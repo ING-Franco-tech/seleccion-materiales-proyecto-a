@@ -1691,6 +1691,17 @@ const DIB = (() => {
     // inyección de inhibidor
     if (o.tag === 'FL-201' || o.tag === 'TL-201') { c.fillStyle = '#9b5de5'; c.fillRect(ci0 - 30, y0 - 40, 8, 40); flujoV(c, 'inh', ci0 - 29, ci0 - 23, y0 - 40, y0, 6, t, '#9b5de5', 1); txt(c, `inhibidor ${fmt((o.A || 0) * 100, 0)} %`, ci0 - 40, y0 - 46, '#7c3aed'); }
     if (o.tag === 'FM-201') { const mx = x0 + (x1 - x0) * .62; c.fillStyle = '#e8eef6'; c.beginPath(); c.arc(mx, y0 - 26, 16, 0, 7); c.fill(); c.strokeStyle = '#1f6feb'; c.beginPath(); c.moveTo(mx, y0 - 26); c.lineTo(mx + Math.cos(t) * 11, y0 - 26 + Math.sin(t) * 11); c.stroke(); }
+
+    if (o.tag === 'FL-201') {
+      txt(c, D.G.npozos + ' pozos · ' + D.G.npozos + ' líneas de flujo', W * .35, H * .10);
+      for (let i = 0; i < D.G.npozos; i++) {
+        const x = W * (.36 + i * .06), y = H * .26, length = H * .10;
+        c.fillStyle = met(c, x - 4, 0, 8, 0, true);
+        rr(c, x - 4, y - length, 8, length, 3); c.fill();
+        flujoV(c, 'fl' + i, x - 2, x + 2, y - length, y, 3, t, o.colF, o.vel);
+        txt(c, String(i + 1), x - 4, y + 14);
+      }
+    }
     // sección transversal
     const sx = W * .87, sy = H * .82, sr = H * .1;
     c.fillStyle = '#5b6b82'; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill(); c.fillStyle = '#dbe5f1'; c.beginPath(); c.arc(sx, sy, sr * .82, 0, 7); c.fill();
@@ -1710,19 +1721,19 @@ const DIB = (() => {
     c.fillStyle = '#c9d4e3'; c.fillRect(W * .05, H * .9, W * .9, 6);
     c.fillStyle = met(c, 0, y - 18, 0, 36); rr(c, x0, y - 18, x1 - x0, 36, 18); c.fill();
     c.save(); rr(c, x0 + 30, y - 12, x1 - x0 - 60, 24, 12); c.clip(); c.fillStyle = 'rgba(219,229,241,.9)'; c.fillRect(x0, y - 12, x1 - x0, 24); flujoH(c, 'mf', x0, x1, y - 10, y + 10, 40, t, o.colF, o.vel); c.restore();
-    for (let i = 0; i < 5; i++) {
-      const x = x0 + 50 + i * (x1 - x0 - 100) / 4;
+    for (let i = 0; i < D.G.npozos; i++) {
+      const x = x0 + 50 + i * (x1 - x0 - 100) / Math.max(1, D.G.npozos - 1);
       c.fillStyle = met(c, x - 9, 0, 18, 0, true); c.fillRect(x - 9, H * .12, 18, y - 18 - H * .12);
       flujoV(c, 'r' + i, x - 6, x + 6, H * .12, y - 18, 6, t, o.colF, o.vel);
       c.fillStyle = '#e2a72e'; c.beginPath(); c.moveTo(x - 14, H * .3 - 9); c.lineTo(x + 14, H * .3 + 9); c.lineTo(x + 14, H * .3 - 9); c.lineTo(x - 14, H * .3 + 9); c.closePath(); c.fill();
       c.fillStyle = '#94a3b8'; c.fillRect(x - 2, H * .3 - 24, 4, 16); c.fillRect(x - 10, H * .3 - 26, 20, 4);
-      brida(c, x, H * .18, 30, true); txt(c, `pozo ${i + 1}`, x - 18, H * .1);
+      brida(c, x, H * .18, 30, true); txt(c, `pozo ${i + 1}`, x - 15, H * .1);
     }
     c.fillStyle = met(c, 0, y - 12, 0, 24); c.fillRect(x1, y - 12, W * .95 - x1, 24); flujoH(c, 'mfo', x1, W * .95, y - 8, y + 8, 12, t, o.colF, o.vel * 1.5);
     Z.push({ x: x0 + 30, y: y - 18, w: x1 - x0 - 60, h: 36, kw: ['cabezal', 'colector', 'tubo', 'cuerpo', 'header'], n: 'Colector' });
     Z.push({ x: x0 + 36, y: H * .3 - 14, w: 28, h: 28, kw: ['válvula', 'asiento', 'bola', 'compuerta'], n: 'Válvulas' });
-    Z.push({ x: x0 + 40 + (x1 - x0 - 100) / 4, y: H * .12, w: 20, h: y - H * .12 - 20, kw: ['ramal', 'conexión', 'niple', 'tee'], n: 'Ramales' });
-    Z.push({ x: x0 + 50 + 2 * (x1 - x0 - 100) / 4 - 16, y: H * .18 - 8, w: 32, h: 16, kw: ['brida', 'espárrago', 'junta'], n: 'Bridas' });
+    Z.push({ x: x0 + 40 + (x1 - x0 - 100) / Math.max(1, D.G.npozos - 1), y: H * .12, w: 20, h: y - H * .12 - 20, kw: ['ramal', 'conexión', 'niple', 'tee'], n: 'Ramales' });
+    Z.push({ x: x0 + 50 + 2 * (x1 - x0 - 100) / Math.max(1, D.G.npozos - 1) - 16, y: H * .18 - 8, w: 32, h: 16, kw: ['brida', 'espárrago', 'junta'], n: 'Bridas' });
     return Z;
   };
   P.pozo = (c, W, H, t, o) => {

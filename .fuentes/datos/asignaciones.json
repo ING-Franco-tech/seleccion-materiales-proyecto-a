@@ -1,0 +1,203 @@
+﻿{
+  "A1": {
+    "color": "#f2a900",
+    "confirmada": true,
+    "nota": "Lista real del usuario (puntos 3.2 a 3.8). El punto 3.1 llegó sin nombre: se asumió Casing de producción para Sebastián Baleta (único sin equipo). SL-101 va con el cabezal y WI-101 con el casing.",
+    "integrantes": [
+      {
+        "id": "baleta",
+        "nombre": "Sebastián Baleta",
+        "descripcion": "Casing de producción del pozo",
+        "equipos": ["CS-101", "CS-102", "CS-103", "WI-101"],
+        "piezas": []
+      },
+      {
+        "id": "pineda",
+        "nombre": "Kevin Pineda",
+        "descripcion": "Sarta de producción, niple de asiento, packer y ancla de tubería",
+        "equipos": ["TB-101", "PK-101"],
+        "piezas": []
+      },
+      {
+        "id": "osorio",
+        "nombre": "Kleiver Osorio",
+        "descripcion": "Varillas de bombeo, acoples, barra pulida y cabezal (secciones A y B, colgadores)",
+        "equipos": ["VR-101", "BP-101", "WH-101", "SL-101"],
+        "piezas": []
+      },
+      {
+        "id": "britto",
+        "nombre": "Fredy Britto",
+        "descripcion": "Bomba de subsuelo",
+        "equipos": ["BS-101"],
+        "piezas": []
+      },
+      {
+        "id": "carrillo",
+        "nombre": "Daisy Carrillo",
+        "descripcion": "Árbol de producción y válvulas, SSV y línea de ataque",
+        "equipos": ["XT-101", "SSV-101"],
+        "piezas": []
+      }
+    ]
+  },
+  "A2": {
+    "color": "#27a9e1",
+    "confirmada": true,
+    "integrantes": [
+      {
+        "id": "bayeh",
+        "nombre": "Daniela Bayeh",
+        "equipos": [
+          "FL-201",
+          "MF-201"
+        ],
+        "piezas": [
+          "XV-201-c",
+          "EC-201-a",
+          "EC-201-e",
+          "EC-201-KA"
+        ],
+        "descripcion": "Líneas de flujo ×8, múltiple de producción",
+        "simuladores": [
+          {"titulo": "Líneas de flujo ×8", "equipos": ["FL-201"], "piezas": ["EC-201-a", "EC-201-e", "EC-201-KA"]},
+          {"titulo": "Múltiple de producción", "equipos": ["MF-201"], "piezas": ["XV-201-c"]}
+        ]
+      },
+      {
+        "id": "cano",
+        "nombre": "Julieth Cano",
+        "equipos": [
+          "MF-202",
+          "V-201",
+          "FM-201"
+        ],
+        "piezas": [],
+        "descripcion": "Múltiple de prueba, separador de prueba",
+        "simuladores": [
+          {"titulo": "Múltiple de prueba", "equipos": ["MF-202"]},
+          {"titulo": "Separador de prueba", "equipos": ["V-201", "FM-201"]}
+        ]
+      },
+      {
+        "id": "duque",
+        "nombre": "Daniel Duque",
+        "equipos": [
+          "PL-201",
+          "PL-202"
+        ],
+        "piezas": [],
+        "descripcion": "Trampa de envío y de recibo",
+        "simuladores": [
+          {"titulo": "Trampa de envío", "equipos": ["PL-201"]},
+          {"titulo": "Trampa de recibo", "equipos": ["PL-202"]}
+        ]
+      },
+      {
+        "id": "cortes",
+        "nombre": "Mafer Cortes",
+        "equipos": [],
+        "piezas": [
+          "TL-201-a",
+          "TL-201-b",
+          "EC-201-b",
+          "EC-201-f",
+          "SP-201-a"
+        ],
+        "descripcion": "Línea de transferencia, tramos aéreos y enterrados",
+        "simuladores": [
+          {"titulo": "Tramos enterrados", "piezas": ["TL-201-a", "EC-201-b", "EC-201-f"], "enfoque": "enterrado"},
+          {"titulo": "Tramos aéreos", "piezas": ["TL-201-b", "SP-201-a"], "enfoque": "aereo"}
+        ]
+      },
+      {
+        "id": "fajardo",
+        "nombre": "Juan Fajardo",
+        "equipos": [
+          "CI-201"
+        ],
+        "piezas": [],
+        "descripcion": "Tanque de inhibidor y bomba dosificadora",
+        "simuladores": [
+          {"titulo": "Tanque de inhibidor", "piezas": ["CI-201-c"], "enfoque": "tanque"},
+          {"titulo": "Bomba dosificadora e inyección", "piezas": ["CI-201-a", "CI-201-b", "CI-201-c"], "enfoque": "inyeccion"}
+        ]
+      },
+      {
+        "id": "navarro",
+        "nombre": "Kelly Navarro",
+        "equipos": [
+          "P-301"
+        ],
+        "piezas": [
+          "TL-201-c",
+          "TL-201-d",
+          "EC-201-c",
+          "SP-201-b",
+          "XV-201-a",
+          "XV-201-b"
+        ],
+        "descripcion": "Cruces de quebrada, tramos especiales y bomba de transferencia",
+        "simuladores": [
+          {"titulo": "Cruces de quebrada y tramos especiales", "piezas": ["TL-201-c", "TL-201-d", "EC-201-c", "SP-201-b", "XV-201-a", "XV-201-b"]},
+          {"titulo": "Bomba de transferencia", "equipos": ["P-301"]}
+        ]
+      }
+    ]
+  },
+  "A3": {
+    "color": "#2fb67a",
+    "confirmada": true,
+    "integrantes": [
+      {
+        "id": "franco",
+        "nombre": "José Franco",
+        "equipos": [
+          "V-301",
+          "V-302",
+          "H-301",
+          "L-301",
+          "FL-301"
+        ],
+        "piezas": []
+      },
+      {
+        "id": "jimenez",
+        "nombre": "Deivis Jiménez",
+        "equipos": [
+          "T-301",
+          "T-302",
+          "T-303",
+          "L-302"
+        ],
+        "piezas": []
+      },
+      {
+        "id": "arciniegas",
+        "nombre": "Sebastián Arciniegas",
+        "equipos": [
+          "T-304",
+          "F-301",
+          "L-303",
+          "P-302",
+          "L-304",
+          "WH-301"
+        ],
+        "piezas": []
+      },
+      {
+        "id": "rodriguez",
+        "nombre": "Kevin Rodríguez",
+        "equipos": [
+          "FG-301",
+          "PC-A3",
+          "PC-301",
+          "D-301",
+          "Q-301"
+        ],
+        "piezas": []
+      }
+    ],
+    "observacion": "Nicolás Moreno no expone"
+  }
+}

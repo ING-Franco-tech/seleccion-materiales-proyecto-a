@@ -56,12 +56,7 @@ function show(position) {
     }
   });
   const slide = slides[index];
-  guideNotes.replaceChildren(...JSON.parse(slide.dataset.notes).map(note => {
-    const item = document.createElement('li');
-    item.textContent = note;
-    return item;
-  }));
-  guide.scrollTop = 0;
+  updateGuide(slide);
   part.textContent = slide.dataset.part;
   speaker.textContent = slide.dataset.speaker;
   speaker.hidden = !speaker.textContent;
@@ -70,6 +65,15 @@ function show(position) {
   counter.value = String(index + 1).padStart(2, '0') + ' / ' + slides.length;
   const hash = '#' + (index + 1);
   if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function updateGuide(slide) {
+  const tab = slide.querySelector('.sim-tabs [aria-selected="true"]');
+  guideNotes.replaceChildren(...JSON.parse(tab?.dataset.notes ?? slide.dataset.notes).map(note => {
+    const item = document.createElement('li');
+    item.textContent = note;
+    return item;
+  }));
+  guide.scrollTop = 0;
 }
 async function fullscreen() {
   try {
@@ -90,6 +94,10 @@ for (const [slide, frame] of cached) {
       frame.dataset.src = tab.dataset.module + (tab.dataset.module.includes('?') ? '&' : '?') + 'embed=1';
       frame.src = frameSource(frame);
       slide.querySelector('.sim-open').href = tab.dataset.module;
+      slide.querySelectorAll('[data-sim-matrix]').forEach((matrix, i) => {
+        matrix.hidden = i !== position;
+      });
+      updateGuide(slide);
     });
     tab.addEventListener('keydown', event => {
       const destinations = {ArrowLeft:(position + tabs.length - 1) % tabs.length,
