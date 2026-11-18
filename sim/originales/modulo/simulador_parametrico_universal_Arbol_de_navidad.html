@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 7: Árbol de Producción y Te (API 6A / ISO 10423 / ISO 15156)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(270px,320px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.08rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:600px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div><h1>Árbol de producción y Te de flujo</h1>
+  <p>Módulo 7 de 10, sistema A1. Selección de Clase de Material API 6A, válvulas maestra/lateral, te de bombeo, erosión y aislamiento dieléctrico en frontera A2.</p></div>
+  <ul class="norms"><li>API Spec 6A / ISO 10423</li><li>API 11B / API RP 14E</li><li>ISO 15156-2 / -3</li><li>NACE SP0286</li></ul>
+</header>
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card"><h2>Esquema del Árbol y Te</h2>
+        <svg id="equipSvg" viewBox="0 0 340 580" role="img" aria-label="Corte técnico del Árbol de Producción con válvula maestra, te de bombeo, válvula lateral, barra pulida y kit dieléctrico en brida A2"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido producido y desvío lateral (C1)</span></li>
+          <li><i style="background:#38bdf8;opacity:.75"></i>Corte de agua (BSW) y película de inhibidor</li>
+          <li><i style="background:#a78bfa;opacity:.75"></i>Trim / Cladding CRA en asientos y ranuras de anillo</li>
+          <li><i style="background:var(--warn);opacity:.85"></i>Kit de aislamiento dieléctrico en frontera A1 ↔ A2</li>
+        </ul>
+      </section>
+      <section class="card"><h2>Diagnóstico de severidad, erosión y componentes</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presión parcial CO₂</div><div class="val" id="kpi_pco2">-</div><div class="sub" id="kpi_pco2_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Presión parcial H₂S</div><div class="val" id="kpi_ph2s">-</div><div class="sub" id="kpi_ph2s_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156 / API 6A</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Corrosión interna base / dis.</div><div class="val" id="kpi_vint">-</div><div class="sub" id="kpi_caint">-</div></div>
+          <div class="kpi"><div class="lbl">Velocidad flujo vs Erosional</div><div class="val" id="kpi_vel">-</div><div class="sub" id="kpi_vel_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+    <section class="card"><h2>Elegibilidad de Clases de Material (API Spec 6A / ISO 10423, ISO 15156-2 y -3)</h2>
+      <div class="scroll"><table><thead><tr><th>Clase API 6A</th><th>Cuerpo / Bonete / Te</th><th>Trim (Compuerta, Vástago, Asientos)</th><th>Estado</th><th>Justificación Metalúrgica y Normativa</th></tr></thead><tbody id="grades_tbody"></tbody></table></div></section>
+    <section class="card"><h2>Verificación de pasos nominales y presión de trabajo (API Spec 6A / API RP 14E)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Evaluado con la Clase de Material elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong></p>
+      <div class="scroll"><table><thead><tr><th>Paso Nominal (Bore)</th><th>t nom / t rem (mm)</th><th>P. Trabajo API [FS]</th><th>Vel. Real / Erosional (m/s)</th><th>Par Válvula (N·m)</th><th>Esfuerzo Espárragos [FS]</th><th>Veredicto</th></tr></thead><tbody id="weights_tbody"></tbody></table></div></section>
+    <section class="card"><h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2><pre id="json_output"></pre></section>
+  </main>
+</div>
+
+<script>
+const S = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) || {};
+
+const FORM=[
+["Fluido producido en cabeza (C1)",[
+ ["p_op","Presión oper. en cabeza","bar",incomingValue("p_head_op_bar", 45),1,1000,1],
+ ["p_int","Presión máx. cierre (SITP)","bar",incomingValue("p_head_design_bar", 50),1,1000,1],
+ ["temp_c","Temperatura máx. diseño","°C",incomingValue("temp_surface_design_c", 85),0,250,1],
+ ["y_co2","CO₂ en gas","% mol",incomingValue("y_co2_pct", 3.1),0,100,0.1],
+ ["y_h2s","H₂S en gas (hoy / año 10)","% mol",incomingValue("y_h2s_pct", 0.15),0,100,0.01],
+ ["ph","pH in situ","",incomingValue("pH", 4.6),1,14,0.1],
+ ["chlorides","Cloruros","mg/L",incomingValue("chlorides_mgL", S.chlorides_mgL??42000),0,250000,500],
+ ["sand_lb","Arena / Sólidos","lb/1000 bbl",incomingValue("solids_lb_1000bbl", 12),0,500,1]]],
+["Control de corrosión y flujo",[
+ ["wet_factor","Corte de agua (BSW)","%",incomingValue("bsw_pct", 78),0,100,1],
+ ["inhib_avail","Disponibilidad inhibidor (A)","%",incomingValue("inhibitor_availability_pct", 90),0,100,0.5],
+ ["v_inhib","Velocidad con inhibidor","mm/a",incomingValue("v_inhibited_mm_yr", 0.1),0,2,0.01],
+ ["q_bpd","Caudal bruto de diseño","bbl/d",214,5,10000,5],
+ ["rho_mix","Densidad mezcla multifásica","kg/m³",880,100,1200,10],
+ ["c_erosion","Constante erosional API 14E (c)","",100,75,150,5]]],
+["Operación y ambiente exterior (C5)",[
+ ["temp_class","Clase Temperatura API 6A",[["U","Clase U (-18 °C a 121 °C)"],["V","Clase V (2 °C a 121 °C)"],["P","Clase P (-29 °C a 82 °C)"],["X","Clase X (-18 °C a 180 °C)"]],"U"],
+ ["ext_iso","Atmósfera exterior (ISO 9223)",[["C4","Categoría C4 (Industrial / Tropical húmeda)"],["C3","Categoría C3 (Media urbana)"],["C5","Categoría C5 (Severa industrial / Marina)"]],"C4"],
+ ["cp_a2","Protección catódica en línea A2",[["yes","Sí, exige kit dieléctrico NACE SP0286"],["no","No, sin corriente impresa externa"]],"yes"],
+ ["rod_od","Diámetro Barra Pulida (API 11B)",[["1.25","1 1/4 in (31,8 mm)"],["1.125","1 1/8 in (28,6 mm)"],["1.50","1 1/2 in (38,1 mm)"]],"1.25"]]],
+["Geometría API 6A y factores de diseño",[
+ ["wp_rating","Presión Nominal API 6A",[["2000","2 000 psi (138 bar)"],["3000","3 000 psi (207 bar)"],["5000","5 000 psi (345 bar)"]],"2000"],
+ ["bore_select","Paso nominal preferido (Bore)",[["2.0625","2 1/16 in (52,4 mm)"],["2.5625","2 9/16 in (65,1 mm)"],["3.125","3 1/8 in (79,4 mm)"],["4.0625","4 1/16 in (103,2 mm)"]],"2.5625"],
+ ["f_rod_max","Carga máx. barra pulida","kN",62,5,300,2],
+ ["design_life","Vida de diseño","años",incomingValue("design_life_yr", 20),1,50,1],
+ ["fs_press_req","FS mín. presión / espesor","",1.25,1.0,3.0,0.05],
+ ["fs_bolt_req","FS mín. espárragos (B7M)","",1.50,1.1,3.0,0.05]]]];
+
+function buildForm(){
+  document.getElementById("form").innerHTML=FORM.map(([t,fs])=>`<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f=>{
+    const [id,lb,u]=f,sel=Array.isArray(u);
+    const ctl=sel?`<select id="${id}">${u.map(o=>`<option value="${o[0]}"${o[0]===f[3]?" selected":""}>${o[1]}</option>`).join("")}</select>`
+      :`<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel?" w":""}"><label for="${id}">${lb}</label>${ctl}</div>`}).join("")}</div></details>`).join("");
+}
+buildForm();
+const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:d;};
+
+// 1. Catálogo Comercial de Pasos Nominales (Through-Bore) API Spec 6A para Árbol y Te
+const BORE_CATALOG = [
+  { key: "2.0625", label: "2 1/16 in", id_mm: 52.4, od_body_mm: 108.0, t_nom_mm: 27.8, ring: "R-23 / RX-23", n_bolts: 8, bolt_area_mm2: 205 },
+  { key: "2.5625", label: "2 9/16 in", id_mm: 65.1, od_body_mm: 127.0, t_nom_mm: 31.0, ring: "R-27 / RX-27", n_bolts: 8, bolt_area_mm2: 268 },
+  { key: "3.125",  label: "3 1/8 in",  id_mm: 79.4, od_body_mm: 146.0, t_nom_mm: 33.3, ring: "R-31 / RX-31", n_bolts: 8, bolt_area_mm2: 342 },
+  { key: "4.0625", label: "4 1/16 in", id_mm: 103.2, od_body_mm: 178.0, t_nom_mm: 37.4, ring: "R-37 / RX-37", n_bolts: 8, bolt_area_mm2: 456 }
+];
+
+// 2. Catálogo de Clases de Materiales API Spec 6A / ISO 10423 + ISO 15156
+const API6A_CLASSES = [
+  {
+    id: "AA",
+    name: "API 6A Clase AA (Servicio General)",
+    bodyMat: "Acero baja aleación AISI 4130 / 8630 (60K/75K)",
+    trimMat: "Acero al carbono o baja aleación nitrurado",
+    bodyCRA: false, trimCRA: false, sourCapable: false,
+    max_pco2_psi: 7, max_ph2s_kpa: 0.3,
+    costRank: 1
+  },
+  {
+    id: "BB",
+    name: "API 6A Clase BB (Ligeramente Corrosivo)",
+    bodyMat: "Acero forjado AISI 4130 (60K/75K)",
+    trimMat: "Inoxidable AISI 410 (13Cr, ≤ 23 HRC)",
+    bodyCRA: false, trimCRA: true, sourCapable: false,
+    max_pco2_psi: 30, max_ph2s_kpa: 0.3,
+    costRank: 2
+  },
+  {
+    id: "CC",
+    name: "API 6A Clase CC (Corrosivo CO₂ Dulce)",
+    bodyMat: "Inoxidable Martensítico AISI 410 (13Cr) o F6NM",
+    trimMat: "Inoxidable 13Cr / 17-4PH con Stellite 6",
+    bodyCRA: true, trimCRA: true, sourCapable: false,
+    max_pco2_psi: 9999, max_ph2s_kpa: 0.3,
+    costRank: 5
+  },
+  {
+    id: "DD",
+    name: "API 6A Clase DD (Servicio Amargo sin CO₂)",
+    bodyMat: "AISI 4130 Templado y Revenido (≤ 22 HRC, ISO 15156-2)",
+    trimMat: "Baja aleación (≤ 22 HRC) + recubrimiento WC/Co",
+    bodyCRA: false, trimCRA: false, sourCapable: true,
+    max_pco2_psi: 7, max_ph2s_kpa: 9999,
+    costRank: 3
+  },
+  {
+    id: "EE-13Cr",
+    name: "API 6A Clase EE (Trim 13Cr / F6NM)",
+    bodyMat: "AISI 4130 forjado (≤ 22 HRC) + Inlay Alloy 625 en ranuras RX",
+    trimMat: "AISI 410 / F6NM (≤ 22-23 HRC) + Compuerta/Asientos con WC o Stellite 6",
+    bodyCRA: false, trimCRA: true, sourCapable: true,
+    max_pco2_psi: 30, max_ph2s_kpa: 10.0,
+    costRank: 4
+  },
+  {
+    id: "EE-CRA",
+    name: "API 6A Clase EE Mejorada (Trim Dúplex F51 / S13Cr / 718)",
+    bodyMat: "AISI 4130 forjado (≤ 22 HRC) + Inlay Alloy 625 en ranuras RX",
+    trimMat: "Dúplex UNS S31803 / Inconel 718 + Carburo de Tungsteno (HVOF)",
+    bodyCRA: false, trimCRA: true, sourCapable: true,
+    max_pco2_psi: 30, max_ph2s_kpa: 100.0,
+    costRank: 6
+  },
+  {
+    id: "FF",
+    name: "API 6A Clase FF (Amargo + Alto CO₂, Cuerpo Inox)",
+    bodyMat: "Inoxidable F6NM (≤ 23 HRC) o Dúplex F51 (≤ 28 HRC)",
+    trimMat: "Dúplex / Inconel 718 + Asientos con Carburo de Tungsteno",
+    bodyCRA: true, trimCRA: true, sourCapable: true,
+    max_pco2_psi: 9999, max_ph2s_kpa: 10.0,
+    costRank: 7
+  },
+  {
+    id: "HH",
+    name: "API 6A Clase HH (Cuerpo Clad Inconel 625 + Trim CRA)",
+    bodyMat: "AISI 4130 (≤ 22 HRC) con Cladding integral 3 mm de Alloy 625 (UNS N06625)",
+    trimMat: "Inconel 625 / 718 (≤ 35-40 HRC) + Carburo de Tungsteno",
+    bodyCRA: true, trimCRA: true, sourCapable: true,
+    max_pco2_psi: 9999, max_ph2s_kpa: 9999,
+    costRank: 8
+  }
+];
+
+// 3. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 4. Evaluación de Elegibilidad Metalúrgica de cada Clase API 6A
+function evaluateClassEligibility(cls, state) {
+  const { region, pCO2_psi, pH2S_kPa, pH, chlorides, temp_c, ca_int_mm } = state;
+
+  // Descarte por Servicio Amargo (ISO 15156-2 exige clase DD, EE, FF o HH cuando pH2S >= 0.3 kPa)
+  if (region > 0 && !cls.sourCapable) {
+    return {
+      eligible: false,
+      status: "Descartado (SSC)",
+      reason: `No apto para servicio amargo (Región ${region}, pH₂S = ${pH2S_kPa.toFixed(1)} kPa ≥ 0,3 kPa). ISO 15156 exige clases DD, EE, FF o HH.`
+    };
+  }
+
+  // Descarte por presión parcial de CO2 en el Trim
+  if (!cls.trimCRA && pCO2_psi >= 7.0) {
+    return {
+      eligible: false,
+      status: "Descartado (CO₂ en Trim)",
+      reason: `Con pCO₂ = ${pCO2_psi.toFixed(1)} psi (≥ 7 psi), el trim de acero al carbono/baja aleación sufre corrosión acelerada y pérdida de sello en compuerta y asientos.`
+    };
+  }
+
+  // Verificación específica de Clase EE con Trim 13Cr (ISO 15156-3: pH2S <= 10 kPa y pH >= 3.5)
+  if (cls.id === "EE-13Cr") {
+    if (pCO2_psi > 30) {
+      return {
+        eligible: false,
+        status: "Excede pCO₂ Clase EE",
+        reason: `pCO₂ = ${pCO2_psi.toFixed(1)} psi supera el rango moderado de Clase EE (7 a 30 psi); requiere Clase FF o HH.`
+      };
+    }
+    if (pH2S_kPa > 10.0 || pH < 3.5) {
+      return {
+        eligible: false,
+        status: "Límite ISO 15156-3 (13Cr)",
+        reason: `El trim 13Cr/F6NM excede su límite ambiental ISO 15156-3 (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 10 kPa, o pH < 3,5). Use Clase EE con Trim Dúplex/718 o Clase HH.`
+      };
+    }
+    if (ca_int_mm > 6.0) {
+      return {
+        eligible: false,
+        status: "CA excesivo en Cuerpo",
+        reason: `Baja disponibilidad de inhibidor produce CA = ${ca_int_mm.toFixed(1)} mm en el cuerpo AISI 4130; requiere revestimiento Clad Alloy 625 (Clase HH).`
+      };
+    }
+    const clWarn = chlorides > 30000 ? " Se recomienda vástago en Inconel 718 o Dúplex ante picadura por altos cloruros." : "";
+    return {
+      eligible: true,
+      status: "Apto API 6A / ISO 15156",
+      reason: `Cumple rango EE (pCO₂ = ${pCO2_psi.toFixed(1)} psi entre 7-30 psi) y pH₂S ≤ 10 kPa. Cuerpo 4130 (≤ 22 HRC) con sobreespesor CA = ${ca_int_mm.toFixed(2)} mm.${clWarn}`
+    };
+  }
+
+  // Verificación de Clase EE Mejorada (Trim Dúplex / Aleación 718)
+  if (cls.id === "EE-CRA") {
+    if (pCO2_psi > 30) {
+      return {
+        eligible: false,
+        status: "Excede pCO₂ Clase EE",
+        reason: `pCO₂ = ${pCO2_psi.toFixed(1)} psi supera los 30 psi para cuerpos de baja aleación sin cladding; pase a Clase HH.`
+      };
+    }
+    if (ca_int_mm > 6.0) {
+      return {
+        eligible: false,
+        status: "CA excesivo en Cuerpo",
+        reason: `Pérdida interna en cuerpo AISI 4130 (${ca_int_mm.toFixed(1)} mm) excede tolerancia mecánica; requiere Clase HH (Clad 625).`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto Amargo / Altos Cl⁻",
+      reason: `Cuerpo AISI 4130 (≤ 22 HRC) con Inlay Alloy 625 en ranuras y Trim resistente a pH₂S > 10 kPa (Región 3) y ${chlorides.toLocaleString()} mg/L de Cl⁻.`
+    };
+  }
+
+  // Verificación de Clase FF (Cuerpo 13Cr / Dúplex)
+  if (cls.id === "FF") {
+    if (pH2S_kPa > 10.0 || pH < 3.5 || (chlorides > 50000 && temp_c > 90)) {
+      return {
+        eligible: false,
+        status: "Descartado (ISO 15156-3)",
+        reason: `El cuerpo inoxidable martensítico/dúplex supera el límite de pH₂S ≤ 10 kPa (${pH2S_kPa.toFixed(1)} kPa) o cloruros a alta temperatura.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto CRA Integral",
+      reason: "Cuerpo e internos resistentes a CO₂ sin requerir inhibidor en el árbol (pH₂S ≤ 10 kPa)."
+    };
+  }
+
+  // Verificación de Clase HH (Cuerpo Clad Alloy 625)
+  if (cls.id === "HH") {
+    return {
+      eligible: true,
+      status: "Apto Servicio Extremo",
+      reason: "Revestimiento soldado (Weld Overlay) de Inconel 625 en todas las superficies mojadas y ranuras de sello; inmune a CO₂, H₂S Región 3 y cloruros."
+    };
+  }
+
+  // Clases AA, BB, CC, DD cuando sí cumplen sus ventanas
+  if (!cls.bodyCRA && ca_int_mm > 6.0) {
+    return {
+      eligible: false,
+      status: "Falla por Corrosión",
+      reason: `Pérdida de pared de ${ca_int_mm.toFixed(1)} mm excede el margen admisible para acero de baja aleación sin cladding.`
+    };
+  }
+
+  return {
+    eligible: true,
+    status: "Apto según API 6A",
+    reason: `Cumple límites de pCO₂ (${pCO2_psi.toFixed(1)} psi) y pH₂S (${pH2S_kPa.toFixed(2)} kPa) con dureza controlada.`
+  };
+}
+
+// 5. Motor Principal de Simulación
+function runSimulation() {
+  const p_op = num("p_op", 45);
+  const p_int = Math.max(p_op, num("p_int", 55));
+  const temp_c = num("temp_c", 85);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.30);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const sand_lb = num("sand_lb", 12);
+
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+  const q_bpd = num("q_bpd", 214);
+  const rho_mix = num("rho_mix", 880);
+  const c_erosion = num("c_erosion", 100);
+
+  const temp_class = document.getElementById("temp_class").value;
+  const ext_iso = document.getElementById("ext_iso").value;
+  const cp_a2 = document.getElementById("cp_a2").value === "yes";
+  const rod_od_in = parseFloat(document.getElementById("rod_od").value);
+
+  const wp_psi = parseFloat(document.getElementById("wp_rating").value);
+  const wp_bar = wp_psi * 0.0689476;
+  const bore_key = document.getElementById("bore_select").value;
+  const f_rod_max = num("f_rod_max", 62);
+  const design_life = num("design_life", 20);
+  const fs_press_req = num("fs_press_req", 1.25);
+  const fs_bolt_req = num("fs_bolt_req", 1.50);
+
+  // Presiones parciales evaluadas a la presión de diseño/cierre en cabeza (p_int) y operación (p_op)
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+  const pH2S_op_kPa = (y_h2s / 100) * (p_op + 1.01325) * 100;
+
+  // Región SSC ISO 15156-2
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const region_op = getISO15156Region(pH2S_op_kPa, pH);
+
+  // Clase normativa sugerida por API 6A
+  let apiClassTarget = "AA";
+  if (region === 0) {
+    if (pCO2_psi >= 7 && pCO2_psi <= 30) apiClassTarget = "BB";
+    else if (pCO2_psi > 30) apiClassTarget = "CC";
+  } else {
+    if (pCO2_psi < 7) apiClassTarget = "DD";
+    else if (pCO2_psi <= 30) apiClassTarget = pH2S_kPa <= 10 ? "EE (Trim 13Cr)" : "EE (Trim CRA) / HH";
+    else apiClassTarget = "FF / HH";
+  }
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + ISO 21457 en cuerpo de baja aleación
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const f_wet_eff = Math.min(1, Math.max(0.1, wet_factor / 100));
+  const v_uncontrolled = v_base_co2 * f_wet_eff;
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_design_int = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+  const ca_int_mm = v_design_int * design_life;
+
+  // Velocidad erosional crítica según API RP 14E: v_e = (c * 1.22) / sqrt(rho_m en kg/m3)
+  const v_erosional_ms = (c_erosion * 1.22) / Math.sqrt(Math.max(10, rho_mix));
+  const q_m3s = (q_bpd * 0.158987) / 86400;
+  const preferredBore = BORE_CATALOG.find(b => b.key === bore_key) || BORE_CATALOG[1];
+  const area_pref_m2 = (Math.PI / 4) * Math.pow(preferredBore.id_mm / 1000, 2);
+  const v_actual_pref_ms = q_m3s / area_pref_m2;
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pco2").textContent = `${pCO2_bar.toFixed(3)} bar`;
+  document.getElementById("kpi_pco2_sub").textContent = `${pCO2_psi.toFixed(1)} psi (${pCO2_psi < 7 ? '<7 Leve' : pCO2_psi <= 30 ? '7-30 Moderado' : '>30 Alto'})`;
+  document.getElementById("kpi_ph2s").textContent = `${pH2S_kPa.toFixed(2)} kPa`;
+  document.getElementById("kpi_ph2s_sub").textContent = `Op (${p_op} bar): ${pH2S_op_kPa.toFixed(2)} kPa (Reg. ${region_op})`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 | ${apiClassTarget}</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} | ${apiClassTarget}</span>`;
+  document.getElementById("kpi_regime").textContent = `API 6A Temp. ${temp_class} | PSL ${region >= 2 || wp_psi >= 5000 ? '2 / 3' : '1 / 2'}`;
+
+  document.getElementById("kpi_vint").textContent = `${v_design_int.toFixed(2)} mm/a`;
+  document.getElementById("kpi_caint").textContent = `Sin inhib.: ${v_uncontrolled.toFixed(1)} mm/a | CA (20a): ${ca_int_mm.toFixed(2)} mm`;
+  document.getElementById("kpi_vel").textContent = `${v_actual_pref_ms.toFixed(2)} / ${v_erosional_ms.toFixed(2)} m/s`;
+  document.getElementById("kpi_vel_sub").textContent = `En paso ${preferredBore.label} (${((v_actual_pref_ms / v_erosional_ms) * 100).toFixed(1)}% de límite API 14E)`;
+
+  // Evaluar todas las clases de material API 6A y su cumplimiento mecánico en el paso seleccionado
+  const stateObj = { region, pCO2_psi, pH2S_kPa, pH, chlorides, temp_c, ca_int_mm };
+  const yp_body_MPa = 517; // Fluencia mínima API 6A 75K (517 MPa / 75 ksi)
+  const yp_bolt_MPa = 550; // Fluencia ASTM A193 B7M (80 ksi = 550 MPa, <= 22 HRC)
+
+  function checkBoreMechanics(bore, isBodyCRA) {
+    const eff_ca = isBodyCRA ? 0 : ca_int_mm;
+    const t_rem_mm = Math.max(0, bore.t_nom_mm - eff_ca);
+    // Presión admisible por espesor remanente (Barlow con factor de diseño API 6A)
+    const p_allow_wall_bar = ((2 * (0.67 * yp_body_MPa) * t_rem_mm) / bore.od_body_mm) * 10;
+    const p_cap_bar = Math.min(wp_bar, p_allow_wall_bar);
+    const fs_press = p_int > 0 ? p_cap_bar / p_int : 99;
+
+    // Velocidad real vs erosional
+    const area_m2 = (Math.PI / 4) * Math.pow(bore.id_mm / 1000, 2);
+    const v_real_ms = q_m3s / area_m2;
+    const vel_ok = v_real_ms <= v_erosional_ms;
+
+    // Par de apertura/cierre de válvula de compuerta (N·m): F_sello * mu * paso_husillo
+    const area_bore_mm2 = (Math.PI / 4) * bore.id_mm * bore.id_mm;
+    const f_gate_N = (p_int * 0.1) * area_bore_mm2 * 0.32;
+    const torque_Nm = Math.round(25 + (f_gate_N * 0.0038));
+
+    // Esfuerzo en espárragos ASTM A193 B7M en la brida ante presión de cierre + carga axial
+    const area_seal_mm2 = area_bore_mm2 * 1.45;
+    const f_sep_N = (p_int * 0.1) * area_seal_mm2 + (f_rod_max * 1000 * 0.35);
+    const sigma_bolt_MPa = f_sep_N / (bore.n_bolts * bore.bolt_area_mm2);
+    const fs_bolt = sigma_bolt_MPa > 0 ? yp_bolt_MPa / sigma_bolt_MPa : 99;
+
+    const passes = (fs_press >= fs_press_req) && vel_ok && (fs_bolt >= fs_bolt_req) && (t_rem_mm >= 12.0);
+    return { t_rem_mm, p_cap_bar, fs_press, v_real_ms, vel_ok, torque_Nm, sigma_bolt_MPa, fs_bolt, passes };
+  }
+
+  const classesEval = API6A_CLASSES.map(c => {
+    const envCheck = evaluateClassEligibility(c, stateObj);
+    const mechPref = checkBoreMechanics(preferredBore, c.bodyCRA);
+    const fullEligible = envCheck.eligible && mechPref.passes;
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !mechPref.passes) {
+      finalReason += ` Falla verificación mecánica/hidráulica en paso ${preferredBore.label} o requiere aumentar rating de presión API 6A.`;
+    }
+    return { ...c, envCheck, mechPref, fullEligible, finalReason };
+  }).sort((a, b) => a.costRank - b.costRank);
+
+  // Renderizar Tabla 1 (Clases API 6A)
+  document.getElementById("grades_tbody").innerHTML = classesEval.map(c => {
+    const badgeClass = c.fullEligible ? "ok" : (c.envCheck.eligible ? "warn" : "danger");
+    const statusLbl = c.fullEligible ? `Óptimo (Costo #${c.costRank})` : (c.envCheck.eligible ? "Falla Mecánica" : c.envCheck.status);
+    return `
+      <tr>
+        <td><strong>${c.name}</strong></td>
+        <td>${c.bodyMat}</td>
+        <td>${c.trimMat}</td>
+        <td><span class="tag ${badgeClass}">${statusLbl}</span></td>
+        <td>${c.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Seleccionar la clase óptima de menor costo
+  const chosenClass = classesEval.find(c => c.fullEligible) || classesEval.find(c => c.id === "EE-CRA") || classesEval[0];
+  document.getElementById("selected_grade_lbl").textContent = chosenClass.name;
+
+  const eff_ca_chosen = chosenClass.bodyCRA ? 0 : ca_int_mm;
+  const vd = document.getElementById("verdict");
+  if (chosenClass.fullEligible) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Clase API 6A recomendada</span><strong>${chosenClass.name.replace("API 6A ","")}</strong></div>
+      <div><span>Rating y Paso nominal</span><strong>${wp_psi} psi · ${preferredBore.label}</strong></div>
+      <div><span>Región ISO 15156-2</span><strong>Región ${region} (${pH2S_kPa.toFixed(1)} kPa)</strong></div>
+      <div><span>Sobreespesor cuerpo / Vel.</span><strong>${eff_ca_chosen.toFixed(2)} mm · ${v_actual_pref_ms.toFixed(2)} m/s</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `<div class="msg"><strong>Configuración fuera de límites mecánicos o metalúrgicos en el paso ${preferredBore.label}</strong><span>Incremente la Presión Nominal API 6A (ej. 3 000 o 5 000 psi), seleccione un paso nominal mayor para reducir la velocidad erosional o aumente la disponibilidad del inhibidor.</span></div>`;
+  }
+
+  // Renderizar Tabla 2 (Pasos nominales comerciales)
+  document.getElementById("weights_tbody").innerHTML = BORE_CATALOG.map(b => {
+    const m = checkBoreMechanics(b, chosenClass.bodyCRA);
+    const isSelected = b.key === bore_key;
+    return `
+      <tr style="${isSelected ? 'outline:1px solid var(--acc);' : ''}">
+        <td><strong>${b.label} (${b.id_mm} mm)</strong> ${isSelected ? '<span class="tag ok">Elegido</span>' : ''}<br><span style="color:var(--mut);font-size:.73rem">Anillo ${b.ring}</span></td>
+        <td>${b.t_nom_mm.toFixed(1)} / ${m.t_rem_mm.toFixed(1)}</td>
+        <td>${m.p_cap_bar.toFixed(0)} bar [${m.fs_press.toFixed(2)}]</td>
+        <td>${m.v_real_ms.toFixed(2)} / ${v_erosional_ms.toFixed(2)}</td>
+        <td>${m.torque_Nm} N·m</td>
+        <td>${m.sigma_bolt_MPa.toFixed(0)} MPa [${m.fs_bolt.toFixed(2)}]</td>
+        <td><span class="tag ${m.passes ? 'ok' : 'danger'}">${m.passes ? 'CUMPLE' : 'FALLA'}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Recomendaciones detalladas por Subcomponentes A, B y C
+  const hardfacing = sand_lb >= 5
+    ? `Recubrimiento duro por termorrociado HVOF de Carburo de Tungsteno (WC-CoCr) o soldadura Stellite 6 en caras de compuerta y asientos para resistir abrasión por arena (${sand_lb} lb/1000 bbl).`
+    : `Asientos y compuerta con depósito de Stellite 6 lapeado espejo para sello metal-metal hermético.`;
+
+  const stuffingPacking = temp_c > 80 || region >= 2
+    ? `Empaquetaduras seccionales en HNBR de alta densidad reforzado con Kevlar/PTFE o FKM/FEPM resistentes a H₂S y hasta 121 °C (Clase ${temp_class}), sobre barra pulida de ${rod_od_in}" con spray metal Ni-Cr-B.`
+    : `Anillos de empaque elastoméricos en NBR/HNBR lubricados para barra pulida de ${rod_od_in}".`;
+
+  const dielectricTxt = cp_a2
+    ? `Obligatorio instalar <strong>Kit de Aislamiento Dieléctrico (NACE SP0286 / ISO 15589)</strong> en la brida de salida hacia A2: empaque fenólico/GRE con sellos de PTFE/Viton, mangas aislantes de Mylar/Epoxi-vidrio de longitud completa y doble arandela aislante + metálica en cada espárrago para evitar drenar la corriente de protección catódica de la línea A2 hacia el casing.`
+    : `Junta anular metálica estándar sin requerimiento de aislamiento catódico externo.`;
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Válvulas del Árbol (Maestra, Corona y Lateral) — API 6A PSL ${region >= 2 ? '2' : '1'}</h3>
+      <p><strong>Cuerpo y Bonete:</strong> <span style="color:var(--ok);">${chosenClass.bodyMat}</span>, Clase de Temperatura <strong>${temp_class}</strong>. Ranuras de anillo (${preferredBore.ring}) con <em>Weld Overlay (Inlay)</em> de <strong>Inconel 625 (UNS N06625)</strong>.</p>
+      <p><strong>Trim (Compuerta, Asientos y Vástago):</strong> <span style="color:var(--acc);">${chosenClass.trimMat}</span>. ${hardfacing}</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Te del Árbol (Flow Tee), Te de Bombeo y Prensaestopas (API 11B)</h3>
+      <p><strong>Te / Cruz de Flujo:</strong> Forjado integral del mismo material del cuerpo (${chosenClass.bodyMat}), con sobreespesor interno disponible mayor a ${ca_int_mm.toFixed(1)} mm. Velocidad de cambio de dirección (${v_actual_pref_ms.toFixed(2)} m/s) segura frente a erosión API RP 14E (${v_erosional_ms.toFixed(2)} m/s).</p>
+      <p><strong>Sello Superior de Bombeo:</strong> ${stuffingPacking}</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Brida Frontera A1 ↔ A2, Espárragos y Recubrimiento Exterior (C5)</h3>
+      <p><strong>Unión Embridada y Aislamiento:</strong> Espárragos <strong>ASTM A193 Gr. B7M</strong> y tuercas <strong>ASTM A194 Gr. 2HM</strong> (dureza controlada ≤ 22 HRC según ISO 15156-2) con recubrimiento fluoropolimérico (PTFE/Xylan). ${dielectricTxt}</p>
+      <p><strong>Protección Atmosférica (${ext_iso}):</strong> Sistema tricapa resistente a ${temp_c} °C (Imprimación epóxica rica en zinc + epóxico poliamida intermedio + acabado poliuretano alifático UV, espesor total ≥ 240 μm).</p>
+    </div>
+  `;
+
+  // Dibujar SVG Técnico con Fluido Ascendente y Desvío Lateral Reactivo
+  drawTreeSVG({
+    p_op, p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int, region, chosenClass,
+    preferredBore, v_actual_pref_ms, v_erosional_ms, cp_a2, rod_od_in
+  });
+
+  // Actualizar y exportar window.wellStreamState
+  window.wellStreamState = {
+    ...(window.wellStreamState || {}),
+    updatedAt: new Date().toISOString(),
+    fluidStream_C1_C2: {
+      p_op_bar: p_op,
+      p_int_bar: p_int,
+      temp_c: temp_c,
+      y_co2_pct: y_co2,
+      y_h2s_pct: y_h2s,
+      pCO2_bar: Number(pCO2_bar.toFixed(4)),
+      pCO2_psi: Number(pCO2_psi.toFixed(2)),
+      pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+      pH: pH,
+      chlorides_mgL: chlorides,
+      sand_lb_1000bbl: sand_lb,
+      iso15156_region: region,
+      inhibitor_availability_pct: inhib_avail,
+      wet_factor_pct: wet_factor,
+      v_inhibited_mm_yr: v_inhib,
+      design_life_yr: design_life
+    },
+    productionTree_Mod7: {
+      api6a_wp_psi: wp_psi,
+      bore_in: preferredBore.label,
+      bore_mm: preferredBore.id_mm,
+      recommendedClass: chosenClass.name,
+      tempClass: temp_class,
+      ca_internal_mm: Number(eff_ca_chosen.toFixed(2)),
+      flow_velocity_ms: Number(v_actual_pref_ms.toFixed(3)),
+      erosional_velocity_ms: Number(v_erosional_ms.toFixed(2)),
+      dielectricKit_A1_A2: cp_a2,
+      bolting: "ASTM A193 B7M / A194 2HM (<= 22 HRC)"
+    }
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 6. Esquema Vectorial Técnico del Árbol de Producción y Te con Fluido Animado
+function drawTreeSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    p_op, p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int, region, chosenClass,
+    preferredBore, v_actual_pref_ms, cp_a2, rod_od_in
+  } = d;
+
+  // 1. Paleta cromática reactiva del fluido según Región ISO 15156 y CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.0) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316";
+      fluidLabel = "Dulce CO₂ Activo";
+    } else {
+      fluidTopColor = "#d4a338"; fluidBotColor = "#785316"; fluidGlow = "#eab308";
+      fluidLabel = "Dulce (Región 0)";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308";
+    fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316";
+    fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444";
+    fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido (C1): ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | v=${v_actual_pref_ms.toFixed(2)} m/s`;
+  }
+
+  // Velocidad de animación acoplada a presión y caudal
+  const flowDrive = Math.min(1, Math.max(0.15, (p_op / 80) * 0.5 + (v_actual_pref_ms / 1.5) * 0.5));
+  const flowDur = (3.0 - flowDrive * 2.0).toFixed(2);
+  const rodDur = "2.20";
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+
+  // Burbujas de CO2 y H2S
+  const co2Intensity = Math.min(1, y_co2 / 10);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const rCo2 = (1.3 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.5).toFixed(1);
+  const opCo2 = (0.3 + co2Intensity * 0.6).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.4 + h2sIntensity * 0.55 : 0).toFixed(2);
+
+  // Geometría escalada del paso del árbol y barra pulida
+  const cx = 132;
+  const boreHw = Math.round(14 + ((preferredBore.id_mm - 52.4) / (103.2 - 52.4)) * 9); // 14 a 23 px
+  const bodyHw = boreHw + 16;
+  const teeY = 235;
+  const topBoreY = 128, botBoreY = 505;
+  const wingEndX = 296;
+  const rodHw = Math.max(4, Math.round(boreHw * 0.28));
+
+  const steelColor = chosenClass.bodyCRA ? "#a78bfa" : (region >= 2 ? "#5fa883" : "#6b9eb3");
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+  const inhibDash = inhib_avail >= 97 ? "none" : "6 4";
+
+  svg.innerHTML = `
+    <defs>
+      <!-- Recorte en T del conducto interno mojado (Vertical + Salida Lateral hacia A2) -->
+      <clipPath id="clipTreeBore">
+        <rect x="${cx - boreHw}" y="${topBoreY}" width="${2 * boreHw}" height="${botBoreY - topBoreY}"/>
+        <rect x="${cx}" y="${teeY - boreHw}" width="${wingEndX - cx}" height="${2 * boreHw}"/>
+      </clipPath>
+
+      <linearGradient id="treeFluidGrad" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.92"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.82"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.5 ? '#0284c7' : fluidTopColor}" stop-opacity="0.75"/>
+      </linearGradient>
+
+      <!-- Patrón de corriente ascendente vertical -->
+      <pattern id="upFlowPat" width="32" height="44" patternUnits="userSpaceOnUse">
+        <path d="M 8 38 Q 11 22 8 6" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 24 40 Q 21 22 24 4" stroke="#38bdf8" stroke-width="1.6" fill="none" opacity="${(waterFrac * 0.7).toFixed(2)}"/>
+        <path d="M 12 24 L 16 18 L 20 24" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="10" cy="32" r="${rCo2}" fill="#f8fafc" opacity="${opCo2}"/>
+        <circle cx="22" cy="14" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.6" opacity="${opH2s}"/>
+      </pattern>
+
+      <!-- Patrón de corriente lateral hacia la brida de salida A2 -->
+      <pattern id="sideFlowPat" width="44" height="32" patternUnits="userSpaceOnUse">
+        <path d="M 4 10 Q 22 7 38 10" stroke="${fluidGlow}" stroke-width="1.4" fill="none" opacity="0.55" stroke-dasharray="5 4"/>
+        <path d="M 6 22 Q 22 25 40 22" stroke="#38bdf8" stroke-width="1.8" fill="none" opacity="${(waterFrac * 0.75).toFixed(2)}"/>
+        <path d="M 20 12 L 26 16 L 20 20" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <circle cx="14" cy="18" r="${rCo2}" fill="#f8fafc" opacity="${opCo2}"/>
+        <circle cx="32" cy="11" r="${rH2s}" fill="#fde047" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.5px var(--mono); fill: var(--mut); }
+      #equipSvg .lbl-b { fill: var(--tx); font-weight: 700; font-size: 10px; }
+      @keyframes treeUp { from { transform: translateY(0px); } to { transform: translateY(-44px); } }
+      @keyframes treeRight { from { transform: translateX(0px); } to { transform: translateX(44px); } }
+      @keyframes rodRecip { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
+      #equipSvg .anim-up { animation: treeUp ${flowDur}s linear infinite; }
+      #equipSvg .anim-right { animation: treeRight ${flowDur}s linear infinite; }
+      #equipSvg .anim-rod { animation: rodRecip ${rodDur}s ease-in-out infinite; }
+    </style>
+
+    <!-- Banner superior de estado en tiempo real -->
+    <rect x="8" y="6" width="324" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" style="fill:var(--tx);font-weight:600">${fluidLabel}</text>
+    <text x="324" y="21" text-anchor="end" style="fill:var(--acc)">P=${p_op}/${p_int}bar | T=${temp_c}°C | Bore ${preferredBore.label}</text>
+
+    <!-- 1. Cuerpo Metálico Exterior del Árbol (Brida Inferior, Válvula Maestra, Te de Bombeo, Corona y Brazo Lateral) -->
+    <!-- Brida inferior sobre el cabezal (Módulo 6) -->
+    <rect x="${cx - bodyHw - 24}" y="485" width="${2 * (bodyHw + 24)}" height="22" rx="3" fill="${steelColor}" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Columna vertical del árbol -->
+    <rect x="${cx - bodyHw}" y="122" width="${2 * bodyHw}" height="363" fill="${steelColor}" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Brazo horizontal lateral de salida hacia A2 -->
+    <rect x="${cx + bodyHw - 2}" y="${teeY - bodyHw}" width="${wingEndX - (cx + bodyHw) + 2}" height="${2 * bodyHw}" fill="${steelColor}" stroke="var(--tx)" stroke-width="1.2"/>
+
+    <!-- 2. Fluido Producido Ascendente y Desvío en la Te de Bombeo -->
+    <g clip-path="url(#clipTreeBore)">
+      <rect x="40" y="100" width="270" height="420" fill="url(#treeFluidGrad)"/>
+      <!-- Flujo vertical ascendente desde tubing hasta la Te -->
+      <rect x="${cx - boreHw}" y="${teeY - boreHw}" width="${2 * boreHw}" height="${botBoreY - teeY + boreHw + 44}" fill="url(#upFlowPat)" class="anim-up"/>
+      <!-- Cámara superior bajo prensaestopas / válvula corona -->
+      <rect x="${cx - boreHw}" y="${topBoreY}" width="${2 * boreHw}" height="${teeY - topBoreY}" fill="url(#upFlowPat)" opacity="0.45"/>
+      <!-- Flujo lateral desviado hacia válvula lateral y frontera A2 -->
+      <rect x="${cx - 22}" y="${teeY - boreHw}" width="${wingEndX - cx + 44}" height="${2 * boreHw}" fill="url(#sideFlowPat)" class="anim-right"/>
+    </g>
+
+    <!-- Película de inhibidor en las paredes internas del paso vertical y lateral -->
+    <line x1="${cx - boreHw + 1.5}" x2="${cx - boreHw + 1.5}" y1="${topBoreY}" y2="${botBoreY}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    <line x1="${cx + boreHw - 1.5}" x2="${cx + boreHw - 1.5}" y1="${teeY + boreHw}" y2="${botBoreY}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    <line x1="${cx + boreHw}" x2="${wingEndX}" y1="${teeY - boreHw + 1.5}" y2="${teeY - boreHw + 1.5}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    <line x1="${cx + boreHw}" x2="${wingEndX}" y1="${teeY + boreHw - 1.5}" y2="${teeY + boreHw - 1.5}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+
+    <!-- 3. Barra Pulida Recíproca (API 11B) y Prensaestopas Superior (Stuffing Box) -->
+    <rect x="${cx - 22}" y="72" width="44" height="50" rx="4" fill="#334155" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Empaques elastoméricos HNBR/FKM del prensaestopas -->
+    <rect x="${cx - 14}" y="82" width="28" height="28" fill="var(--warn)" opacity="0.85" stroke="#101316"/>
+    <!-- Barra pulida atravesando prensaestopas y Te hacia la sarta de varillas -->
+    <g class="anim-rod">
+      <rect x="${cx - rodHw}" y="38" width="${2 * rodHw}" height="472" fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>
+      <line x1="${cx}" x2="${cx}" y1="42" y2="505" stroke="#ffffff" stroke-width="1.2" opacity="0.7"/>
+      <!-- Flecha doble de carrera recíproca -->
+      <path d="M ${cx - 28} 45 L ${cx - 28} 66 M ${cx - 32} 50 L ${cx - 28} 44 L ${cx - 24} 50 M ${cx - 32} 61 L ${cx - 28} 67 L ${cx - 24} 61" stroke="var(--acc)" stroke-width="1.5" fill="none"/>
+    </g>
+    <text x="${cx + 28}" y="55" class="lbl-b">Barra Pulida ${rod_od_in}"</text>
+    <text x="${cx + 28}" y="67">Spray Metal Ni-Cr-B</text>
+    <text x="${cx + 28}" y="94" style="fill:var(--warn);font-weight:600">Prensaestopas + M5</text>
+    <text x="${cx + 28}" y="106">Empaques HNBR/FKM</text>
+
+    <!-- 4. Válvula Corona / Swab (Superior) -->
+    <rect x="${cx - bodyHw - 14}" y="150" width="${2 * (bodyHw + 14)}" height="34" rx="4" fill="#27303a" stroke="var(--tx)" stroke-width="1.2"/>
+    <line x1="${cx - bodyHw - 30}" x2="${cx - bodyHw - 14}" y1="167" y2="167" stroke="var(--tx)" stroke-width="3"/>
+    <ellipse cx="${cx - bodyHw - 32}" cy="167" rx="4" ry="13" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+    <text x="14" y="164" class="lbl-b">Válv. Corona</text>
+    <text x="14" y="176">(Swab / Mantenimiento)</text>
+
+    <!-- 5. Te de Bombeo / Flow Tee (Cambio de dirección vertical a lateral) -->
+    <circle cx="${cx}" cy="${teeY}" r="${boreHw + 6}" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <text x="14" y="${teeY - 2}" class="lbl-b" style="fill:var(--acc)">Te de Flujo / Bombeo</text>
+    <text x="14" y="${teeY + 10}">v = ${v_actual_pref_ms.toFixed(2)} m/s (API 6A)</text>
+
+    <!-- 6. Válvula Lateral (Wing Valve) en el brazo de salida -->
+    <rect x="206" y="${teeY - bodyHw - 12}" width="36" height="${2 * (bodyHw + 12)}" rx="4" fill="#27303a" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Asientos con Hardfacing Stellite 6 / Carburo de Tungsteno -->
+    <rect x="209" y="${teeY - boreHw - 3}" width="5" height="${2 * boreHw + 6}" fill="#a78bfa"/>
+    <rect x="234" y="${teeY - boreHw - 3}" width="5" height="${2 * boreHw + 6}" fill="#a78bfa"/>
+    <!-- Vástago y volante superior de la válvula lateral -->
+    <line x1="224" x2="224" y1="${teeY - bodyHw - 12}" y2="${teeY - bodyHw - 28}" stroke="var(--tx)" stroke-width="3"/>
+    <ellipse cx="224" cy="${teeY - bodyHw - 30}" rx="14" ry="4" fill="none" stroke="var(--bad)" stroke-width="2.5"/>
+    <text x="224" y="${teeY + bodyHw + 26}" text-anchor="middle" class="lbl-b">Válv. Lateral</text>
+    <text x="224" y="${teeY + bodyHw + 38}" text-anchor="middle" style="fill:#a78bfa">Trim WC / Stellite</text>
+
+    <!-- 7. Brida de Salida Frontera A1 ↔ A2 y Kit de Aislamiento Dieléctrico (NACE SP0286) -->
+    <rect x="${wingEndX - 8}" y="${teeY - bodyHw - 20}" width="12" height="${2 * (bodyHw + 20)}" rx="2" fill="${steelColor}" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Junta aislante dieléctrica en color ámbar/dorado -->
+    <rect x="${wingEndX + 4}" y="${teeY - bodyHw - 22}" width="6" height="${2 * (bodyHw + 22)}" fill="${cp_a2 ? 'var(--warn)' : '#94a3b8'}" stroke="#101316" stroke-width="1"/>
+    <!-- Brida contraparte del Sistema A2 -->
+    <rect x="${wingEndX + 10}" y="${teeY - bodyHw - 20}" width="10" height="${2 * (bodyHw + 20)}" rx="2" fill="#475569" stroke="var(--mut)" stroke-width="1"/>
+    <!-- Espárragos B7M con mangas aislantes -->
+    <line x1="${wingEndX - 12}" x2="${wingEndX + 24}" y1="${teeY - bodyHw - 12}" y2="${teeY - bodyHw - 12}" stroke="var(--warn)" stroke-width="3"/>
+    <line x1="${wingEndX - 12}" x2="${wingEndX + 24}" y1="${teeY + bodyHw + 12}" y2="${teeY + bodyHw + 12}" stroke="var(--warn)" stroke-width="3"/>
+    <text x="${wingEndX + 6}" y="${teeY - bodyHw - 36}" text-anchor="end" class="lbl-b" style="fill:var(--warn)">Frontera A1 ↔ A2</text>
+    <text x="${wingEndX + 6}" y="${teeY - bodyHw - 25}" text-anchor="end">${cp_a2 ? 'Kit Dieléctrico NACE SP0286' : 'Brida Anillo ' + preferredBore.ring}</text>
+
+    <!-- 8. Válvula Maestra Principal (Master Valve) con Asientos CRA -->
+    <rect x="${cx - bodyHw - 18}" y="352" width="${2 * (bodyHw + 18)}" height="46" rx="5" fill="#27303a" stroke="var(--tx)" stroke-width="1.4"/>
+    <!-- Asientos de compuerta en Aleación CRA / WC -->
+    <rect x="${cx - boreHw - 4}" y="356" width="${2 * boreHw + 8}" height="5" fill="#a78bfa"/>
+    <rect x="${cx - boreHw - 4}" y="390" width="${2 * boreHw + 8}" height="5" fill="#a78bfa"/>
+    <!-- Vástago y volante de la Válvula Maestra -->
+    <line x1="${cx + bodyHw + 18}" x2="${cx + bodyHw + 42}" y1="375" y2="375" stroke="var(--tx)" stroke-width="3.5"/>
+    <ellipse cx="${cx + bodyHw + 45}" cy="375" rx="5" ry="18" fill="none" stroke="var(--bad)" stroke-width="3"/>
+    <text x="${cx + bodyHw + 56}" y="372" class="lbl-b">Válvula Maestra</text>
+    <text x="${cx + bodyHw + 56}" y="384">Cuerpo ≤ 22 HRC (ISO 15156)</text>
+    <text x="${cx + bodyHw + 56}" y="396" style="fill:#a78bfa">Inlay Alloy 625 en Sellos</text>
+
+    <!-- 9. Anillo RX con Inlay Alloy 625 en la base del árbol (Conexión con Módulo 6 Cabezal) -->
+    <rect x="${cx - boreHw - 10}" y="502" width="7" height="6" fill="#a78bfa" stroke="#101316" stroke-width="0.8"/>
+    <rect x="${cx + boreHw + 3}" y="502" width="7" height="6" fill="#a78bfa" stroke="#101316" stroke-width="0.8"/>
+    <text x="${cx}" y="525" text-anchor="middle" class="lbl-b">Brida Base sobre Cabezal (Anillo ${preferredBore.ring} + B7M/2HM)</text>
+
+    <!-- Pie de resumen metalúrgico -->
+    <text x="170" y="550" text-anchor="middle" style="fill:${steelColor};font-weight:700;font-size:10.5px">${chosenClass.name}</text>
+    <text x="170" y="565" text-anchor="middle" style="font-size:9px;fill:var(--mut)">CO₂: ${y_co2}% (${pCO2_bar.toFixed(2)} bar) · H₂S: ${y_h2s}% (${pH2S_kPa.toFixed(1)} kPa) · Inhib: ${inhib_avail}%</text>
+  `;
+}
+
+function copyGlobalState(btn){
+  const t=JSON.stringify(window.wellStreamState,null,2),done=()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar JSON",1500)};
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(done).catch(()=>{
+    const r=document.createRange();r.selectNodeContents(document.getElementById("json_output"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Texto seleccionado: Ctrl+C";});
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>

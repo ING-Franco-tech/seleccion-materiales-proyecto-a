@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 4: Tubing y Niple de Asiento (API 5CT / API 11AX / ISO 15156)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(310px,360px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(275px,320px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center;white-space:nowrap}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.warn{--c:var(--warn)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.22rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.08rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:640px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Tubing de producción y niple de asiento</h1>
+    <p>Módulo 4 de 10, sistema A1 (1 850 m a 0 m). Conducción multifásica, desgaste por varillas, erosión API RP 14E en el niple de asiento, severidad SSC y resistencia API TR 5C3.</p>
+  </div>
+  <ul class="norms">
+    <li>API 5CT / ISO 11960</li>
+    <li>API Spec 11AX</li>
+    <li>API TR 5C3</li>
+    <li>API RP 14E</li>
+    <li>ISO 15156-2 / -3</li>
+    <li>ISO 21457</li>
+  </ul>
+</header>
+
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+
+    <div class="res">
+      <section class="card">
+        <h2>Esquema Tubing + Niple</h2>
+        <svg id="equipSvg" viewBox="0 0 330 580" role="img" aria-label="Corte vertical del tubing, acople EUE, packer, ancla y niple de asiento con fluido ascendente dinámico"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido ascendente en tubing y niple (C1)</span></li>
+          <li><i style="background:#22d3ee;opacity:.85"></i>Película de inhibidor / Liner PEAD (HDPE) interno</li>
+          <li><i style="background:var(--ok);opacity:.45"></i>Fluido de empaque alcalino pH 9.5–10.5 sobre packer (C4)</li>
+          <li><i style="background:var(--warn);opacity:.65"></i>Gas húmedo ácido anular bajo packer (C2) y Niple API 11AX</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Diagnóstico de corrosión, erosión y niple de asiento</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">pCO₂ / pH₂S (en Niple)</div><div class="val" id="kpi_pgas">-</div><div class="sub" id="kpi_pgas_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Desgaste int. Tubing</div><div class="val" id="kpi_vint">-</div><div class="sub" id="kpi_caint">-</div></div>
+          <div class="kpi"><div class="lbl">Velocidad en Niple (14E)</div><div class="val" id="kpi_vel">-</div><div class="sub" id="kpi_vel_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Hombro Niple (Bearing)</div><div class="val" id="kpi_bear">-</div><div class="sub" id="kpi_bear_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Elegibilidad metalúrgica de grados (Tubing API 5CT y Niple API 11AX)</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Grado / Aleación</th>
+              <th>Fluencia</th>
+              <th>Dureza máx.</th>
+              <th>Estado Tubing</th>
+              <th>Apto Niple</th>
+              <th>Justificación técnica (ISO 15156 / API 5CT / API 11AX)</th>
+            </tr>
+          </thead>
+          <tbody id="grades_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Verificación dimensional y mecánica de Tubing (API 5CT / ISO 11960 / API TR 5C3)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">
+        Evaluado con el grado elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong>
+        | Drift estándar ISO 11960 Tabla C.28 y recalcado externo Tabla E.25
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Peso comercial</th>
+              <th>t nom (mm)</th>
+              <th>ID / Drift (mm)</th>
+              <th>t rem inf / sup (mm)</th>
+              <th>Colapso rem (bar) [FS]</th>
+              <th>Estallido rem (bar) [FS]</th>
+              <th>Tensión rem (kN) [FS]</th>
+              <th>Veredicto</th>
+            </tr>
+          </thead>
+          <tbody id="weights_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>
+        <span>Estado global exportable (window.wellStreamState)</span>
+        <button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button>
+      </h2>
+      <pre id="json_output"></pre>
+    </section>
+  </main>
+</div>
+
+<script>
+// Inicialización desde window.wellStreamState si existe en sesión
+const INIT_STATE = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) ? window.wellStreamState.fluidStream_C1_C2 : {};
+
+const FORM = [
+  ["Química del fluido producido y gas (C1, C2)", [
+    ["p_int", "Presión en niple (1850 m)", "bar", incomingValue("p_bottom_op_bar", 45), 1, 1000, 1],
+    ["p_head", "Presión en cabezal (0 m)", "bar", incomingValue("p_head_op_bar", 45), 1, 500, 1],
+    ["temp_c", "Temperatura operativa", "°C", incomingValue("temp_bottom_c", 68), 5, 250, 1],
+    ["y_co2", "CO₂ en gas", "% mol", incomingValue("y_co2_pct", 3.1), 0, 100, 0.1],
+    ["y_h2s", "H₂S en gas (hoy / año 10)", "% mol", incomingValue("y_h2s_pct", 0.15), 0, 100, 0.01],
+    ["ph", "pH in situ (C1)", "", incomingValue("pH", 4.6), 1, 14, 0.1],
+    ["chlorides", "Cloruros (Cl⁻)", "mg/L", incomingValue("chlorides_mgL", INIT_STATE.chlorides_mgL ?? 42000), 0, 300000, 500],
+    ["wet_factor", "Corte de agua (BSW)", "%", incomingValue("bsw_pct", 78), 0, 100, 1]
+  ]],
+  ["Inhibición, roce de varillas y protección interna", [
+    ["inhib_avail", "Disponibilidad inhibidor (A)", "%", incomingValue("inhibitor_availability_pct", 90), 0, 100, 0.5],
+    ["v_inhib", "Velocidad con inhibidor", "mm/a", incomingValue("v_inhibited_mm_yr", 0.1), 0, 2, 0.01],
+    ["v_wear", "Desgaste roce de varillas", "mm/a", 0.05, 0, 2, 0.01],
+    ["int_lining", "Protección interna del Tubing", [
+      ["bare", "Acero desnudo + Inhibidor continuo (A ≥ 97.5%)"],
+      ["hdpe", "Liner termoplástico interno PEAD (HDPE)"],
+      ["epoxy", "Recubrimiento interno Epóxico Fenólico (Bullet-Nose)"]
+    ], "bare"],
+    ["has_packer", "Aislamiento anular (Packer a 1500 m)", [
+      ["yes", "Sí: C4 alcalino arriba (0-1500 m) / C2 gas abajo"],
+      ["no", "No: Anular expuesto a gas húmedo C2 en todo el pozo"]
+    ], "yes"]
+  ]],
+  ["Operación multifásica y Niple de Asiento (API 11AX)", [
+    ["q_bpd", "Caudal de producción", "bpd", 214, 10, 5000, 10],
+    ["rho_mix", "Densidad de mezcla", "kg/m³", 920, 400, 1200, 10],
+    ["sand_lb", "Contenido de arena", "lb/1000 bbl", incomingValue("solids_lb_1000bbl", 12), 0, 500, 1],
+    ["nipple_type", "Tipo de Niple de Asiento API 11AX", [
+      ["mech", "Mecánico (Top / Bottom Lock - Hombro de carga)"],
+      ["cup", "De Copas (Cup-Type - Fricción en espejo bruñido)"]
+    ], "mech"],
+    ["id_bore", "ID espejo bruñido (Seal Bore)", "mm", 45.2, 25, 95, 0.2],
+    ["f_seat", "Carga axial en hombro del niple", "kN", 65, 5, 400, 5],
+    ["dp_nipple", "ΔP a través del sello del niple", "bar", 100, 5, 500, 5]
+  ]],
+  ["Geometría del Tubing (API 5CT) y cargas mecánicas", [
+    ["od_select", "Diámetro exterior API 5CT (Label 1)", [
+      ["2.375", "2 3/8 in (60.3 mm)"],
+      ["2.875", "2 7/8 in (73.0 mm) — Caso Base A1"],
+      ["3.500", "3 1/2 in (88.9 mm)"],
+      ["4.000", "4 in (101.6 mm)"],
+      ["4.500", "4 1/2 in (114.3 mm)"]
+    ], "2.875"],
+    ["conn_type", "Conexión roscada (ISO 11960 / API 5B)", [
+      ["EU", "API EUE 8rd (Recalcado externo - Tabla E.25)"],
+      ["NU", "API NUE 10rd (Sin recalcado - Tabla C.24)"],
+      ["IJ", "API IJ (Junta integral - Tabla E.26)"],
+      ["PREM", "Conexión Premium sello metal-metal (SR22)"]
+    ], "EU"],
+    ["depth_nipple", "Profundidad Niple / Bomba", "m", 1850, 100, 4500, 50],
+    ["depth_packer", "Profundidad Packer", "m", incomingValue("depth_packer_m", 1500), 0, 4500, 50],
+    ["design_life", "Vida útil entre intervenciones", "años", 6, 1, 25, 1],
+    ["p_col_req", "Colapso diferencial anular", "bar", 55, 1, 500, 5],
+    ["p_burst_req", "Estallido interno de diseño", "bar", incomingValue("p_bottom_design_bar", 112), 1, 600, 5],
+    ["f_ten_req", "Tensión en colgador (Peso + Ancla)", "kN", 220, 10, 1500, 10],
+    ["fs_pres_req", "FS mín. colapso / estallido", "", 1.125, 1.0, 2.5, 0.025],
+    ["fs_ten_req", "FS mín. tensión axial", "", 1.50, 1.0, 3.0, 0.05]
+  ]]
+];
+
+function buildForm() {
+  document.getElementById("form").innerHTML = FORM.map(([t, fs]) => `<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f => {
+    const [id, lb, u] = f, sel = Array.isArray(u);
+    const ctl = sel
+      ? `<select id="${id}">${u.map(o => `<option value="${o[0]}"${o[0] === f[3] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>`
+      : `<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4] != null ? ` min="${f[4]}"` : ""}${f[5] != null ? ` max="${f[5]}"` : ""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel ? " w" : ""}"><label for="${id}">${lb}</label>${ctl}</div>`;
+  }).join("")}</div></details>`).join("");
+}
+buildForm();
+
+const num = (id, d) => {
+  const v = parseFloat(document.getElementById(id).value);
+  return Number.isFinite(v) ? v : d;
+};
+
+// 1. Catálogo Comercial de Tubing API 5CT / ISO 11960 (Tablas C.24, C.28 y E.25)
+const TUBING_CATALOG = {
+  "2.375": {
+    od_in: 2.375, od_mm: 60.32, upset_od_mm: 65.89, drift_ded_mm: 2.38,
+    weights: [
+      { lbft: 4.00, t_mm: 4.24, eu_avail: false },
+      { lbft: 4.70, t_mm: 4.83, eu_avail: true },
+      { lbft: 5.95, t_mm: 6.45, eu_avail: true },
+      { lbft: 7.45, t_mm: 8.53, eu_avail: true }
+    ]
+  },
+  "2.875": {
+    od_in: 2.875, od_mm: 73.02, upset_od_mm: 78.59, drift_ded_mm: 2.38,
+    weights: [
+      { lbft: 6.50, t_mm: 5.51, eu_avail: true },
+      { lbft: 7.90, t_mm: 7.01, eu_avail: true },
+      { lbft: 8.70, t_mm: 7.82, eu_avail: true },
+      { lbft: 9.45, t_mm: 8.64, eu_avail: true }
+    ]
+  },
+  "3.500": {
+    od_in: 3.500, od_mm: 88.90, upset_od_mm: 95.25, drift_ded_mm: 3.18,
+    weights: [
+      { lbft: 7.70, t_mm: 5.49, eu_avail: false },
+      { lbft: 9.30, t_mm: 6.45, eu_avail: true },
+      { lbft: 10.20, t_mm: 7.34, eu_avail: false },
+      { lbft: 12.95, t_mm: 9.52, eu_avail: true }
+    ]
+  },
+  "4.000": {
+    od_in: 4.000, od_mm: 101.60, upset_od_mm: 107.95, drift_ded_mm: 3.18,
+    weights: [
+      { lbft: 9.50, t_mm: 5.74, eu_avail: false },
+      { lbft: 11.00, t_mm: 6.65, eu_avail: true },
+      { lbft: 13.40, t_mm: 8.38, eu_avail: false }
+    ]
+  },
+  "4.500": {
+    od_in: 4.500, od_mm: 114.30, upset_od_mm: 120.65, drift_ded_mm: 3.18,
+    weights: [
+      { lbft: 12.75, t_mm: 6.88, eu_avail: true },
+      { lbft: 13.50, t_mm: 7.37, eu_avail: false },
+      { lbft: 15.50, t_mm: 8.56, eu_avail: false }
+    ]
+  }
+};
+
+// 2. Catálogo de Grados Metalúrgicos para Tubing (API 5CT) y Niple de Asiento (API 11AX / ISO 15156)
+const GRADES_CATALOG = [
+  { id: "J55",      name: "API 5CT J55",                yp_ksi: 55,  hardness: "≤ 22 HRC típico",            type: "CS",  costRank: 1 },
+  { id: "N80",      name: "API 5CT N80 Tipo 1 / N80Q",  yp_ksi: 80,  hardness: "Sin control SSC a T < 65 °C", type: "CS",  costRank: 2 },
+  { id: "L80-1",    name: "API 5CT L80 Tipo 1 (Cr-Mo)", yp_ksi: 80,  hardness: "≤ 22 HRC (250 HV)",          type: "CS",  costRank: 3 },
+  { id: "C90",      name: "API 5CT C90 Tipo 1 (AISI 41XX)", yp_ksi: 90, hardness: "≤ 25.4 HRC",             type: "CS",  costRank: 4 },
+  { id: "T95",      name: "API 5CT T95 Tipo 1 (AISI 41XX)", yp_ksi: 95, hardness: "≤ 25.4 HRC",             type: "CS",  costRank: 5 },
+  { id: "P110",     name: "API 5CT P110",               yp_ksi: 110, hardness: "> 26 HRC (Alta dureza)",     type: "CS",  costRank: 6 },
+  { id: "L80-13Cr", name: "API 5CT L80 13Cr",           yp_ksi: 80,  hardness: "≤ 22 HRC",                   type: "CRA", costRank: 7 },
+  { id: "S13Cr",    name: "Super 13Cr (13Cr-5Ni-2Mo)",  yp_ksi: 95,  hardness: "≤ 28 HRC",                   type: "CRA", costRank: 8 },
+  { id: "22Cr",     name: "Dúplex 22Cr (UNS S31803)",   yp_ksi: 80,  hardness: "≤ 28 HRC",                   type: "CRA", costRank: 9 },
+  { id: "Alloy825", name: "Aleación Níquel 825 / 718",  yp_ksi: 85,  hardness: "≤ 35 HRC",                   type: "CRA", costRank: 10 }
+];
+
+// 3. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 4. Ecuaciones Mecánicas API TR 5C3 (Colapso, Estallido Barlow y Tensión Axial)
+function calcCollapseAPI5C3_bar(od_mm, t_mm, yp_ksi) {
+  if (t_mm <= 0.4) return 0;
+  const dt = od_mm / t_mm;
+  const Yp = yp_ksi * 1000;
+  const A = 2.8762 + 1.0679e-6 * Yp + 2.1301e-11 * Yp * Yp - 5.3132e-17 * Yp * Yp * Yp;
+  const B = 0.026233 + 5.0609e-7 * Yp;
+  const C = -465.93 + 0.030867 * Yp - 1.0483e-8 * Yp * Yp + 3.6989e-14 * Yp * Yp * Yp;
+  const F = (46.95e6 * Math.pow((3 * B / A) / (2 + B / A), 3)) /
+            (Yp * Math.pow((3 * B / A) / (2 + B / A) - B / A, 2) * Math.pow(1 - (3 * B / A) / (2 + B / A), 2));
+  const G = F * B / A;
+
+  const dt_yp = (Math.sqrt((A - 2) * (A - 2) + 8 * (B + C / Yp)) + (A - 2)) / (2 * (B + C / Yp));
+  const dt_pt = (Yp * (A - F)) / (C + Yp * (B - G));
+  const dt_te = (2 + B / A) / (3 * B / A);
+
+  let Pc_psi = 0;
+  if (dt <= dt_yp) {
+    Pc_psi = 2 * Yp * ((dt - 1) / (dt * dt));
+  } else if (dt <= dt_pt) {
+    Pc_psi = Yp * (A / dt - B) - C;
+  } else if (dt <= dt_te) {
+    Pc_psi = Yp * (F / dt - G);
+  } else {
+    Pc_psi = 46.95e6 / (dt * Math.pow(dt - 1, 2));
+  }
+  return Math.max(0, Pc_psi * 0.0689476);
+}
+
+function calcBurst_bar(od_mm, t_mm, yp_ksi) {
+  if (t_mm <= 0.4) return 0;
+  const yp_MPa = yp_ksi * 6.89476;
+  const p_MPa = 0.875 * (2 * yp_MPa * t_mm) / od_mm;
+  return p_MPa * 10;
+}
+
+function calcTension_kN(od_mm, t_mm, yp_ksi) {
+  if (t_mm <= 0.4) return 0;
+  const id_mm = Math.max(0, od_mm - 2 * t_mm);
+  const area_mm2 = (Math.PI / 4) * (od_mm * od_mm - id_mm * id_mm);
+  const yp_MPa = yp_ksi * 6.89476;
+  return (area_mm2 * yp_MPa) / 1000;
+}
+
+// 5. Evaluación de Elegibilidad Metalúrgica de cada Grado (Tubing y Niple)
+function evaluateGradeEligibility(grade, state) {
+  const { region, temp_c, pH2S_kPa, pH, chlorides, inhib_avail, int_lining } = state;
+  const lowInhib = (int_lining === "bare" && inhib_avail < 97.5);
+
+  if (grade.id === "J55") {
+    return {
+      eligible: true,
+      nippleOk: region <= 1,
+      status: "Apto ISO 15156-2",
+      reason: "Apto frente a SSC en Regiones 0 a 3, pero baja fluencia (55 ksi) para cargas profundas o asiento de niple con alta presión."
+    };
+  }
+  if (grade.id === "N80") {
+    if (region === 0 || region === 1) {
+      return { eligible: true, nippleOk: true, status: "Apto (Dulce / R1)", reason: "Válido en Región 0 y Región 1." };
+    }
+    if (region === 2 && temp_c > 65) {
+      return { eligible: true, nippleOk: false, status: "Apto en R2 (T > 65 °C)", reason: "ISO 15156-2 permite N80Q en Región 2 sobre 65 °C, pero se descarta en Región 3 (niple a 1850 m)." };
+    }
+    if (temp_c > 80) {
+      return { eligible: true, nippleOk: true, status: "Apto por T > 80 °C", reason: "ISO 15156-2 permite N80 sobre 80 °C." };
+    }
+    return {
+      eligible: false,
+      nippleOk: false,
+      status: "Descartado (SSC)",
+      reason: `Susceptible a SSC en Región ${region} a ${temp_c} °C (requiere T > ${region === 2 ? 65 : 80} °C).`
+    };
+  }
+  if (grade.id === "L80-1" || grade.id === "C90" || grade.id === "T95") {
+    const warnInhib = lowInhib
+      ? " ¡Atención!: Con A < 97.5% en acero desnudo sufre alta pérdida por CO₂; instalar Liner PEAD (HDPE)."
+      : " Templado y revenido (UNS G41XX0 / Cr-Mo), apto en Regiones 0 a 3 a toda temperatura.";
+    return {
+      eligible: true,
+      nippleOk: true,
+      status: "Apto Todo Servicio",
+      reason: `Cumple ISO 15156-2 (${grade.hardness}).${warnInhib}`
+    };
+  }
+  if (grade.id === "P110") {
+    if (region === 0) {
+      return { eligible: true, nippleOk: true, status: "Apto (Dulce)", reason: "Alta resistencia para servicio dulce sin H₂S." };
+    }
+    return {
+      eligible: false,
+      nippleOk: false,
+      status: "Descartado (SSC)",
+      reason: `Dureza > 22 HRC no permitida en Región ${region} (${pH2S_kPa.toFixed(1)} kPa H₂S).`
+    };
+  }
+  if (grade.id === "L80-13Cr") {
+    if (pH2S_kPa <= 10 && pH >= 3.5 && temp_c <= 150) {
+      return {
+        eligible: true,
+        nippleOk: true,
+        status: "Apto CRA (13Cr)",
+        reason: "Inmune a CO₂ sin inhibidor cuando pH₂S ≤ 10 kPa y pH ≥ 3.5 (ISO 15156-3)."
+      };
+    }
+    return {
+      eligible: false,
+      nippleOk: false,
+      status: "Descartado (ISO 15156-3)",
+      reason: `Excede límite de 13Cr convencional (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 10 kPa, o pH < 3.5).`
+    };
+  }
+  if (grade.id === "S13Cr") {
+    if (pH2S_kPa <= 20 && pH >= 3.5 && chlorides <= 100000 && temp_c <= 175) {
+      return {
+        eligible: true,
+        nippleOk: true,
+        status: "Apto CRA (Super 13Cr)",
+        reason: "Excelente para Niple de Asiento y Tubing sin inhibidor hasta pH₂S ≤ 20 kPa y pH ≥ 3.5."
+      };
+    }
+    return {
+      eligible: false,
+      nippleOk: false,
+      status: "Descartado (ISO 15156-3)",
+      reason: `Supera envolvente de Super 13Cr (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 20 kPa).`
+    };
+  }
+  if (grade.id === "22Cr") {
+    if (pH2S_kPa <= 10 && temp_c <= 232) {
+      return {
+        eligible: true,
+        nippleOk: true,
+        status: "Apto CRA Dúplex",
+        reason: "Resistente a CO₂ y salmueras cloruradas con pH₂S ≤ 10 kPa (ISO 15156-3)."
+      };
+    }
+    return {
+      eligible: false,
+      nippleOk: false,
+      status: "Descartado (ISO 15156-3)",
+      reason: `Excede límite de H₂S para Dúplex 22Cr (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 10 kPa).`
+    };
+  }
+  if (grade.id === "Alloy825") {
+    return {
+      eligible: true,
+      nippleOk: true,
+      status: "Apto CRA Severo",
+      reason: "Aleación base níquel (UNS N08825 / N07718) inmune a CO₂, H₂S extremo y 42 000+ mg/L Cl⁻ sin inhibidor."
+    };
+  }
+}
+
+// 6. Motor Principal de Simulación en Tiempo Real
+function runSimulation() {
+  const p_int = num("p_int", 112);
+  const p_head = num("p_head", 45);
+  const temp_c = num("temp_c", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const wet_factor = num("wet_factor", 78);
+
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+  const v_wear_raw = num("v_wear", 0.05);
+  const int_lining = document.getElementById("int_lining").value;
+  const has_packer = document.getElementById("has_packer").value === "yes";
+
+  const q_bpd = num("q_bpd", 214);
+  const rho_mix = num("rho_mix", 920);
+  const sand_lb = num("sand_lb", 12);
+  const nipple_type = document.getElementById("nipple_type").value;
+  const id_bore = num("id_bore", 45.2);
+  const f_seat = num("f_seat", 65);
+  const dp_nipple = num("dp_nipple", 100);
+
+  const od_key = document.getElementById("od_select").value;
+  const conn_type = document.getElementById("conn_type").value;
+  const depth_nipple = num("depth_nipple", 1850);
+  const depth_packer = Math.min(depth_nipple, num("depth_packer", 1500));
+  const design_life = num("design_life", 6);
+  const p_col_req = num("p_col_req", 55);
+  const p_burst_req = num("p_burst_req", 112);
+  const f_ten_req = num("f_ten_req", 220);
+  const fs_pres_req = num("fs_pres_req", 1.125);
+  const fs_ten_req = num("fs_ten_req", 1.50);
+
+  // Presiones parciales en el Niple de Asiento (punto más severo: 1850 m) y en Cabezal (0 m)
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  const pH2S_head_kPa = (y_h2s / 100) * (p_head + 1.01325) * 100;
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const region_head = getISO15156Region(pH2S_head_kPa, pH);
+
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+  let regimeTxt = "Dominio CO₂ (> 500)";
+  if (pH2S_bar > 0 && ratio_co2_h2s < 20) regimeTxt = `Dominio H₂S (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+  else if (pH2S_bar > 0 && ratio_co2_h2s <= 500) regimeTxt = `Régimen Mixto (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + ISO 21457 en C1
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  // Factor pH ácido y ácidos orgánicos (ajuste a condición de campo A1: ~14.1 mm/a a 112 bar y 68 °C con alto corte de agua)
+  const ph_factor = pH < 5.0 ? (1 + (5.0 - pH) * 0.42) : 1.0;
+  const v_uncontrolled = v_base_co2 * ph_factor * (wet_factor / 100);
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_corr_int_raw = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+
+  // Efecto de protección interna (Liner HDPE o Epóxico Fenólico)
+  let v_corr_int = v_corr_int_raw;
+  let v_wear_eff = v_wear_raw;
+  if (int_lining === "hdpe") {
+    v_corr_int = 0.0; // El liner PEAD aísla el acero del fluido C1 y absorbe el roce de varillas
+    v_wear_eff = 0.0;
+  } else if (int_lining === "epoxy") {
+    v_corr_int = v_corr_int_raw * 0.25; // Protege contra CO2 pero es vulnerable al roce de cabillas
+    v_wear_eff = v_wear_raw * 0.85;
+  }
+
+  const v_tot_int = v_corr_int + v_wear_eff;
+  const ca_int_mm = v_tot_int * design_life;
+
+  // Corrosión externa anular del Tubing:
+  // - Arriba del packer (0 a 1500 m): C4 fluido de empaque alcalino pH 9.5-10.5 (v_ext_sup = 0.01 mm/a)
+  // - Debajo del packer (1500 a 1850 m) o sin packer: C2 gas húmedo ácido con condensación intermitente (10% mojado, ~0.15 mm/a con inhibidor / vapor)
+  const v_ext_bot = 0.15;
+  const v_ext_sup = has_packer ? 0.01 : 0.15;
+  const ca_ext_bot_mm = v_ext_bot * design_life;
+  const ca_ext_sup_mm = v_ext_sup * design_life;
+
+  // Hidráulica y Erosión en el Niple de Asiento (API RP 14E)
+  const q_m3s = (q_bpd * 0.1589873) / 86400;
+  const area_bore_m2 = (Math.PI / 4) * Math.pow(id_bore / 1000, 2);
+  const v_nipple_ms = area_bore_m2 > 0 ? (q_m3s / area_bore_m2) : 0;
+  // Constante C de API RP 14E (C=100 servicio continuo con sólidos moderados, reducida si hay mucha arena)
+  const c_14e = sand_lb > 20 ? 80 : (sand_lb > 5 ? 100 : 125);
+  const v_erosional_ms = c_14e / Math.sqrt(Math.max(100, rho_mix));
+  const erosion_ratio = v_erosional_ms > 0 ? (v_nipple_ms / v_erosional_ms) : 0;
+
+  // Esfuerzo de aplastamiento (Bearing Stress) en el hombro anular del Niple de Asiento
+  const pipeData = TUBING_CATALOG[od_key];
+  const ref_id_tubing = pipeData.od_mm - 2 * pipeData.weights[0].t_mm;
+  const d_outer_shoulder = Math.max(id_bore + 4.5, ref_id_tubing);
+  const area_shoulder_mm2 = (Math.PI / 4) * (d_outer_shoulder * d_outer_shoulder - id_bore * id_bore);
+  const p_hyd_force_kN = (dp_nipple * 0.1) * ((Math.PI / 4) * id_bore * id_bore) / 1000;
+  const f_total_shoulder_kN = f_seat + p_hyd_force_kN;
+  const sigma_bearing_MPa = area_shoulder_mm2 > 0 ? (f_total_shoulder_kN * 1000) / area_shoulder_mm2 : 999;
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pgas").textContent = `${pCO2_bar.toFixed(2)} bar / ${pH2S_kPa.toFixed(1)} kPa`;
+  document.getElementById("kpi_pgas_sub").textContent = `pCO₂: ${pCO2_psi.toFixed(1)} psi | pH₂S: ${pH2S_psi.toFixed(2)} psi`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? "danger" : "warn"}">Región ${region} (Niple) / R${region_head} (Cab.)</span>`;
+  document.getElementById("kpi_regime").textContent = regimeTxt;
+
+  document.getElementById("kpi_vint").textContent = `${v_tot_int.toFixed(2)} mm/a`;
+  document.getElementById("kpi_caint").textContent = `Sin inhib: ${v_uncontrolled.toFixed(1)} mm/a | CA (${design_life}a): ${ca_int_mm.toFixed(2)} mm`;
+
+  const velBadge = erosion_ratio <= 0.8 ? "ok" : (erosion_ratio <= 1.0 ? "warn" : "danger");
+  document.getElementById("kpi_vel").innerHTML = `${v_nipple_ms.toFixed(2)} m/s <span class="tag ${velBadge}">${(erosion_ratio * 100).toFixed(0)}% Ve</span>`;
+  document.getElementById("kpi_vel_sub").textContent = `Límite API RP 14E: ${v_erosional_ms.toFixed(2)} m/s (ID ${id_bore} mm)`;
+
+  document.getElementById("kpi_bear").textContent = `${sigma_bearing_MPa.toFixed(0)} MPa`;
+  document.getElementById("kpi_bear_sub").textContent = `Carga total hombro: ${f_total_shoulder_kN.toFixed(0)} kN (${nipple_type === "mech" ? "Mecánico" : "Copas"})`;
+
+  // Evaluar cada grado para el Tubing y el Niple
+  const stateObj = { region, temp_c, pH2S_kPa, pH, chlorides, inhib_avail, int_lining };
+
+  const gradesEval = GRADES_CATALOG.map(g => {
+    const envCheck = evaluateGradeEligibility(g, stateObj);
+    const isCRA = g.type === "CRA";
+    const eff_ca_int = isCRA ? (v_wear_eff * design_life) : ca_int_mm;
+    const eff_ca_bot = eff_ca_int + (isCRA ? 0 : ca_ext_bot_mm);
+    const eff_ca_sup = eff_ca_int + (isCRA ? 0 : ca_ext_sup_mm);
+
+    const yp_MPa = g.yp_ksi * 6.89476;
+    const nippleMechOk = envCheck.nippleOk && (sigma_bearing_MPa <= 0.75 * yp_MPa);
+
+    let validWeight = null;
+    for (const w of pipeData.weights) {
+      const t_rem_bot = Math.max(0, w.t_mm - eff_ca_bot);
+      const t_rem_sup = Math.max(0, w.t_mm - eff_ca_sup);
+      const t_rem_min = Math.min(t_rem_bot, t_rem_sup);
+
+      const col_rem = calcCollapseAPI5C3_bar(pipeData.od_mm, t_rem_min, g.yp_ksi);
+      const burst_rem = calcBurst_bar(pipeData.od_mm, t_rem_min, g.yp_ksi);
+      // Para conexión NUE sin recalcado, la eficiencia de junta en tracción es ~80%; en EUE / Premium es 100% del cuerpo
+      const joint_eff = conn_type === "NU" ? 0.82 : 1.0;
+      const ten_rem = calcTension_kN(pipeData.od_mm, t_rem_sup, g.yp_ksi) * joint_eff;
+
+      const fs_col = p_col_req > 0 ? col_rem / p_col_req : 99;
+      const fs_burst = p_burst_req > 0 ? burst_rem / p_burst_req : 99;
+      const fs_ten = f_ten_req > 0 ? ten_rem / f_ten_req : 99;
+
+      if (fs_col >= fs_pres_req && fs_burst >= fs_pres_req && fs_ten >= fs_ten_req) {
+        validWeight = { ...w, t_rem_bot, t_rem_sup, col_rem, burst_rem, ten_rem, fs_col, fs_burst, fs_ten };
+        break;
+      }
+    }
+
+    const fullEligible = envCheck.eligible && (validWeight !== null);
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !validWeight) {
+      finalReason = `Pasa criterio SSC, pero pierde ${eff_ca_bot.toFixed(2)} mm en ${design_life} años y ningún espesor comercial de ${pipeData.od_in}" resiste las cargas.`;
+    } else if (fullEligible) {
+      finalReason += ` Cumple mecánica desde ${validWeight.lbft.toFixed(2)} lb/ft.`;
+    }
+
+    return { ...g, envCheck, validWeight, fullEligible, nippleMechOk, finalReason };
+  });
+
+  // Renderizar Tabla 1: Elegibilidad de Grados
+  document.getElementById("grades_tbody").innerHTML = gradesEval.map(g => {
+    const badgeClass = g.fullEligible ? "ok" : (g.envCheck.eligible ? "warn" : "danger");
+    const statusLabel = g.fullEligible ? `Óptimo (${g.validWeight.lbft.toFixed(2)} lb/ft)` : (g.envCheck.eligible ? "Falla Espesor/Carga" : g.envCheck.status);
+    const nipBadge = g.nippleMechOk ? `<span class="tag ok">Apto Niple</span>` : `<span class="tag danger">No Apto</span>`;
+    return `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.yp_ksi} ksi (${(g.yp_ksi * 6.895).toFixed(0)} MPa)</td>
+        <td>${g.hardness}</td>
+        <td><span class="tag ${badgeClass}">${statusLabel}</span></td>
+        <td>${nipBadge}</td>
+        <td>${g.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Seleccionar el grado óptimo para Tubing (menor costo que cumpla) y para el Niple de Asiento
+  const chosenGrade = gradesEval.find(g => g.fullEligible) || gradesEval.find(g => g.id === "L80-1");
+  const chosenNippleGrade = gradesEval.find(g => g.nippleMechOk && (g.type === "CRA" || g.id === "L80-1" || g.id === "C90")) || chosenGrade;
+  document.getElementById("selected_grade_lbl").textContent = chosenGrade.name;
+
+  const isChosenCRA = chosenGrade.type === "CRA";
+  const eff_ca_int_chosen = isChosenCRA ? (v_wear_eff * design_life) : ca_int_mm;
+  const eff_ca_bot_chosen = eff_ca_int_chosen + (isCRA_or_Lined(isChosenCRA, false) ? 0 : ca_ext_bot_mm);
+  const eff_ca_sup_chosen = eff_ca_int_chosen + (isCRA_or_Lined(isChosenCRA, false) ? 0 : ca_ext_sup_mm);
+
+  function isCRA_or_Lined(cra, internal) {
+    return cra || (internal && int_lining === "hdpe");
+  }
+
+  // Banner de Veredicto Global
+  const vd = document.getElementById("verdict");
+  const needsLinerWarning = (int_lining === "bare" && inhib_avail < 97.5 && !isChosenCRA);
+  if (chosenGrade.fullEligible) {
+    vd.className = needsLinerWarning ? "verdict warn" : "verdict ok";
+    vd.innerHTML = `
+      <div><span>Tubing recomendado</span><strong>${chosenGrade.name} (${chosenGrade.validWeight.lbft.toFixed(2)} lb/ft)</strong></div>
+      <div><span>Niple de asiento (1850 m)</span><strong>${chosenNippleGrade.name}</strong></div>
+      <div><span>Severidad ISO 15156-2</span><strong>Región ${region} (Niple) / R${region_head} (Cab.)</strong></div>
+      <div><span>Pérdida pared (${design_life} años)</span><strong>${eff_ca_bot_chosen.toFixed(2)} mm (inf) / ${eff_ca_sup_chosen.toFixed(2)} mm (sup)</strong></div>
+      ${needsLinerWarning ? `<div class="msg"><strong style="color:var(--warn)">Alerta de Interfaz Química (A = ${inhib_avail.toFixed(1)}% &lt; 97.5%):</strong><span>Conforme a la ingeniería del Sistema A1, si la disponibilidad del inhibidor es inferior al 97.5%, se debe activar el Liner interno de PEAD (HDPE) o seleccionar CRA para alcanzar los ${design_life} años.</span></div>` : ""}
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `<div class="msg"><strong>Ningún espesor comercial cumple en ${pipeData.od_in}" bajo las condiciones actuales</strong><span>La pérdida de pared acumulada (${eff_ca_bot_chosen.toFixed(2)} mm en ${design_life} años) agota el espesor remanente. Active el Liner interno de PEAD (HDPE), asegure disponibilidad de inhibidor ≥ 97.5% o aumente el diámetro/grado.</span></div>`;
+  }
+
+  // Renderizar Tabla 2: Verificación de Pesos Comerciales API 5CT / ISO 11960
+  const joint_eff = conn_type === "NU" ? 0.82 : 1.0;
+  document.getElementById("weights_tbody").innerHTML = pipeData.weights.map(w => {
+    const id_nom = pipeData.od_mm - 2 * w.t_mm;
+    const drift_mm = id_nom - pipeData.drift_ded_mm;
+    const t_rem_bot = Math.max(0, w.t_mm - eff_ca_bot_chosen);
+    const t_rem_sup = Math.max(0, w.t_mm - eff_ca_sup_chosen);
+    const t_rem_min = Math.min(t_rem_bot, t_rem_sup);
+
+    const col_rem = calcCollapseAPI5C3_bar(pipeData.od_mm, t_rem_min, chosenGrade.yp_ksi);
+    const burst_rem = calcBurst_bar(pipeData.od_mm, t_rem_min, chosenGrade.yp_ksi);
+    const ten_rem = calcTension_kN(pipeData.od_mm, t_rem_sup, chosenGrade.yp_ksi) * joint_eff;
+
+    const fs_col = p_col_req > 0 ? col_rem / p_col_req : 99;
+    const fs_burst = p_burst_req > 0 ? burst_rem / p_burst_req : 99;
+    const fs_ten = f_ten_req > 0 ? ten_rem / f_ten_req : 99;
+
+    const passes = fs_col >= fs_pres_req && fs_burst >= fs_pres_req && fs_ten >= fs_ten_req;
+    return `
+      <tr>
+        <td><strong>${w.lbft.toFixed(2)} lb/ft</strong> ${w.eu_avail ? '<span style="color:var(--mut);font-size:.72rem">(EUE/NUE)</span>' : '<span style="color:var(--mut);font-size:.72rem">(NUE)</span>'}</td>
+        <td>${w.t_mm.toFixed(2)}</td>
+        <td>${id_nom.toFixed(2)} / ${drift_mm.toFixed(2)}</td>
+        <td>${t_rem_bot.toFixed(2)} / ${t_rem_sup.toFixed(2)}</td>
+        <td>${col_rem.toFixed(0)} [${fs_col.toFixed(2)}]</td>
+        <td>${burst_rem.toFixed(0)} [${fs_burst.toFixed(2)}]</td>
+        <td>${ten_rem.toFixed(0)} [${fs_ten.toFixed(2)}]</td>
+        <td><span class="tag ${passes ? "ok" : "danger"}">${passes ? "CUMPLE" : "FALLA"}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Recomendación técnica desglosada por los 4 subcomponentes del Módulo 4
+  const recWeightTxt = chosenGrade.validWeight
+    ? `${chosenGrade.validWeight.lbft.toFixed(2)} lb/ft (t = ${chosenGrade.validWeight.t_mm.toFixed(2)} mm, Drift = ${(pipeData.od_mm - 2 * chosenGrade.validWeight.t_mm - pipeData.drift_ded_mm).toFixed(2)} mm)`
+    : "Requiere Liner PEAD o mayor espesor";
+
+  const nippleAlloyRec = (pH2S_kPa <= 20 && pH >= 3.5)
+    ? "Super 13Cr (UNS S41426, ≤ 28 HRC) o Aleación Níquel 825 / 718 para el espejo bruñido (Honed Seal Bore), o API 5CT L80 Tipo 1 (≤ 22 HRC) con niquelado químico (ENP) e inhibición continua por capilar."
+    : "Aleación de Níquel 825 (UNS N08825) o Inconel 718 (UNS N07718) por alta severidad de H₂S en el asiento de la bomba.";
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Cuerpo de la Tubería de Producción (Tubing 0 m a ${depth_nipple} m)</h3>
+      <p><strong>Especificación Seleccionada:</strong> <span style="color:var(--ok)">${chosenGrade.name}</span> sin costura (Seamless, ISO 11960 Nivel NDE U4/L4), dureza ${chosenGrade.hardness} — <strong>Dimensiones:</strong> ${pipeData.od_in}" (${pipeData.od_mm} mm) × ${recWeightTxt}.</p>
+      <p><strong>Desempeño en Corrientes C1, C2 y C4:</strong> Pérdida interna proyectada a ${design_life} años de <strong>${eff_ca_int_chosen.toFixed(2)} mm</strong> (${v_corr_int.toFixed(2)} mm/a por CO₂ + ${v_wear_eff.toFixed(2)} mm/a por roce de varillas). Exterior sobre ${depth_packer} m protegido por fluido de empaque C4 (pH 9.5–10.5) y tramo inferior (${depth_packer}–${depth_nipple} m) expuesto a gas húmedo C2.</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Acoples Roscados (Couplings) y Extremos (ISO 11960 Cláusula 9)</h3>
+      <p><strong>Configuración de Junta:</strong> Conexión <strong>${conn_type}</strong> (OD de recalcado $D_4 = ${pipeData.upset_od_mm}\text{ mm}$ según Tabla E.25) del mismo grado y tratamiento térmico (${chosenGrade.name}, inspección partículas magnéticas húmedas ISO 10893-5). Se recomienda <strong>bisel especial de 20° (Special Bevel — ISO 11960 Fig. D.4)</strong> o anillo de sello no metálico (SR13 Fig. D.20) para evitar enganches y turbulencia.</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Niple de Asiento de la Bomba (API Spec 11AX a ${depth_nipple} m)</h3>
+      <p><strong>Tipo y Material del Niple:</strong> Anclaje <strong>${nipple_type === "mech" ? "Mecánico (Top/Bottom Lock)" : "De Copas (Cup-Type)"}</strong> con ID de espejo bruñido de <strong>${id_bore.toFixed(1)} mm</strong>. Material recomendado: <span style="color:var(--acc)">${nippleAlloyRec}</span></p>
+      <p><strong>Verificación Hidráulica y de Hombro:</strong> Velocidad real en la garganta de <strong>${v_nipple_ms.toFixed(2)} m/s</strong> (${(erosion_ratio * 100).toFixed(0)}% del límite erosional API RP 14E de ${v_erosional_ms.toFixed(2)} m/s) y esfuerzo de aplastamiento en el hombro de <strong>${sigma_bearing_MPa.toFixed(0)} MPa</strong>.</p>
+    </div>
+    <div class="section-box">
+      <h3>D. Alternativa de Liner Termoplástico Interno (PEAD / HDPE) y Control Químico</h3>
+      <p><strong>Criterio de Activación:</strong> ${int_lining === "hdpe"
+        ? '<span style="color:var(--ok)">Liner interno de PEAD (HDPE) ACTIVO:</span> Elimina la corrosión acuosa por CO₂/H₂S sobre el acero base y actúa como barrera de sacrificio frente al roce de la sarta de varillas.'
+        : (inhib_avail < 97.5
+          ? `<span style="color:var(--bad)">¡REQUERIDO!:</span> Con disponibilidad de inhibidor del ${inhib_avail.toFixed(1)}% (< 97.5%), el acero desnudo pierde ${ca_int_mm.toFixed(2)} mm en ${design_life} años. Debe especificarse Tubing con <strong>Liner interno de PEAD (HDPE)</strong> y extremo redondeado (<em>Rounded/Bullet Nose</em> según ISO 11960 8.12.3).`
+          : `Con disponibilidad de inhibidor del <strong>${inhib_avail.toFixed(1)}% (≥ 97.5%)</strong> inyectado continuamente por capilar de Alloy 625 hasta la succión (${depth_nipple} m), el acero ${chosenGrade.name} desnudo es viable sin liner de PEAD.`)}</p>
+    </div>
+  `;
+
+  // Dibujar el Esquema SVG Técnico Dinámico
+  drawTubingNippleSVG({
+    depth_nipple,
+    depth_packer,
+    has_packer,
+    region,
+    chosenGrade,
+    p_int,
+    p_head,
+    temp_c,
+    y_co2,
+    y_h2s,
+    pCO2_bar,
+    pH2S_kPa,
+    pH,
+    wet_factor,
+    inhib_avail,
+    v_tot_int,
+    int_lining,
+    nipple_type,
+    id_bore,
+    od_mm: pipeData.od_mm,
+    conn_type
+  });
+
+  // Actualizar y exportar window.wellStreamState
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    p_int_bar: p_int,
+    p_head_bar: p_head,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region_bottom: region,
+    iso15156_region_head: region_head,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: wet_factor,
+    v_inhibited_mm_yr: v_inhib,
+    design_life_yr: design_life
+  };
+  window.wellStreamState.productionTubing_B4 = {
+    od_in: pipeData.od_in,
+    connectionType: conn_type,
+    recommendedGrade: chosenGrade.name,
+    recommendedWeight_lbft: chosenGrade.validWeight ? chosenGrade.validWeight.lbft : null,
+    internalProtection: int_lining,
+    ca_internal_mm: Number(eff_ca_int_chosen.toFixed(2)),
+    ca_external_bottom_mm: Number(ca_ext_bot_mm.toFixed(2)),
+    tensionDesign_kN: f_ten_req
+  };
+  window.wellStreamState.seatingNipple_B2 = {
+    depth_m: depth_nipple,
+    nippleType: nipple_type,
+    sealBoreID_mm: id_bore,
+    recommendedMaterial: chosenNippleGrade.name,
+    fluidVelocity_ms: Number(v_nipple_ms.toFixed(2)),
+    erosionalVelocity_ms: Number(v_erosional_ms.toFixed(2)),
+    bearingStress_MPa: Number(sigma_bearing_MPa.toFixed(1))
+  };
+
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 7. Esquema Vectorial SVG con Fluido Ascendente Reactivo, Acople EUE, Packer, Ancla y Niple de Asiento
+function drawTubingNippleSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    depth_nipple, depth_packer, has_packer, region, chosenGrade,
+    p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_tot_int, int_lining, nipple_type, od_mm, conn_type
+  } = d;
+
+  const top = 48, bot = 508, H = bot - top, cx = 148;
+  // Escalar ancho del Casing contenedor y del Tubing central
+  const casHw = 54;
+  const tbHw = Math.round(20 + ((od_mm - 60.3) / (114.3 - 60.3)) * 10);
+  const wl = 5;
+  const y = m => top + Math.min(1, Math.max(0, m / Math.max(1, depth_nipple))) * H;
+
+  const casL = cx - casHw, casR = cx + casHw;
+  const tbL = cx - tbHw, tbR = cx + tbHw;
+  const pkY = y(depth_packer);
+  const ancY = Math.min(bot - 52, pkY + 38);
+  const nipTopY = bot - 34;
+  const nipBoreHw = Math.max(10, tbHw - 6);
+
+  // Colores reactivos del fluido según Región SSC e intensidad de CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.5) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido C1: ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | T=${temp_c}°C`;
+  }
+
+  // Velocidad de animación según presión y temperatura
+  const tempNorm = Math.min(1, Math.max(0, (temp_c - 20) / 180));
+  const flowDrive = Math.min(1, Math.max(0.15, (p_int / 150) * 0.7 + tempNorm * 0.3));
+  const flowDur = (3.1 - flowDrive * 2.1).toFixed(2);
+  const bubbleDur = (2.6 - flowDrive * 1.7).toFixed(2);
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+
+  const co2Intensity = Math.min(1, y_co2 / 10);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const rCo2 = (1.3 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.5).toFixed(1);
+  const opCo2 = (0.30 + co2Intensity * 0.60).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.40 + h2sIntensity * 0.55 : 0).toFixed(2);
+
+  const steelColor = chosenGrade.type === "CRA" ? "#a78bfa" : "var(--ok)";
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+  const inhibDash = inhib_avail >= 97.5 ? "none" : "5 4";
+
+  // Escala de profundidad (ticks)
+  const step = [100, 250, 500].find(s => depth_nipple / s <= 9) || 500;
+  let ticks = "";
+  for (let m = 0; m <= depth_nipple; m += step) {
+    ticks += `<line x1="42" x2="48" y1="${y(m)}" y2="${y(m)}" stroke="var(--mut)"/>
+              <text x="38" y="${y(m) + 3}" text-anchor="end">${m}</text>`;
+  }
+
+  // Coordenadas de uniones (Couplings EUE/NUE) en el Tubing
+  const coupY1 = top + Math.round(H * 0.26);
+  const coupY2 = top + Math.round(H * 0.54);
+  const upsetW = conn_type === "EU" ? 3.5 : (conn_type === "PREM" ? 2.5 : 1.5);
+
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipTubingBore">
+        <path d="M ${tbL} ${top} L ${tbR} ${top} L ${tbR} ${nipTopY} L ${cx + nipBoreHw} ${nipTopY + 6} L ${cx + nipBoreHw} ${bot} L ${cx - nipBoreHw} ${bot} L ${cx - nipBoreHw} ${nipTopY + 6} L ${tbL} ${nipTopY} Z"/>
+      </clipPath>
+
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.94"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.82"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.6 ? '#0284c7' : fluidTopColor}" stop-opacity="0.74"/>
+      </linearGradient>
+
+      <linearGradient id="c4FluidGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.45"/>
+        <stop offset="50%" stop-color="#059669" stop-opacity="0.20"/>
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.45"/>
+      </linearGradient>
+
+      <linearGradient id="c2GasGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#eab308" stop-opacity="0.22"/>
+      </linearGradient>
+
+      <pattern id="upStreamPat" width="32" height="44" patternUnits="userSpaceOnUse">
+        <path d="M 7 40 Q 11 22 7 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 25 42 Q 21 24 25 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 12 24 L 16 18 L 20 24" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.65"/>
+      </pattern>
+
+      <pattern id="waterCutPat" width="24" height="36" patternUnits="userSpaceOnUse">
+        <path d="M 5 32 C 3 22, 8 14, 5 4" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <circle cx="15" cy="18" r="1.8" fill="#7dd3fc" opacity="0.75"/>
+      </pattern>
+
+      <pattern id="gasBubblesPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="38" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="24" cy="16" r="${(rCo2 * 0.85).toFixed(1)}" fill="#e0f2fe" opacity="${opCo2}"/>
+        <circle cx="27" cy="40" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.7" opacity="${opH2s}"/>
+        <circle cx="13" cy="22" r="${(rH2s * 0.8).toFixed(1)}" fill="#bef264" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.8px var(--mono); fill: var(--mut); }
+      #equipSvg .b { fill: var(--tx); font-weight: 700; }
+      @keyframes svgFlowUp { from { transform: translateY(0px); } to { transform: translateY(-44px); } }
+      @keyframes svgWaterUp { from { transform: translateY(0px); } to { transform: translateY(-36px); } }
+      @keyframes svgBubblesUp {
+        0%   { transform: translate(0px, 0px); }
+        50%  { transform: translate(1.2px, -24px); }
+        100% { transform: translate(0px, -48px); }
+      }
+      #equipSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #equipSvg .flow-up-fast { animation: svgWaterUp ${(flowDur * 0.82).toFixed(2)}s linear infinite; }
+      #equipSvg .bubbles-up { animation: svgBubblesUp ${bubbleDur}s linear infinite; }
+    </style>
+
+    <!-- Cabecera de estado dinámico -->
+    <rect x="8" y="6" width="314" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" style="fill:var(--tx);font-weight:600;font-size:9.3px">${fluidLabel}</text>
+    <text x="314" y="21" text-anchor="end" style="fill:var(--acc);font-size:9px">Niple: ${p_int}bar | T=${temp_c}°C | pH=${pH.toFixed(1)}</text>
+
+    <!-- Escala vertical (m) -->
+    <text x="48" y="${top - 8}" text-anchor="middle">m</text>
+    <line x1="48" x2="48" y1="${top}" y2="${bot}" stroke="var(--mut)"/>
+    ${ticks}
+
+    <!-- Pared interior del Casing de Producción (7") como referencia de frontera anular -->
+    <rect x="${casL - 4}" y="${top}" width="4" height="${H}" fill="var(--line)"/>
+    <rect x="${casR}" y="${top}" width="4" height="${H}" fill="var(--line)"/>
+
+    <!-- Espacio Anular: C4 sobre el Packer (0 a 1500 m) y C2 bajo el Packer (1500 a 1850 m) -->
+    ${has_packer ? `
+      <rect x="${casL}" y="${top}" width="${tbL - wl - casL}" height="${pkY - top}" fill="url(#c4FluidGrad)"/>
+      <rect x="${tbR + wl}" y="${top}" width="${casR - (tbR + wl)}" height="${pkY - top}" fill="url(#c4FluidGrad)"/>
+      <rect x="${casL}" y="${pkY}" width="${tbL - wl - casL}" height="${bot - pkY}" fill="url(#c2GasGrad)"/>
+      <rect x="${tbR + wl}" y="${pkY}" width="${casR - (tbR + wl)}" height="${bot - pkY}" fill="url(#c2GasGrad)"/>
+    ` : `
+      <rect x="${casL}" y="${top}" width="${tbL - wl - casL}" height="${H}" fill="url(#c2GasGrad)"/>
+      <rect x="${tbR + wl}" y="${top}" width="${casR - (tbR + wl)}" height="${H}" fill="url(#c2GasGrad)"/>
+    `}
+
+    <!-- Línea capilar de inyección química (Alloy 625, 3/8") adosada al exterior del Tubing -->
+    <line x1="${tbL - wl - 3}" x2="${tbL - wl - 3}" y1="${top}" y2="${bot - 6}" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <circle cx="${tbL - wl - 3}" cy="${bot - 6}" r="2.5" fill="#22d3ee"/>
+
+    <!-- Interior del Tubing y Niple con Fluido Producido Ascendente (C1) -->
+    <g clip-path="url(#clipTubingBore)">
+      <rect x="${tbL}" y="${top}" width="${2 * tbHw}" height="${H}" fill="url(#prodFluidGrad)"/>
+      <rect x="${tbL}" y="${top}" width="${2 * tbHw}" height="${H}" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.88).toFixed(2)}" class="flow-up-fast"/>
+      <rect x="${tbL}" y="${top}" width="${2 * tbHw}" height="${H}" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${tbL}" y="${top}" width="${2 * tbHw}" height="${H}" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+
+    <!-- Sarta de Varillas de Bombeo (7/8") en el eje central del Tubing -->
+    <line x1="${cx}" x2="${cx}" y1="${top - 6}" y2="${nipTopY - 6}" stroke="#cbd5e1" stroke-width="3.2" opacity="0.85"/>
+    <!-- Pistón / Anclaje de la bomba asentado en el Niple de Asiento -->
+    <rect x="${cx - nipBoreHw + 2}" y="${nipTopY - 12}" width="${2 * (nipBoreHw - 2)}" height="18" rx="2" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+
+    <!-- Liner interno PEAD (HDPE) o película de inhibidor sobre la pared interna del Tubing -->
+    ${int_lining === "hdpe" ? `
+      <line x1="${tbL + 1.8}" x2="${tbL + 1.8}" y1="${top}" y2="${nipTopY}" stroke="#22d3ee" stroke-width="3.2"/>
+      <line x1="${tbR - 1.8}" x2="${tbR - 1.8}" y1="${top}" y2="${nipTopY}" stroke="#22d3ee" stroke-width="3.2"/>
+    ` : `
+      <line x1="${tbL + 1.4}" x2="${tbL + 1.4}" y1="${top}" y2="${nipTopY}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+      <line x1="${tbR - 1.4}" x2="${tbR - 1.4}" y1="${top}" y2="${nipTopY}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    `}
+
+    <!-- Paredes de Acero del Tubing API 5CT -->
+    <rect x="${tbL - wl}" y="${top}" width="${wl}" height="${nipTopY - top}" fill="${steelColor}"/>
+    <rect x="${tbR}" y="${top}" width="${wl}" height="${nipTopY - top}" fill="${steelColor}"/>
+
+    <!-- Acoples Roscados (Couplings EUE / NUE con bisel de 20°) -->
+    <polygon points="${tbL - wl},${coupY1 - 14} ${tbL - wl - upsetW},${coupY1 - 9} ${tbL - wl - upsetW},${coupY1 + 9} ${tbL - wl},${coupY1 + 14}" fill="${steelColor}" stroke="var(--bg)" stroke-width="0.7"/>
+    <polygon points="${tbR + wl},${coupY1 - 14} ${tbR + wl + upsetW},${coupY1 - 9} ${tbR + wl + upsetW},${coupY1 + 9} ${tbR + wl},${coupY1 + 14}" fill="${steelColor}" stroke="var(--bg)" stroke-width="0.7"/>
+    <polygon points="${tbL - wl},${coupY2 - 14} ${tbL - wl - upsetW},${coupY2 - 9} ${tbL - wl - upsetW},${coupY2 + 9} ${tbL - wl},${coupY2 + 14}" fill="${steelColor}" stroke="var(--bg)" stroke-width="0.7"/>
+    <polygon points="${tbR + wl},${coupY2 - 14} ${tbR + wl + upsetW},${coupY2 - 9} ${tbR + wl + upsetW},${coupY2 + 9} ${tbR + wl},${coupY2 + 14}" fill="${steelColor}" stroke="var(--bg)" stroke-width="0.7"/>
+
+    <!-- Packer de Producción a 1500 m -->
+    ${has_packer ? `
+      <rect x="${casL}" y="${pkY - 7}" width="${tbL - wl - casL}" height="14" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <rect x="${tbR + wl}" y="${pkY - 7}" width="${casR - (tbR + wl)}" height="14" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+    ` : ""}
+
+    <!-- Ancla de Tubería (44 kN) debajo del packer -->
+    <polygon points="${casL},${ancY - 5} ${tbL - wl},${ancY - 8} ${tbL - wl},${ancY + 8} ${casL},${ancY + 5}" fill="var(--acc)" opacity="0.85"/>
+    <polygon points="${casR},${ancY - 5} ${tbR + wl},${ancY - 8} ${tbR + wl},${ancY + 8} ${casR},${ancY + 5}" fill="var(--acc)" opacity="0.85"/>
+
+    <!-- Niple de Asiento API 11AX en el fondo de la sarta (1850 m) con Hombro de Carga y Espejo Bruñido -->
+    <polygon points="${tbL - wl - 2},${nipTopY} ${tbL},${nipTopY} ${cx - nipBoreHw},${nipTopY + 7} ${cx - nipBoreHw},${bot} ${tbL - wl - 2},${bot}" fill="#f59e0b" stroke="var(--tx)" stroke-width="1"/>
+    <polygon points="${tbR + wl + 2},${nipTopY} ${tbR},${nipTopY} ${cx + nipBoreHw},${nipTopY + 7} ${cx + nipBoreHw},${bot} ${tbR + wl + 2},${bot}" fill="#f59e0b" stroke="var(--tx)" stroke-width="1"/>
+
+    <!-- Etiquetas técnicas a la derecha del esquema -->
+    <text x="${casR + 8}" y="${top + 8}" class="b">Cabezal 0 m</text>
+    <text x="${casR + 8}" y="${coupY1 + 3}" style="fill:var(--acc)">Acople ${conn_type}</text>
+    <text x="${casR + 8}" y="${coupY2 + 3}" style="fill:#38bdf8">Capilar 3/8" (625)</text>
+    ${has_packer ? `<text x="${casR + 8}" y="${pkY + 3}" style="fill:var(--warn);font-weight:600">Packer ${depth_packer} m</text>` : ""}
+    <text x="${casR + 8}" y="${ancY + 4}" style="fill:var(--acc)">Ancla (44 kN)</text>
+    <text x="${casR + 8}" y="${bot - 8}" class="b" style="fill:#f59e0b">Niple ${depth_nipple} m</text>
+    <text x="${casR + 8}" y="${bot + 4}" style="font-size:8.8px;fill:var(--mut)">ID Bore: ${id_bore} mm</text>
+
+    <!-- Resumen inferior en el lienzo SVG -->
+    <text x="${cx}" y="${bot + 28}" text-anchor="middle" style="fill:${steelColor};font-weight:700">${chosenGrade.name} (${int_lining === "hdpe" ? "Con Liner PEAD" : "Sin Liner"})</text>
+    <text x="${cx}" y="${bot + 42}" text-anchor="middle" style="font-size:9px;fill:var(--mut)">CO₂: ${y_co2}% (${pCO2_bar.toFixed(2)} bar) · H₂S: ${y_h2s}% (${pH2S_kPa.toFixed(1)} kPa) · Inhib: ${inhib_avail}%</text>
+  `;
+}
+
+function copyGlobalState(btn) {
+  const t = JSON.stringify(window.wellStreamState, null, 2);
+  const done = () => {
+    btn.textContent = "Copiado";
+    setTimeout(() => btn.textContent = "Copiar JSON", 1500);
+  };
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById("json_output"));
+    const s = getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+    btn.textContent = "Texto seleccionado: Ctrl+C";
+  });
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>

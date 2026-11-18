@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Maestro Integrado — Sistema A1 (Extracción y Completamiento del Pozo)</title>
+<style>
+:root{
+  --bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;
+  --tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;
+  --warn:#e6b450;--bad:#ef6f62;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;
+    --tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;
+    --warn:#8f5f08;--bad:#b3322a;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--tx);
+  font:14px/1.5 system-ui,"Segoe UI",sans-serif;
+  padding:clamp(10px,1.8vw,22px);max-width:1760px;margin:auto;
+}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+/* Cabecera Industrial */
+.top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:16px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:16px;
+  border-bottom:2px solid var(--tx);
+}
+.top-left h1{
+  font:600 clamp(1.35rem,2.4vw,2rem)/1.12 var(--head);
+  letter-spacing:.01em;
+}
+.top-left p{color:var(--mut);margin-top:4px;max-width:78ch;font-size:.86rem}
+.norms{list-style:none;display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.norms li{
+  border:1px solid var(--line);background:var(--panel);
+  padding:2px 8px;border-radius:4px;font:11.5px var(--mono);color:var(--mut);
+}
+.top-controls{
+  display:flex;flex-direction:column;gap:8px;align-items:flex-end;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+}
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctrl-row label{font-size:.76rem;color:var(--mut);font-weight:600}
+
+/* Botones y Controles */
+.btn{
+  background:var(--tx);color:var(--bg);border:1px solid transparent;
+  padding:6px 11px;border-radius:5px;font-weight:600;cursor:pointer;
+  font-size:.78rem;display:inline-flex;align-items:center;gap:6px;
+  transition:all .15s ease;text-decoration:none;white-space:nowrap;
+}
+.btn:hover{background:var(--acc);color:#0d1114}
+.btn.sec{
+  background:var(--sunk);color:var(--tx);border:1px solid var(--line);
+}
+.btn.sec:hover{border-color:var(--acc);color:var(--acc);background:var(--panel)}
+.btn.accent{background:var(--acc);color:#0c1014}
+.btn.accent:hover{filter:brightness(1.1)}
+.preset-bar{
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  margin-bottom:14px;padding:8px 12px;background:var(--panel);
+  border:1px solid var(--line);border-radius:8px;
+}
+.preset-bar span{font:600 .78rem var(--head);color:var(--mut);margin-right:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Layout Principal */
+.app{
+  display:grid;
+  grid-template-columns:minmax(295px,335px) minmax(0,1fr);
+  gap:18px;align-items:start;
+}
+aside{
+  position:sticky;top:10px;
+  max-height:calc(100vh - 20px);overflow-y:auto;padding-right:3px;
+}
+main{display:grid;gap:16px;min-width:0}
+.workspace{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;
+}
+.schema-grid{
+  display:grid;grid-template-columns:minmax(0,720px) minmax(260px,1fr);
+  gap:16px;align-items:start;
+}
+.schema-side{position:sticky;top:10px;min-width:0}
+.schema-side .mod-pills{grid-template-columns:repeat(2,1fr)}
+.schema-side .legend{grid-template-columns:1fr;margin-top:0}
+@media(max-width:1000px){
+  .schema-grid{grid-template-columns:minmax(0,1fr)}
+  .schema-side{position:static}
+  .schema-side .mod-pills{grid-template-columns:repeat(5,1fr)}
+  .schema-side .legend{margin-top:10px}
+}
+@media(max-width:1024px){
+  .app{grid-template-columns:1fr}
+  aside{position:static;max-height:none}
+  .top-controls{align-items:stretch;width:100%}
+}
+
+/* Tarjetas y Formularios */
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:14px 16px;margin-bottom:12px;
+}
+main .card{margin:0}
+.card h2,summary{font:600 1.02rem var(--head);letter-spacing:.02em}
+.card h2{
+  margin-bottom:10px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px;flex-wrap:wrap;
+}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::after{content:"+";color:var(--mut);font-family:var(--mono)}
+details[open]>summary::after{content:"–"}
+details .grid{margin-top:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f.w{grid-column:span 2}
+label{font-size:.75rem;color:var(--mut)}
+.in,select{
+  display:flex;background:var(--sunk);border:1px solid var(--line);
+  border-radius:5px;color:var(--tx);
+}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{
+  flex:1;min-width:0;border:0;background:none;color:inherit;
+  padding:5px 7px;font:12.5px var(--mono);
+}
+.in input:focus-visible{outline:none}
+.in span{padding:5px 7px 5px 0;color:var(--mut);font-size:.72rem;align-self:center;white-space:nowrap}
+select{padding:5px 7px;font:12.5px system-ui;width:100%;cursor:pointer}
+
+/* Banner de Veredicto Global */
+.verdict{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px;padding:14px 16px;border:1px solid var(--line);
+  border-left:6px solid var(--c);border-radius:8px;background:var(--panel);
+}
+.verdict.ok{--c:var(--ok)}.verdict.warn{--c:var(--warn)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.74rem;color:var(--mut)}
+.verdict strong{font:600 1.18rem/1.2 var(--head)}
+
+/* Píldoras de acceso rápido M1 a M10 */
+.mod-pills{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;
+}
+.mod-pill{
+  user-select:none;
+  background:var(--sunk);border:1px solid var(--line);border-radius:5px;
+  padding:5px 6px;font:600 .73rem var(--mono);color:var(--tx);
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  gap:4px;transition:all .15s ease;text-align:left;
+}
+.mod-pill:hover{border-color:var(--acc);transform:translateY(-1px)}
+.mod-pill.active{
+  background:color-mix(in srgb,var(--acc) 18%,var(--sunk));
+  border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);
+}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.danger{background:var(--bad)}
+
+/* SVG Maestro */
+#systemSvg{
+  width:100%;height:auto;background:var(--sunk);
+  border:1px solid var(--line);border-radius:6px;display:block;
+  user-select:none;
+}
+.svg-mod{cursor:pointer}
+/* Al hacer clic solo se ilumina suavemente el borde de la tarjeta (sin mover ni escalar nada) */
+.svg-mod .mod-badge rect:first-child{transition:filter .2s ease,stroke-width .2s ease}
+.svg-mod.selected-mod .mod-badge rect:first-child{
+  filter:drop-shadow(0 0 3px var(--acc));stroke-width:2.2px;
+}
+/* La pieza seleccionada también se ilumina: contorno suave + halo y leve relleno (sin mover ni redibujar) */
+.svg-mod.selected-mod .mod-hitbox{
+  stroke:var(--acc)!important;stroke-width:1.6px!important;stroke-dasharray:none!important;
+  fill:rgba(140,196,214,0.10)!important;
+  filter:drop-shadow(0 0 4px var(--acc));
+}
+
+.legend{
+  list-style:none;display:grid;grid-template-columns:1fr 1fr;
+  gap:6px 12px;margin-top:10px;font-size:.74rem;color:var(--mut);
+}
+.legend i{
+  display:inline-block;width:12px;height:12px;border-radius:2px;
+  margin-right:6px;vertical-align:-2px;
+}
+
+/* KPIs y Panel de Módulo Seleccionado */
+.kpi-row{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+  gap:8px;margin-bottom:12px;
+}
+.kpi{
+  background:var(--sunk);border:1px solid var(--line);
+  padding:9px 11px;border-radius:6px;
+}
+.kpi .lbl{font-size:.72rem;color:var(--mut)}
+.kpi .val{font:600 1.05rem var(--mono);margin-top:2px}
+.kpi .sub{font-size:.7rem;color:var(--mut);margin-top:2px}
+
+.tag{
+  display:inline-block;padding:1px 7px;border-radius:4px;
+  font-size:.72rem;font-weight:600;color:var(--c);
+  border:1px solid var(--c);
+  background:color-mix(in srgb,var(--c) 14%,transparent);
+  font-family:var(--mono);
+}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}.tag.info{--c:var(--acc)}
+
+/* Inspector del Módulo Activo */
+.inspector-head{
+  background:var(--sunk);border:1px solid var(--line);
+  border-left:5px solid var(--acc);border-radius:6px;
+  padding:12px 14px;margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:12px;flex-wrap:wrap;
+}
+.inspector-head h3{font:600 1.15rem var(--head);color:var(--tx)}
+.inspector-head .file-chip{
+  font:11.5px var(--mono);color:var(--acc);
+  background:color-mix(in srgb,var(--acc) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);
+  padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;
+}
+.section-box{
+  background:var(--sunk);border:1px solid var(--line);
+  border-radius:6px;padding:11px 13px;margin-bottom:8px;
+}
+.section-box h4{font:600 .92rem var(--head);margin-bottom:4px;color:var(--tx);display:flex;justify-content:space-between;align-items:center}
+.section-box p{font-size:.8rem;color:var(--mut);margin-bottom:3px}
+.section-box p strong{color:var(--tx)}
+
+/* Tablas */
+.side-col{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);min-width:0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.79rem;min-width:680px}
+table.matrix{min-width:0}
+table.matrix td{overflow-wrap:anywhere}
+table.matrix .tag{white-space:nowrap}
+table.matrix td:first-child,table.matrix th:first-child{white-space:nowrap}
+table.matrix .mfile{font:10.5px var(--mono);color:var(--mut);margin-top:2px}
+table.matrix .mmeta{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:4px}
+table.matrix .mnorm{font:10.5px var(--mono);color:var(--mut);margin-top:3px}
+th,td{
+  padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);
+  vertical-align:middle;font-variant-numeric:tabular-nums;
+}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tbody tr{user-select:none;cursor:pointer;transition:background .12s}
+tbody tr:hover td{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+tbody tr.active-row td{background:color-mix(in srgb,var(--acc) 15%,transparent)}
+
+pre{
+  font:11.5px/1.45 var(--mono);background:var(--sunk);
+  border:1px solid var(--line);border-radius:6px;padding:10px;
+  color:var(--acc);overflow:auto;max-height:230px;
+}
+
+/* Modal Visor de Módulo HTML */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(8,10,12,0.82);
+  backdrop-filter:blur(4px);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+.modal-backdrop.open{display:flex}
+.modal-win{
+  background:var(--panel);border:1px solid var(--acc);
+  border-radius:10px;width:min(1700px,99vw);height:min(94vh,1000px);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.65);
+}
+.modal-bar{
+  padding:10px 16px;background:var(--sunk);border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.modal-bar-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.modal-bar-title h3{font:600 1.08rem var(--head)}
+.modal-body{
+  flex:1;display:grid;grid-template-columns:1fr;min-height:0;position:relative;
+  background:var(--bg);
+}
+.modal-body.split{grid-template-columns:320px minmax(0,1fr)}
+@media(max-width:960px){.modal-body.split{grid-template-columns:1fr}}
+.modal-side{
+  border-right:1px solid var(--line);padding:14px;overflow-y:auto;
+  background:var(--panel);display:none;
+}
+.modal-body.split .modal-side{display:block}
+.modal-frame-wrap{position:relative;width:100%;height:100%;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.iframe-stage{flex:1;position:relative;overflow:hidden;min-height:0}
+#modIframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:var(--bg);transform-origin:0 0}
+.iframe-notice{
+  padding:7px 12px;background:var(--sunk);border-bottom:1px solid var(--line);
+  font-size:.76rem;color:var(--mut);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div class="top-left">
+    <h1>Simulador Maestro Integrado — Sistema A1 (Extracción y Completamiento del Pozo)</h1>
+    <p>Arquitectura acoplada en cascada de los <strong>10 módulos críticos</strong> (Barrancabermeja · Bombeo Mecánico · Corrientes C1 a C5). Haga clic sobre cualquier equipo del esquema vertical o de superficie para inspeccionar y abrir su simulador específico.</p>
+    <ul class="norms">
+      <li>API 5CT / ISO 11960</li>
+      <li>API TR 5C3</li>
+      <li>API 11AX / ISO 12412</li>
+      <li>API 11D1 / ISO 14310</li>
+      <li>API 11B / API RP 11BR</li>
+      <li>API 6A / ISO 10423</li>
+      <li>ISO 15156-2 / -3</li>
+      <li>ISO 21457</li>
+    </ul>
+  </div>
+</header>
+
+<!-- Barra de Escenarios Operativos Rápidos -->
+<div class="preset-bar">
+  <span>Escenarios del Pozo:</span>
+  <button class="btn sec" type="button" onclick="applyPreset('base_today')">Caso Base Hoy (0,15% H₂S · A=90%)</button>
+  <button class="btn sec" type="button" onclick="applyPreset('year_10')">Año 10 SRB Activo (0,30% H₂S)</button>
+  <button class="btn sec" type="button" onclick="applyPreset('low_inhib')">Falla Química (A=92%)</button>
+  <button class="btn sec" type="button" onclick="applyPreset('high_sand')">Alta Arena y Sin Packer (35 lb/1000 bbl)</button>
+  <button class="btn sec" type="button" onclick="applyPreset('sweet_well')">Pozo Dulce (0% H₂S · Región 0)</button>
+  <span id="preset_status" style="margin-left:auto;font:11.5px var(--mono);color:var(--acc)">Estado sincronizado en window.wellStreamState</span>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR IZQUIERDO: PARÁMETROS GLOBALES DE LAS 5 CORRIENTES -->
+  <aside>
+    <div id="form"></div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main>
+    <!-- Banner de Veredicto Global del Sistema A1 -->
+    <section id="verdict" class="verdict ok" aria-live="polite"></section>
+
+    <div class="workspace">
+      <!-- COLUMNA IZQUIERDA: ESQUEMA VECTORIAL INTEGRADO INTERACTIVO (SUBSUELO + SUPERFICIE) -->
+      <section class="card">
+        <h2>
+          <span>Esquema Integral Interactivo (Clic en el Equipo)</span>
+          <span class="tag info" id="flow_badge">Flujo Activo C1 → A2</span>
+        </h2>
+
+        <div class="schema-grid">
+          <!-- Lienzo SVG de Pozo Completo y Superficie -->
+          <svg id="systemSvg" viewBox="0 0 760 900" role="img" aria-label="Esquema integral interactivo del Sistema A1 con los 10 módulos y flujo animado"></svg>
+          <div class="schema-side">
+            <!-- Botones rápidos M1 a M10 -->
+            <div class="mod-pills" id="mod_pills_bar"></div>
+
+            <ul class="legend">
+              <li><i id="leg_c1_sw" style="background:#e68a2e"></i><span id="leg_c1_txt">Corriente 1 (C1): Fluido producido multifásico + burbujas CO₂/H₂S</span></li>
+              <li><i style="background:#22d3ee"></i>Línea capilar 3/8" Alloy 625 y película de inhibidor en tubería</li>
+              <li><i style="background:#10b981;opacity:.6"></i>Corriente 4 (C4): Fluido de empaque alcalino inhibido (0 a 1500 m)</li>
+              <li><i style="background:#eab308;opacity:.6"></i>Corriente 2 (C2): Gas húmedo ácido en espacio anular</li>
+              <li><i style="background:#38bdf8;opacity:.55"></i>Corriente 3 (C3): Acuífero somero aireado (0 a TOC 800 m)</li>
+              <li><i style="background:#94a3b8;opacity:.55"></i>Cemento anular (TOC 800 m a Zapata 2300 m) y Atmósfera C5</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- MATRIZ DE MÓDULOS (debajo del esquema) -->
+      <div class="side-col">
+        <!-- Matriz Resumen de los 10 Módulos -->
+        <section class="card">
+          <h2>
+            <span>Matriz de Ingeniería de los 10 Módulos</span>
+            <span style="font-size:.75rem;color:var(--mut);font-weight:400">Clic en una fila para resaltar</span>
+          </h2>
+          <div class="scroll">
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Módulo / Equipo</th>
+                  <th>Selección Metalúrgica Activa</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="modules_tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Exportación del Estado Global window.wellStreamState -->
+    <section class="card">
+      <h2>
+        <span>Estado Global Compartido (window.wellStreamState → Propagado a los 10 Módulos)</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn sec" type="button" onclick="copyGlobalState(this)">Copiar JSON</button>
+        </div>
+      </h2>
+      <pre id="json_output"></pre>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL VISOR INTEGRADO DE MÓDULOS HTML -->
+<div class="modal-backdrop" id="modModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-win">
+    <div class="modal-bar">
+      <div class="modal-bar-title">
+        <h3 id="modalTitle">Casing de Producción</h3>
+      </div>
+      <div class="ctrl-row">
+        <button class="btn" type="button" style="background:var(--bad);color:#fff" onclick="closeModal()">
+          Cerrar ✕
+        </button>
+      </div>
+    </div>
+    <div class="modal-body split" id="modalBody">
+      <div class="modal-side" id="modalSideContent"></div>
+      <div class="modal-frame-wrap">
+        <div class="iframe-notice" id="iframeNotice">
+          <span id="iframeNoticeTxt">Ejecutando vista interactiva sincronizada con <code>window.wellStreamState</code>.</span>
+          <span style="font-family:var(--mono);color:var(--acc)" id="iframeSyncStamp"></span>
+        </div>
+        <div class="iframe-stage" id="iframeStage">
+          <iframe id="modIframe" title="Visor del Módulo"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// 1. CATÁLOGO OFICIAL DE LOS 10 MÓDULOS Y NOMBRES EXACTOS DE ARCHIVOS DEL USUARIO
+// ============================================================================
+const MODULES_META = [
+  {
+    id: 1,
+    code: "M1",
+    name: "Casing de Producción",
+    file: "simulador_parametrico_universal_casing_api_5ct.html",
+    location: "2300 m a 0 m",
+    streams: "C1, C2, C3, C4",
+    norms: "API 5CT / API TR 5C3 / ISO 15156-2",
+    role: "Barrera estructural permanente (20 años) y aislamiento del acuífero somero."
+  },
+  {
+    id: 2,
+    code: "M2",
+    name: "Bomba de Subsuelo",
+    file: "simulador_parametrico_universal_Bomba_subsuelo.html",
+    location: "Asiento a 1850 m",
+    streams: "C1",
+    norms: "API 11AX / ISO 12412 / ISO 15156",
+    role: "Motor de desplazamiento positivo en el punto de máxima presión y abrasión."
+  },
+  {
+    id: 3,
+    code: "M3",
+    name: "Packer y Ancla de Tubería",
+    file: "simulador_parametrico_universal_Packer.html",
+    location: "Asentado a 1500 m",
+    streams: "C1, C2, C4",
+    norms: "API 11D1 / ISO 14310 / ISO 23936-2",
+    role: "Aislamiento anular (gas ácido C2 vs fluido inhibido C4) y fijación mecánica."
+  },
+  {
+    id: 4,
+    code: "M4",
+    name: "Tubing y Niple de Asiento",
+    file: "simulador_parametrico_universal_Tubing_y_niple.html",
+    location: "1850 m a 0 m",
+    streams: "C1, C2, C4",
+    norms: "API 5CT / API 11AX / ISO 21457",
+    role: "Conducción primaria del fluido producido (C1) hasta el cabezal y alojamiento de bomba."
+  },
+  {
+    id: 5,
+    code: "M5",
+    name: "Varillas de Bombeo y Barra Pulida",
+    file: "simulador_parametrico_universal_varillas_de_bombeo.html",
+    location: "1850 m a Superficie",
+    streams: "C1, C5",
+    norms: "API 11B / API RP 11BR / ISO 15156-2",
+    role: "Transmisión mecánica recíproca sometida a corrosión-fatiga cíclica y sello dinámico."
+  },
+  {
+    id: 6,
+    code: "M6",
+    name: "Cabezal de Pozo y Colgadores",
+    file: "simulador_parametrico_universal_cabezal.html",
+    location: "Base de Superficie (0 m)",
+    streams: "C1, C2, C4, C5",
+    norms: "API 6A / ISO 10423 / ISO 15156-2 y -3",
+    role: "Soporte de cargas axiales de las sartas de casing/tubing y sellado inter-anular."
+  },
+  {
+    id: 7,
+    code: "M7",
+    name: "Árbol de Producción y Te",
+    file: "simulador_parametrico_universal_Arbol_de_navidad.html",
+    location: "Sobre el Cabezal (0 m)",
+    streams: "C1, C5",
+    norms: "API 6A / API 11B / NACE SP0286",
+    role: "Control de flujo vertical/lateral, prensaestopas, desvío de bombeo y brida frontera A2."
+  },
+  {
+    id: 8,
+    code: "M8",
+    name: "Válvula de Aguja y Manómetro (M5)",
+    file: "simulador_parametrico_universal_valvula_de_aguja.html",
+    location: "Tope del Árbol (Punto M5)",
+    streams: "C1, C5",
+    norms: "MSS SP-99 / ASME B40.100 / ISO 15156-3",
+    role: "Monitoreo de presión y muestreo químico en fluido estancado con altos cloruros."
+  },
+  {
+    id: 9,
+    code: "M9",
+    name: "Válvula de Seguridad (SSV)",
+    file: "simulador_parametrico_universal_valvula_de_seguridad.html",
+    location: "Salida Lateral (Aguas arriba)",
+    streams: "C1, C5",
+    norms: "API 6A (PR2, PSL 2) / ISO 10423",
+    role: "Cierre automático de emergencia de falla segura (Fail-Safe Close) ante contingencias."
+  },
+  {
+    id: 10,
+    code: "M10",
+    name: "Choque (Estrangulador)",
+    file: "simulador_parametrico_universal_choque.html",
+    location: "Salida Lateral (Aguas abajo)",
+    streams: "C1, C5",
+    norms: "API 6A / API RP 14E / ISO 15156",
+    role: "Regulación de caída de presión (ΔP) hacia el sistema A2 y control de erosión por arena."
+  }
+];
+
+// Mapa de Blob URLs cuando el usuario vincula sus archivos .html locales
+
+// Carpeta donde viven los 10 simuladores, relativa a este HTML (modulo/<nombre>.html)
+const MODULES_DIR = "modulo/";
+function moduleUrl(m, embedded = false) {
+  const params = new URLSearchParams({estado:JSON.stringify(window.wellStreamState.fluidStream_C1_C2)});
+  if (embedded) params.set('embed', '1');
+  return MODULES_DIR + encodeURIComponent(m.file) + '?' + params;
+}
+let activeModuleId = 1;
+
+// ============================================================================
+// 2. DEFINICIÓN DEL FORMULARIO PARAMÉTRICO GLOBAL (SIDEBAR IZQUIERDO)
+// ============================================================================
+const FORM = [
+  ["Corriente 1 y 2 — Fluido y Gas (C1, C2)", [
+    ["p_pump",     "Presión en bomba (1850 m)", "bar", 45, 5, 400, 1],
+    ["p_pump_design", "Presión de diseño en fondo", "bar", 112, 5, 400, 1],
+    ["p_head_des", "Presión diseño cabezal",    "bar", 50,  5, 300, 1],
+    ["p_head_op",  "Presión oper. cabezal",     "bar", 45,  1, 250, 1],
+    ["p_out_a2",   "Presión salida a A2",       "bar", 35,  1, 250, 1],
+    ["temp_bot",   "Temp. fondo / bomba",       "°C",  68,  10, 220, 1],
+    ["temp_surf",  "Temp. cabezal / árbol",     "°C",  68,  10, 200, 1],
+    ["temp_surf_design", "Temperatura de diseño en superficie", "°C", 85, 10, 250, 1],
+    ["y_co2",      "CO₂ en fase gas",           "% mol", 3.1, 0, 100, 0.1],
+    ["y_h2s",      "H₂S en fase gas",           "% mol", 0.15, 0, 50, 0.01],
+    ["ph",         "pH in situ (C1)",           "",    4.6, 1, 14, 0.1],
+    ["chlorides",  "Cloruros (Cl⁻)",            "mg/L", 42000, 0, 250000, 500],
+    ["solids",     "Sólidos / Arena",           "lb/Mbbl", 12, 0, 500, 1],
+    ["bsw",        "Corte de agua (BSW)",       "%",   78, 0, 100, 1]
+  ]],
+  ["Control Químico y Corrientes C3, C4, C5", [
+    ["inhib_avail","Disponibilidad inhibidor (A)", "%", 90, 0, 100, 0.5],
+    ["v_inhib",    "Tasa corrosión inhibida",   "mm/a", 0.1, 0.01, 2, 0.01],
+    ["wet_factor", "Mojado gas anular (C2)",    "%",   10, 0, 100, 1],
+    ["ext_env",    "Acuífero externo C3 (0-TOC)", [
+      ["aerated",   "Acuífero somero aireado (con O₂)"],
+      ["anoxic",    "Formación cerrada sin O₂"],
+      ["corrosive", "Salmuera externa agresiva"]
+    ], "aerated"],
+    ["v_ext",      "Velocidad externa C3",      "mm/a", 0.10, 0, 5, 0.02],
+    ["has_packer", "Packer a 1500 m y Fluido C4", [
+      ["yes", "Instalado (Anular sup. con C4 pH 10)"],
+      ["no",  "Sin Packer (Anular abierto a gas C2)"]
+    ], "yes"],
+    ["atm_cat",    "Atmósfera exterior C5 (ISO 9223)", [
+      ["C4", "Categoría C4 (Tropical Industrial)"],
+      ["C3", "Categoría C3 (Urbana / Moderada)"],
+      ["C5", "Categoría C5 (Industrial Severa)"]
+    ], "C4"]
+  ]],
+  ["Geometría del Pozo y Bombeo Mecánico", [
+    ["depth_shoe",   "Zapata de Casing (M1)", "m",   2300, 300, 5000, 50],
+    ["depth_pump",   "Asiento Bomba/Niple",   "m",   1850, 200, 4500, 50],
+    ["depth_packer", "Profundidad Packer",    "m",   1500, 100, 4000, 50],
+    ["depth_toc",    "Tope de Cemento (TOC)", "m",   800,  0,   4000, 50],
+    ["spm",          "Velocidad bombeo",      "SPM", 6,    1,   20,   0.5],
+    ["stroke_in",    "Carrera de bombeo",     "in",  100,  20,  240,  5],
+    ["pprl",         "Carga máx. barra (PPRL)","kN", 62,   10,  250,  2],
+    ["mprl",         "Carga mín. barra (MPRL)","kN", 28,   5,   200,  2],
+    ["life_perm",    "Vida equipos perm.",    "años",20,   5,   40,   1],
+    ["life_rep",     "Vida equipos reempl.",  "años",6,    1,   20,   1]
+  ]]
+];
+
+function buildForm(){
+  document.getElementById("form").innerHTML = FORM.map(([title, fields]) => `
+    <details class="card" open>
+      <summary>${title}</summary>
+      <div class="grid">
+        ${fields.map(f => {
+          const [id, lb, u] = f;
+          const isSelect = Array.isArray(u);
+          const ctl = isSelect
+            ? `<select id="${id}">${u.map(o => `<option value="${o[0]}"${o[0] === f[3] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>`
+            : `<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+          return `<div class="f${isSelect ? " w" : ""}"><label for="${id}">${lb}</label>${ctl}</div>`;
+        }).join("")}
+      </div>
+    </details>
+  `).join("");
+}
+buildForm();
+
+const num = (id, d) => {
+  const el = document.getElementById(id);
+  if (!el) return d;
+  const v = parseFloat(el.value);
+  return Number.isFinite(v) ? v : d;
+};
+
+// ============================================================================
+// 3. MOTORES MATEMÁTICOS Y NORMATIVOS COMPARTIDOS (ISO 15156, DE WAARD, API)
+// ============================================================================
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+function calcDeWaardMilliams(pCO2_bar, temp_c) {
+  if (pCO2_bar <= 0.0001) return 0;
+  const temp_K = temp_c + 273.15;
+  return Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+}
+
+function calcCollapseAPI5C3_bar(od_mm, t_mm, yp_ksi) {
+  if (t_mm <= 0.5) return 0;
+  const dt = od_mm / t_mm;
+  const Yp = yp_ksi * 1000;
+  const A = 2.8762 + 1.0679e-6 * Yp + 2.1301e-11 * Yp * Yp - 5.3132e-17 * Yp * Yp * Yp;
+  const B = 0.026233 + 5.0609e-7 * Yp;
+  const C = -465.93 + 0.030867 * Yp - 1.0483e-8 * Yp * Yp + 3.6989e-14 * Yp * Yp * Yp;
+  const F = (46.95e6 * Math.pow((3 * B / A) / (2 + B / A), 3)) /
+            (Yp * Math.pow((3 * B / A) / (2 + B / A) - B / A, 2) * Math.pow(1 - (3 * B / A) / (2 + B / A), 2));
+  const G = F * B / A;
+  const dt_yp = (Math.sqrt((A - 2) * (A - 2) + 8 * (B + C / Yp)) + (A - 2)) / (2 * (B + C / Yp));
+  const dt_pt = (Yp * (A - F)) / (C + Yp * (B - G));
+  const dt_te = (2 + B / A) / (3 * B / A);
+
+  let Pc_psi = 0;
+  if (dt <= dt_yp) Pc_psi = 2 * Yp * ((dt - 1) / (dt * dt));
+  else if (dt <= dt_pt) Pc_psi = Yp * (A / dt - B) - C;
+  else if (dt <= dt_te) Pc_psi = Yp * (F / dt - G);
+  else Pc_psi = 46.95e6 / (dt * Math.pow(dt - 1, 2));
+  return Math.max(0, Pc_psi * 0.0689476);
+}
+
+function getAPI6AMaterialClass(pCO2_psi, pH2S_psi, chlorides) {
+  const isSour = pH2S_psi >= 0.3 * 14.5038 / 100;
+  if (!isSour) {
+    if (pCO2_psi < 7) return { code: "AA", desc: "Servicio General (No corrosivo, Acero al carbono/baja aleación)" };
+    if (pCO2_psi <= 30) return { code: "BB", desc: "Corrosión Leve CO₂ (Cuerpo CS con Trim Inoxidable)" };
+    return { code: "CC", desc: "Corrosión Moderada/Alta CO₂ (Cuerpo y Trim Inoxidable)" };
+  } else {
+    if (pCO2_psi < 7) return { code: "DD", desc: "Servicio Amargo NACE (Baja corrosión CO₂, AISI 4130 ≤ 22 HRC)" };
+    if (pCO2_psi <= 30 && chlorides <= 60000) return { code: "EE", desc: "Servicio Amargo + Corrosivo Moderado (Cuerpo AISI 4130 ≤ 22 HRC + Trim CRA)" };
+    if (pCO2_psi > 30 && chlorides <= 100000) return { code: "FF", desc: "Servicio Amargo + Alta Corrosión CO₂ (Inoxidable NACE + Trim CRA)" };
+    return { code: "HH", desc: "Servicio Amargo Severo / Altos Cloruros (CRA Macizo o Clad Alloy 625)" };
+  }
+}
+
+// ============================================================================
+// 4. SIMULACIÓN INTEGRAL DE LOS 10 MÓDULOS EN CASCADA
+// ============================================================================
+let lastComputedSystem = null;
+
+function runSystemSimulation() {
+  // Lectura de parámetros
+  const p_pump = num("p_pump", 112);
+  const p_head_des = num("p_head_des", 55);
+  const p_head_op = num("p_head_op", 45);
+  const p_out_a2 = Math.min(p_head_op, num("p_out_a2", 35));
+  const temp_bot = num("temp_bot", 72);
+  const temp_surf = num("temp_surf", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const solids = num("solids", 12);
+  const bsw = num("bsw", 78);
+
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+  const wet_factor = num("wet_factor", 10);
+  const ext_env = document.getElementById("ext_env").value;
+  const v_ext_in = num("v_ext", 0.10);
+  const has_packer = document.getElementById("has_packer").value === "yes";
+  const atm_cat = document.getElementById("atm_cat").value;
+
+  const depth_shoe = num("depth_shoe", 2300);
+  const depth_pump = Math.min(depth_shoe - 50, num("depth_pump", 1850));
+  const depth_packer = Math.min(depth_pump - 50, num("depth_packer", 1500));
+  const depth_toc = Math.min(depth_shoe, num("depth_toc", 800));
+  const spm = num("spm", 6);
+  const stroke_in = num("stroke_in", 100);
+  const pprl = num("pprl", 62);
+  const mprl = Math.min(pprl - 2, num("mprl", 28));
+  const life_perm = num("life_perm", 20);
+  const life_rep = num("life_rep", 6);
+
+  // 1. Termodinámica y Química en Bomba (1850 m)
+  const pCO2_bot_bar = (y_co2 / 100) * (p_pump + 1.01325);
+  const pCO2_bot_psi = pCO2_bot_bar * 14.5038;
+  const pH2S_bot_bar = (y_h2s / 100) * (p_pump + 1.01325);
+  const pH2S_bot_kPa = pH2S_bot_bar * 100;
+  const pH2S_bot_psi = pH2S_bot_bar * 14.5038;
+  const reg_bot = getISO15156Region(pH2S_bot_kPa, pH);
+
+  // 2. Termodinámica y Química en Cabezal/Superficie (Operación y Diseño)
+  const pCO2_surf_op_bar = (y_co2 / 100) * (p_head_op + 1.01325);
+  const pH2S_surf_op_kPa = (y_h2s / 100) * (p_head_op + 1.01325) * 100;
+  const reg_surf_op = getISO15156Region(pH2S_surf_op_kPa, pH);
+
+  const pCO2_surf_des_bar = (y_co2 / 100) * (p_head_des + 1.01325);
+  const pCO2_surf_des_psi = pCO2_surf_des_bar * 14.5038;
+  const pH2S_surf_des_kPa = (y_h2s / 100) * (p_head_des + 1.01325) * 100;
+  const pH2S_surf_des_psi = (pH2S_surf_des_kPa / 100) * 14.5038;
+  const reg_surf_des = getISO15156Region(pH2S_surf_des_kPa, pH);
+
+  const ratio_co2_h2s = pH2S_bot_bar > 0 ? (pCO2_bot_bar / pH2S_bot_bar) : 9999;
+
+  // 3. Velocidades de Corrosión De Waard-Milliams (1991) + Factor de agua/ácidos orgánicos
+  const f_water = Math.min(1.15, Math.max(0.15, (bsw / 100) * 1.15)); // Ajuste por alto BSW y ácidos orgánicos
+  const v_raw_bot = calcDeWaardMilliams(pCO2_bot_bar, temp_bot) * f_water;
+  const v_raw_surf = calcDeWaardMilliams(pCO2_surf_op_bar, temp_surf) * f_water;
+  const v_raw_ann_c2 = calcDeWaardMilliams(pCO2_surf_des_bar, temp_bot) * (wet_factor / 100);
+
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_des_bot = A_frac * v_inhib + (1 - A_frac) * v_raw_bot;
+  const v_des_surf = A_frac * v_inhib + (1 - A_frac) * v_raw_surf;
+  // Para el Casing en anular C2 (10% mojado, disponibilidad 95% efectiva en gas)
+  const A_ann = Math.min(A_frac, 0.95);
+  const v_des_casing_int = A_ann * v_inhib + (1 - A_ann) * v_raw_ann_c2;
+
+  // 4. Cálculos por Módulo (M1 a M10)
+  // --- MÓDULO 1: CASING DE PRODUCCIÓN (7", 29 lb/ft, t = 10.36 mm, L80 Tipo 1) ---
+  const ca_casing_int = v_des_casing_int * life_perm;
+  const v_ext_eff = (depth_toc > 0 && ext_env !== "anoxic") ? v_ext_in : 0;
+  const ca_casing_ext = v_ext_eff * life_perm;
+  const t_nom_csg = 10.36; // 7" 29 lb/ft
+  const t_rem_csg_bot = Math.max(0, t_nom_csg - ca_casing_int);
+  const t_rem_csg_top = Math.max(0, t_nom_csg - (ca_casing_int + ca_casing_ext));
+  const col_csg_bot = calcCollapseAPI5C3_bar(177.8, t_rem_csg_bot, 80);
+  const col_csg_top = calcCollapseAPI5C3_bar(177.8, t_rem_csg_top, 80);
+  const fs_csg_bot = col_csg_bot / 185;
+  const fs_csg_top = depth_toc > 0 ? col_csg_top / 64 : 99;
+  const m1_ok = fs_csg_bot >= 1.125 && fs_csg_top >= 1.125;
+
+  // --- MÓDULO 2: BOMBA DE SUBSUELO (API 11AX, Pistón 1.75 in) ---
+  const d_plunger_in = 1.75;
+  const stroke_m = stroke_in * 0.0254;
+  const v_linear_ms = (2 * stroke_m * spm) / 60;
+  // Caudal desplazado (m3/d y bbl/d) con 85% eficiencia volumétrica
+  const q_theo_bpd = 0.1484 * (d_plunger_in * d_plunger_in) * stroke_in * spm;
+  const q_design_bpd = q_theo_bpd * 0.85;
+  const q_design_m3d = q_design_bpd * 0.158987;
+  const m2_severe_wear = solids > 20 || reg_bot === 3;
+
+  // --- MÓDULO 3: PACKER Y ANCLA DE TUBERÍA (1500 m, API 11D1) ---
+  const dp_packer_bar = Math.max(10, p_pump - p_head_des);
+  const packer_elastomer = (temp_bot > 100 || y_h2s >= 0.5) ? "FKM / FEPM (Aflas) Grado Amargo" : "HNBR 90 Shore A (ISO 23936-2)";
+  const m3_ok = has_packer;
+
+  // --- MÓDULO 4: TUBING 2 7/8" (6.5 lb/ft, t = 5.51 mm) Y NIPLE ---
+  const t_nom_tbg = 5.51;
+  const ca_tbg_6yr = v_des_bot * life_rep;
+  const ca_tbg_20yr = v_des_bot * life_perm;
+  const t_rem_tbg_6yr = Math.max(0, t_nom_tbg - ca_tbg_6yr);
+  const needs_hdpe_liner = inhib_avail < 97.5 || ca_tbg_6yr > 2.2;
+  const m4_ok = !needs_hdpe_liner;
+
+  // --- MÓDULO 5: VARILLAS DE BOMBEO (7/8", A = 388 mm2) Y BARRA PULIDA (1 1/4") ---
+  const area_rod_mm2 = 388;
+  const sigma_max_MPa = (pprl * 1000) / area_rod_mm2;
+  const sigma_min_MPa = (mprl * 1000) / area_rod_mm2;
+  // Goodman Modificado API RP 11BR:
+  // Grado C (UTS = 620 MPa), Grado K (UTS = 655 MPa, Ni-Mo), Grado D Aleado (UTS = 793 MPa)
+  const sf_corr = inhib_avail >= 97.5 ? 0.85 : 0.65;
+  const sa_gradeC = ((620 / 4) + 0.5625 * sigma_min_MPa) * ( sf_corr * 0.65 ); // penalización acero al carbono en amargo
+  const sa_gradeK = ((689 / 4) + 0.5625 * sigma_min_MPa) * sf_corr;
+  const goodman_C_pct = (sigma_max_MPa / sa_gradeC) * 100;
+  const goodman_K_pct = (sigma_max_MPa / sa_gradeK) * 100;
+  const cycles_total_M = (spm * 60 * 24 * 365 * life_rep) / 1e6;
+  const m5_ok = goodman_K_pct <= 100;
+
+  // --- MÓDULO 6: CABEZAL DE POZO Y COLGADORES (API 6A) ---
+  const api6aClass = getAPI6AMaterialClass(pCO2_surf_des_psi, pH2S_surf_des_psi, chlorides);
+  const m6_ok = p_head_des <= 138; // 2000 psi = 137.9 bar
+
+  // --- MÓDULO 7: ÁRBOL DE PRODUCCIÓN Y TE DE BOMBEO (API 6A, Paso 2 9/16" = 65.1 mm) ---
+  const id_tree_m = 0.0651;
+  const area_tree_m2 = (Math.PI / 4) * id_tree_m * id_tree_m;
+  const v_tree_ms = (q_design_m3d / 86400) / area_tree_m2;
+  const rho_mix = (bsw / 100) * 1030 + (1 - bsw / 100) * 946; // 18 API ~ 946 kg/m3
+  const v_erosional_ms = (100 / Math.sqrt(rho_mix * 0.062428)) * 0.3048; // API RP 14E con c=100
+
+  // --- MÓDULO 8: VÁLVULA DE AGUJA Y MANÓMETRO M5 (ASME B40.100 / ISO 15156-3) ---
+  const m8_pitting_risk = chlorides > 15000 && temp_surf >= 60;
+
+  // --- MÓDULO 9: VÁLVULA DE SEGURIDAD SSV (API 6A PR2 PSL 2) ---
+  const m9_ok = p_head_des <= 138;
+
+  // --- MÓDULO 10: CHOQUE / ESTRANGULADOR (API 6A) ---
+  const dp_choke_bar = Math.max(0, p_head_op - p_out_a2);
+  const v_jet_choke_ms = dp_choke_bar > 0 ? Math.sqrt((2 * dp_choke_bar * 1e5) / rho_mix) : v_tree_ms;
+  const m10_erosion_warn = v_jet_choke_ms > 25 || solids > 20;
+
+  // Construir catálogo enriquecido de resultados por módulo
+  const modulesComputed = [
+    {
+      ...MODULES_META[0],
+      status: m1_ok ? (ca_casing_int + ca_casing_ext > 4.2 ? "warn" : "ok") : "danger",
+      statusTxt: m1_ok ? `CUMPLE (FS=${fs_csg_bot.toFixed(2)})` : "FALLA COLAPSO",
+      selection: `API 5CT L80 Tipo 1 (≤ 22 HRC), 7" 29 lb/ft (t = 10,36 mm)`,
+      kpis: [
+        ["Espesor Nominal / Remanente", `10,36 mm → ${t_rem_csg_bot.toFixed(2)} mm (fondo) / ${t_rem_csg_top.toFixed(2)} mm (sup)`],
+        ["Sobreespesor Corrosión (20 a)", `Interno: ${ca_casing_int.toFixed(2)} mm | Externo C3: ${ca_casing_ext.toFixed(2)} mm`],
+        ["Resistencia al Colapso (API TR 5C3)", `Fondo: ${col_csg_bot.toFixed(0)} bar (FS ${fs_csg_bot.toFixed(2)}) | TOC: ${col_csg_top.toFixed(0)} bar (FS ${fs_csg_top.toFixed(2)})`],
+        ["Severidad SSC en Casing", `Región ${reg_bot} en fondo (${pH2S_bot_kPa.toFixed(1)} kPa) / Región ${reg_surf_des} en cabeza`]
+      ],
+      parts: [
+        ["A. Tramo Inferior Cementado (" + depth_toc + " m a " + depth_shoe + " m)", `API 5CT L80 Tipo 1 sin costura (≤ 22 HRC), 29 lb/ft. Protegido exteriormente por cemento alcalino; pared remanente resiste ${col_csg_bot.toFixed(0)} bar frente a 185 bar de diseño.`],
+        ["B. Tramo Superior Sin Cementar (0 m a " + depth_toc + " m)", depth_toc > 0 ? `API 5CT L80 Tipo 1, 29 lb/ft. Expuesto al acuífero C3 (${ext_env}); requiere dosificación anual de secuestrante de O₂ + biocida por punto M4.` : "Cementado hasta superficie (sin corrosión externa por acuífero)."]
+      ]
+    },
+    {
+      ...MODULES_META[1],
+      status: m2_severe_wear ? "warn" : "ok",
+      statusTxt: m2_severe_wear ? "DESGASTE SEVERO" : "ÓPTIMO (CRA/WC)",
+      selection: `API 11AX Émbolo 1 3/4" · Barril Acero Cromado / Latón NACE + Válvulas Carburo de Tungsteno`,
+      kpis: [
+        ["Condición en Succión (" + depth_pump + " m)", `P = ${p_pump} bar | T = ${temp_bot} °C | pCO₂ = ${pCO2_bot_bar.toFixed(2)} bar | pH₂S = ${pH2S_bot_kPa.toFixed(1)} kPa`],
+        ["Caudal Desplazado y Velocidad", `${q_design_m3d.toFixed(1)} m³/d (${q_design_bpd.toFixed(0)} bpd) | v media = ${v_linear_ms.toFixed(2)} m/s`],
+        ["Abrasión por Arena y Corrosión", `${solids} lb/1000 bbl | V sin inhibidor = ${v_raw_bot.toFixed(1)} mm/a → Diseño = ${v_des_bot.toFixed(2)} mm/a`],
+        ["Inyección Química en Succión", `Capilar 3/8" Alloy 625 descargando 50 ppm inhibidor (A = ${inhib_avail}%)`]
+      ],
+      parts: [
+        ["A. Barril (Camisa) y Pistón (Plunger 1 3/4\")", `Barril de acero de baja aleación con recubrimiento de cromo duro interno y pistón con aspersión térmica Ni-Cr-B (Spray Metal) para resistir ${solids} lb/1000 bbl de arena en Región ${reg_bot}.`],
+        ["B. Válvulas Viajera y Fija (Bola y Asiento)", `Carburo de Tungsteno sinterizado con ligante de Níquel (WC-Ni) o Carburo de Titanio; jaulas con estelita en guías.`],
+        ["C. Mandril de Anclaje, Pescante y Acoples", `Acero inoxidable martensítico o aleación Níquel-Cobre (Monel 400 / K-500) conforme a NACE MR0176 / ISO 15156.`]
+      ]
+    },
+    {
+      ...MODULES_META[2],
+      status: has_packer ? "ok" : "warn",
+      statusTxt: has_packer ? "AISLADO (C4 ACTIVO)" : "SIN PACKER (C2 LIBRE)",
+      selection: has_packer ? `Packer Recuperable API 11D1 Mandril L80-1 (≤ 22 HRC) + Empaque ${packer_elastomer}` : "Packer omitido (evaluar venteo de gas vs corrosión anular)",
+      kpis: [
+        ["Estado del Aislamiento Anular", has_packer ? `Asentado a ${depth_packer} m (Separa C2 abajo y C4 arriba)` : "Anular abierto: Gas húmedo C2 llega hasta el cabezal"],
+        ["Diferencial de Presión y Tensión", `ΔP = ${dp_packer_bar.toFixed(0)} bar | Tensión Ancla Tubing = 44 kN (10 000 lbf)`],
+        ["Fluido de Empaque (Corriente 4)", has_packer ? "Agua dulce tratada (Bisulfito amonio + Biocida THPS, pH 9,5–10,5)" : "No aplica (Sin fluido de empaque C4)"],
+        ["Compatibilidad Elastomérica", `${packer_elastomer} (Resiste H₂S y T = ${temp_bot} °C)`]
+      ],
+      parts: [
+        ["A. Cuerpo y Mandril Metálico", `Acero templado y revenido API 5CT L80 Tipo 1 o AISI 4140 (dureza controlada ≤ 22 HRC) resistente a SSC en Región ${reg_bot}.`],
+        ["B. Elemento de Empaque Elastomérico", `${packer_elastomer} de triple durómetro con anillos anti-extrusión de PTFE/PEEK para evitar descompresión explosiva (RGD).`],
+        ["C. Cuñas de Anclaje (Slips) y Ancla de Tubería", `Cuerpo L80-1 con insertos carburizados localizados protegidos galvánicamente; mantiene 44 kN de tensión axial para evitar pandeo (buckling) del tubing.`]
+      ]
+    },
+    {
+      ...MODULES_META[3],
+      status: m4_ok ? "ok" : "danger",
+      statusTxt: m4_ok ? `CUMPLE (CA=${ca_tbg_6yr.toFixed(2)} mm)` : "EXIGE LINER HDPE",
+      selection: m4_ok ? `API 5CT L80 Tipo 1 (≤ 22 HRC), 2 7/8" 6,5 lb/ft + Inhibidor A=${inhib_avail}%` : `API 5CT L80 Tipo 1 (2 7/8") + Liner Interno Termoplástico PEAD (HDPE)`,
+      kpis: [
+        ["Geometría y Espesor Nominal", `OD 2 7/8" (73,0 mm) | 6,5 lb/ft | t nom = 5,51 mm`],
+        ["Pérdida por Corrosión (6 a / 20 a)", `A 6 años: ${ca_tbg_6yr.toFixed(2)} mm (t rem = ${t_rem_tbg_6yr.toFixed(2)} mm) | A 20 años: ${ca_tbg_20yr.toFixed(2)} mm`],
+        ["Sensibilidad al Inhibidor (ISO 21457)", `V sin inhibidor = ${v_raw_bot.toFixed(1)} mm/a | Con A=${inhib_avail}% → V diseño = ${v_des_bot.toFixed(2)} mm/a`],
+        ["Umbral de Cambio a Liner HDPE", inhib_avail >= 97.5 ? `A = ${inhib_avail}% ≥ 97,5% (Opera con acero L80-1 inhibido)` : `¡Alerta! A = ${inhib_avail}% < 97,5% → Obligatorio Liner interno PEAD`]
+      ],
+      parts: [
+        ["A. Cuerpo de Tubería de Producción (Tubing)", `API 5CT L80 Tipo 1 sin costura (≤ 22 HRC), 2 7/8" 6,5 lb/ft (${needs_hdpe_liner ? 'CON revestimiento interno de polietileno de alta densidad HDPE por baja disponibilidad química' : 'protegido mediante inyección continua por capilar de fondo'}).`],
+        ["B. Acoples de Tubing (EUE 8rd)", `Mismo grado API 5CT L80 Tipo 1 (≤ 22 HRC) con bisel interno para mitigar turbulencia y desgaste por roce de cuplas de varilla.`],
+        ["C. Niple de Asiento (Seating Nipple a " + depth_pump + " m)", `Acero inoxidable martensítico L80 13Cr o AISI 4140 ≤ 22 HRC con espejo interno bruñido (Honed Bore) resistente a erosión local.`]
+      ]
+    },
+    {
+      ...MODULES_META[4],
+      status: m5_ok ? "ok" : "danger",
+      statusTxt: m5_ok ? `GRADO K (${goodman_K_pct.toFixed(0)}% Goodman)` : `FATIGA (${goodman_K_pct.toFixed(0)}%)`,
+      selection: `Varillas API 11B Grado K (AISI 46XX, ≤ 22 HRC) 7/8" + Acoples Clase SM + Barra Pulida 1 1/4"`,
+      kpis: [
+        ["Esfuerzo Axial Cíclico (Varilla 7/8\")", `σ máx = ${sigma_max_MPa.toFixed(0)} MPa (${pprl} kN) | σ mín = ${sigma_min_MPa.toFixed(0)} MPa (${mprl} kN)`],
+        ["Evaluación Goodman Modificado", `Grado C: ${goodman_C_pct.toFixed(0)}% (Sobrecargado) → Grado K: ${goodman_K_pct.toFixed(0)}% (${m5_ok ? 'Cumple' : 'Recalcular sarta'})`],
+        ["Ciclos Acumulados (6 años)", `${cycles_total_M.toFixed(1)} × 10⁶ ciclos a ${spm} SPM (Carrera ${stroke_in} in)`],
+        ["Barra Pulida (1 1/4\" en Prensaestopas)", `Esfuerzo máx ≈ ${(pprl * 1000 / 792).toFixed(0)} MPa | Alterna entre C1 y atmósfera ${atm_cat}`]
+      ],
+      parts: [
+        ["A. Sarta de Varillas y Pony Rods (7/8\")", `API 11B Grado K (aleación Ni-Mo AISI 46XX, dureza ≤ 22 HRC) resistente a corrosión-fatiga en salmuera ácida (el Grado C falla al ${goodman_C_pct.toFixed(0)}% de Goodman).`],
+        ["B. Acoples de Varilla (Couplings)", `API 11B Clase SM (Spray Metal) con recubrimiento duro de aleación base níquel (Ni-Cr-B-Si) sobre núcleo ≤ 22 HRC para resistir abrasión contra el tubing.`],
+        ["C. Barra Pulida (1 1/4\") y Acople", `AISI 4140 templado y revenido (≤ 22 HRC) con revestimiento por aspersión térmica de níquel (Ra ≤ 0,2 µm) para sellado dinámico en el prensaestopas.`]
+      ]
+    },
+    {
+      ...MODULES_META[5],
+      status: m6_ok ? "ok" : "danger",
+      statusTxt: `API 6A CLASE ${api6aClass.code}`,
+      selection: `API 6A 2000 psi Clase ${api6aClass.code} · Cuerpo AISI 4130 (≤ 22 HRC) + Inlay Alloy 625 en ranuras`,
+      kpis: [
+        ["Clase de Material API 6A", `Clase ${api6aClass.code} (${api6aClass.desc})`],
+        ["Presión de Diseño vs Nominal", `Diseño: ${p_head_des} bar (${(p_head_des * 14.504).toFixed(0)} psi) ≤ Nominal 2000 psi (138 bar)`],
+        ["Cargas en Colgadores (Hangers)", `Casing 7": 780 kN (Capacidad cuñas ≥ 1170 kN) | Tubing: 220 kN`],
+        ["Pasaje de Línea Capilar Química", `Adaptador con pasamuros continuo de alta presión para línea 3/8" Alloy 625`]
+      ],
+      parts: [
+        ["A. Carrete de Tubing y Adaptador (Spool)", `Acero de baja aleación forjado AISI 4130 templado y revenido (≤ 22 HRC, API 6A PSL 2, Temp. U/V) con recubrimiento exterior C5 de 240 µm.`],
+        ["B. Colgadores de Casing (Cuñas) y Mandril de Tubing", `AISI 4130 ≤ 22 HRC con sellos elastoméricos FKM/HNBR y cuello extendido con puerto para inyección química.`],
+        ["C. Ranuras de Anillo, Anillos R/RX y Espárragos", `Ranuras con soldadura de recargue (inlay) de Alloy 625; anillos octogonales en acero inoxidable 316L / Alloy 825 (≤ 22 HRC); espárragos ASTM A193 Gr. B7M y tuercas A194 Gr. 2HM (≤ 22 HRC).`]
+      ]
+    },
+    {
+      ...MODULES_META[6],
+      status: v_tree_ms <= v_erosional_ms ? "ok" : "warn",
+      statusTxt: `API 6A CLASE ${api6aClass.code}`,
+      selection: `Árbol API 6A 2 9/16" 2000 psi Clase ${api6aClass.code} + Kit Dieléctrico en Brida A2`,
+      kpis: [
+        ["Velocidad en Paso 2 9/16\" (65 mm)", `v real = ${v_tree_ms.toFixed(2)} m/s vs v erosional API RP 14E = ${v_erosional_ms.toFixed(1)} m/s`],
+        ["Condición en Cabeza de Pozo", `Operación: ${p_head_op} bar a ${temp_surf} °C | Cierre: ${p_head_des} bar (Región ${reg_surf_des})`],
+        ["Frontera A1 ↔ A2 (Brida Salida)", `Kit de aislamiento dieléctrico NACE SP0286 (Aísla protección catódica de A2)`],
+        ["Protección Atmosférica Exterior (C5)", `Tricapa Epóxico rico en Zn + Epóxico + Poliuretano alifático (240 µm, resiste 85 °C)`]
+      ],
+      parts: [
+        ["A. Cuerpos y Bonetes (Válvulas Maestra, Corona y Lateral)", `AISI 4130 forjado (≤ 22 HRC) API 6A Clase ${api6aClass.code}, con Te del árbol y Te de bombeo (Flow Tee) integradas.`],
+        ["B. Vástagos, Compuertas y Asientos (Trim CRA)", `Vástagos en precipitación endurecible UNS S17400 (17-4PH condición H1150M ≤ 33 HRC) o Inconel 718; compuertas y asientos en AISI 410 / 17-4PH con Stellite 6.`],
+        ["C. Brida de Salida Frontera A2 y Prensaestopas", `Brida con junta aislante fenólica/PTFE y manguitos dieléctricos en espárragos B7M; prensaestopas superior con empaques HNBR-Kevlar autolubricados.`]
+      ]
+    },
+    {
+      ...MODULES_META[7],
+      status: m8_pitting_risk ? "warn" : "ok",
+      statusTxt: m8_pitting_risk ? "EXIGE ALLOY 625/C276" : "ÓPTIMO (CRA)",
+      selection: `Válvula Aguja y Sello de Diafragma en Alloy 625 / C-276 (Descartado 316L por Cl⁻)`,
+      kpis: [
+        ["Riesgo de Picadura y SCC por Cloruros", `Cl⁻ = ${chlorides.toLocaleString()} mg/L a ${temp_surf} °C en fluido estancado (316SS sufre picadura)`],
+        ["Presión de Trabajo vs Escala", `P op = ${p_head_op} bar | P cierre = ${p_head_des} bar → Rango recomendado: 0 a 100 bar`],
+        ["Amortiguación Dinámica (BM)", `Requiere amortiguador de pulsaciones (Snubber) por bombeo a ${spm} SPM`],
+        ["Normativa de Instrumentación", `ASME B40.100 + MSS SP-99 + ISO 15156-3 (Límite T > 60 °C para 316L)`]
+      ],
+      parts: [
+        ["A. Válvula de Aguja de Bloqueo y Purga (Punto M5)", `Cuerpo y vástago macizos en Aleación de Níquel 625 (UNS N06625) o Hastelloy C-276, 10 000 psi; se descarta el acero inoxidable 316L porque supera el umbral de 60 °C con ${chlorides.toLocaleString()} mg/L de Cl⁻.`],
+        ["B. Sello de Diafragma Aislador (Chemical Seal)", `Membrana corrugada en Alloy C-276 o Tántalo soldada a cuerpo inferior de Alloy 625 con puerto de lavado.`],
+        ["C. Manómetro de Superficie (ASME B40.100)", `Caja hermética de seguridad (Solid Front) en inoxidable 316 con llenado de silicona/glicerina y amortiguador de pulsaciones (snubber).`]
+      ]
+    },
+    {
+      ...MODULES_META[8],
+      status: m9_ok ? "ok" : "danger",
+      statusTxt: "API 6A PR2 · PSL 2",
+      selection: `Válvula Compuerta Inversa Clase ${api6aClass.code} + Trim Carburo de Tungsteno + Actuador 1500 psi`,
+      kpis: [
+        ["Certificación y Nivel de Calidad", `API 6A PR2 (Ciclado riguroso) · Nivel PSL 2 · Clase ${api6aClass.code}`],
+        ["Presión del Circuito Hidráulico", `1500 psi (103 bar) de aceite mineral desde panel de control en cabeza`],
+        ["Modo de Falla Segura (Fail-Safe)", `Cierre automático por resorte ante alta/baja presión en línea A2`],
+        ["Resistencia a Erosión y H₂S", `pH₂S = ${pH2S_surf_des_kPa.toFixed(1)} kPa (Región ${reg_surf_des}) | Arena = ${solids} lb/1000 bbl`]
+      ],
+      parts: [
+        ["A. Cuerpo y Bonete Mojados por Corriente 1", `Acero forjado AISI 4130 (≤ 22 HRC) con alojamiento de sellos de vástago en recubrimiento Alloy 625.`],
+        ["B. Vástago, Compuerta Inversa y Asientos Dinámicos", `Vástago en Inconel 718 / 17-4PH H1150M; compuerta y asientos con recubrimiento duro (HVOF) de Carburo de Tungsteno o Stellite 6 para corte limpio bajo flujo con arena.`],
+        ["C. Actuador Hidráulico de Superficie (Corriente 5)", `Cilindro y carcasa en acero al carbono con recubrimiento epóxico-poliuretano C5 (240 µm), resorte helicoidal protegido y venteo con arrestallamas en 316L.`]
+      ]
+    },
+    {
+      ...MODULES_META[9],
+      status: m10_erosion_warn ? "warn" : "ok",
+      statusTxt: dp_choke_bar > 0 ? `ΔP = ${dp_choke_bar.toFixed(0)} bar (${v_jet_choke_ms.toFixed(0)} m/s)` : "PASO PLENO (ΔP=0)",
+      selection: `Portachoque AISI 4130 (≤ 22 HRC) + Bean Reductor de Carburo de Tungsteno Sólido / Si₃N₄`,
+      kpis: [
+        ["Caída de Presión en Estrangulador", `De ${p_head_op} bar (Árbol) a ${p_out_a2} bar (Línea A2) → ΔP = ${dp_choke_bar.toFixed(1)} bar`],
+        ["Velocidad de Chorro en Vena Contracta", `v jet ≈ ${v_jet_choke_ms.toFixed(1)} m/s (Impacto directo con ${solids} lb/1000 bbl de arena)`],
+        ["Criterio de Instalación en Pozo BM", dp_choke_bar <= 10 ? "ΔP ≤ 10 bar: Opcional usar portachoque con niple de paso pleno" : "ΔP > 10 bar: Estrangulación activa requerida"],
+        ["Severidad de Erosión-Corrosión", `Sinergia crítica entre turbulencia extrema, CO₂ (${pCO2_surf_op_bar.toFixed(2)} bar) y arena`]
+      ],
+      parts: [
+        ["A. Cuerpo del Portachoque (Choke Body)", `AISI 4130 forjado (≤ 22 HRC) API 6A Clase ${api6aClass.code}, con camisa protectora de desgaste aguas abajo en acero inoxidable endurecido.`],
+        ["B. Orificio Restrictor / Bean (Trim de Erosión)", `Carburo de Tungsteno sólido sinterizado con ligante de Níquel (WC-Ni) o cerámica avanzada de Nitruro de Silicio (Si₃N₄) inmune al corte por arena a ${v_jet_choke_ms.toFixed(0)} m/s.`],
+        ["C. Bonete, Vástago y Sellos", `Vástago en Inconel 718 / S17400 con empaques FKM/PTFE anti-extrusión y tapón de venteo de seguridad.`]
+      ]
+    }
+  ];
+
+  // Guardar estado global y actualizar UI
+  lastComputedSystem = {
+    inputs: {
+      p_pump, p_head_des, p_head_op, p_out_a2, temp_bot, temp_surf,
+      y_co2, y_h2s, pH, chlorides, solids, bsw,
+      inhib_avail, v_inhib, wet_factor, ext_env, v_ext_eff, has_packer, atm_cat,
+      depth_shoe, depth_pump, depth_packer, depth_toc, spm, stroke_in, pprl, mprl, life_perm, life_rep
+    },
+    calc: {
+      pCO2_bot_bar, pCO2_bot_psi, pH2S_bot_kPa, pH2S_bot_psi, reg_bot,
+      pCO2_surf_op_bar, pH2S_surf_op_kPa, reg_surf_op,
+      pCO2_surf_des_bar, pCO2_surf_des_psi, pH2S_surf_des_kPa, pH2S_surf_des_psi, reg_surf_des,
+      ratio_co2_h2s, v_raw_bot, v_raw_surf, v_des_bot, v_des_surf, v_des_casing_int,
+      ca_casing_int, ca_casing_ext, q_design_m3d, q_design_bpd, v_linear_ms,
+      sigma_max_MPa, sigma_min_MPa, goodman_C_pct, goodman_K_pct, cycles_total_M,
+      api6aClass, v_tree_ms, v_erosional_ms, dp_choke_bar, v_jet_choke_ms, needs_hdpe_liner
+    },
+    modules: modulesComputed
+  };
+
+  // Actualizar KPIs globales y Banner de Veredicto
+  updateGlobalUI(lastComputedSystem);
+  // Dibujar el gran esquema SVG interactivo con flujo reactivo
+  drawMasterSystemSVG(lastComputedSystem);
+  // Actualizar inspector del módulo activo y tabla de los 10 módulos
+  renderModulePillsAndTable(lastComputedSystem);
+  syncGlobalWellStreamState(lastComputedSystem);
+  renderModuleInspector(activeModuleId);
+}
+
+// ============================================================================
+// 5. ACTUALIZACIÓN DE INTERFAZ GLOBAL, TABLA E INSPECTOR DE MÓDULOS
+// ============================================================================
+function updateGlobalUI(sys) {
+  const { inputs, calc, modules } = sys;
+  const nDanger = modules.filter(m => m.status === "danger").length;
+  const nWarn = modules.filter(m => m.status === "warn").length;
+
+  const vd = document.getElementById("verdict");
+  if (nDanger === 0 && nWarn === 0) {
+    vd.className = "verdict ok";
+  } else if (nDanger === 0) {
+    vd.className = "verdict warn";
+  } else {
+    vd.className = "verdict bad";
+  }
+
+  vd.innerHTML = `
+    <div>
+      <span>Severidad SSC (Fondo / Cabezal)</span>
+      <strong>Región ${calc.reg_bot} / Región ${calc.reg_surf_des}</strong>
+    </div>
+    <div>
+      <span>Tasa Diseño C1 (Inhib. ${inputs.inhib_avail}%)</span>
+      <strong>${calc.v_des_bot.toFixed(2)} mm/a <small style="font-weight:400;color:var(--mut)">(sin inh: ${calc.v_raw_bot.toFixed(1)})</small></strong>
+    </div>
+    <div>
+      <span>Tubing 2 7/8" y Varillas 7/8"</span>
+      <strong>${calc.needs_hdpe_liner ? "Exige Liner PEAD" : "L80-1 Inhibido"} · Gr. K (${calc.goodman_K_pct.toFixed(0)}%)</strong>
+    </div>
+    <div>
+      <span>Cabezal y Árbol (API 6A)</span>
+      <strong>Clase ${calc.api6aClass.code} (2000 psi ≤ 22 HRC)</strong>
+    </div>
+    <div>
+      <span>Integridad de los 10 Módulos</span>
+      <strong>${10 - nDanger - nWarn} Óptimos · ${nWarn} Alertas · ${nDanger} Críticos</strong>
+    </div>
+  `;
+}
+
+function renderModulePillsAndTable(sys) {
+  const pillsBar = document.getElementById("mod_pills_bar");
+  pillsBar.innerHTML = sys.modules.map(m => `
+    <button type="button" class="mod-pill ${m.id === activeModuleId ? 'active' : ''}" onclick="handleModuleClick(${m.id})" title="${m.name} (${m.file})">
+      <span><strong>${m.code}</strong> ${m.name.split(" ")[0]}</span>
+      <i class="dot ${m.status}"></i>
+    </button>
+  `).join("");
+
+  const tbody = document.getElementById("modules_tbody");
+  tbody.innerHTML = sys.modules.map(m => {
+    return `
+      <tr class="${m.id === activeModuleId ? 'active-row' : ''}" onclick="handleModuleClick(${m.id})">
+        <td><strong>${m.code}</strong></td>
+        <td>
+          <strong>${m.name}</strong>
+          <div class="mfile">${m.file}</div>
+          <div class="mmeta"><span class="tag info">${m.streams}</span><span style="font-size:.74rem;color:var(--mut)">${m.location}</span></div>
+          <div class="mnorm">${m.norms}</div>
+        </td>
+        <td>${m.selection}</td>
+        <td><span class="tag ${m.status}">${m.statusTxt}</span></td>
+        <td>
+          <button type="button" class="btn sec" style="padding:4px 8px;font-size:.72rem" onclick="event.stopPropagation(); openModuleViewer(${m.id})">
+            Abrir ↗
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderModuleInspector(modId) {
+  if (!lastComputedSystem || !document.getElementById("module_inspector")) return;
+  const m = lastComputedSystem.modules.find(x => x.id === modId) || lastComputedSystem.modules[0];
+  const targetUrl = moduleUrl(m);
+
+
+  document.getElementById("module_inspector").innerHTML = `
+    <div class="inspector-head">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="tag info">${m.code} · ${m.location}</span>
+          <span class="tag ${m.status}">${m.statusTxt}</span>
+          <span style="font-size:.76rem;color:var(--mut)">Corrientes: <strong>${m.streams}</strong></span>
+        </div>
+        <h3 style="margin-top:4px">${m.id}. ${m.name}</h3>
+        <div class="file-chip">Archivo: ${m.file}</div>
+        <p style="font-size:.8rem;color:var(--mut);margin-top:5px">${m.role} — <strong>Normas:</strong> ${m.norms}</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <button type="button" class="btn accent" onclick="openModuleViewer(${m.id})">
+          Abrir Simulador de ${m.code} (Visor / Pestaña)
+        </button>
+        <a class="btn sec" href="${targetUrl}" target="_blank" rel="noopener" style="font-size:.74rem">
+          Abrir ${m.file} en pestaña nueva ↗
+        </a>
+      </div>
+    </div>
+
+    <div class="kpi-row" style="margin-bottom:10px">
+      ${m.kpis.map(([k, v]) => `
+        <div class="kpi">
+          <div class="lbl">${k}</div>
+          <div class="val" style="font-size:.86rem">${v}</div>
+        </div>
+      `).join("")}
+    </div>
+
+    <div>
+      ${m.parts.map(([title, desc]) => `
+        <div class="section-box">
+          <h4><span>${title}</span></h4>
+          <p>${desc}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+// ============================================================================
+// 6. ESQUEMA VECTORIAL INTEGRAL INTERACTIVO (SUBSUELO + SUPERFICIE + FLUJO)
+// ============================================================================
+function drawMasterSystemSVG(sys) {
+  const svg = document.getElementById("systemSvg");
+  const { inputs, calc, modules } = sys;
+
+  // Dinámica cromática del fluido C1 según Región SSC ISO 15156-2 y CO2
+  let c1Top = "#d99b26", c1Bot = "#9a5b13", c1Glow = "#f59e0b", c1Name = "Dulce (Región 0)";
+  if (calc.reg_bot === 0) {
+    if (calc.pCO2_bot_bar >= 1.5) {
+      c1Top = "#e07a2e"; c1Bot = "#8f3914"; c1Glow = "#f97316"; c1Name = "Dulce CO₂ Activo";
+    }
+  } else if (calc.reg_bot === 1) {
+    c1Top = "#b8b42d"; c1Bot = "#656314"; c1Glow = "#eab308"; c1Name = "Amargo Leve (Región 1)";
+  } else if (calc.reg_bot === 2) {
+    c1Top = "#e68a2e"; c1Bot = "#8c3b14"; c1Glow = "#f97316"; c1Name = "Amargo Medio (Región 2)";
+  } else {
+    c1Top = "#ef5350"; c1Bot = "#7f1d1d"; c1Glow = "#ef4444"; c1Name = "Amargo Severo (Región 3)";
+  }
+
+  // Actualizar leyenda cromática
+  const legSw = document.getElementById("leg_c1_sw");
+  const legTxt = document.getElementById("leg_c1_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${c1Top}, ${c1Bot})`;
+    legTxt.textContent = `Corriente 1 (C1): ${c1Name} | BSW ${inputs.bsw}% | Arena ${inputs.solids} lb/Mbbl`;
+  }
+  document.getElementById("flow_badge").textContent = `${c1Name} · Q=${calc.q_design_m3d.toFixed(0)} m³/d`;
+
+  // Velocidades de animación reactivas a SPM, presión y velocidad en choque
+  const flowDur = Math.max(0.65, 2.5 - (inputs.spm / 12) * 1.4).toFixed(2);
+  const rodCycleDur = Math.max(0.8, (60 / Math.max(1, inputs.spm)) * 0.35).toFixed(2);
+  const jetDur = Math.max(0.28, 1.1 - Math.min(0.8, calc.dp_choke_bar / 40)).toFixed(2);
+  const waterOp = Math.min(0.9, Math.max(0.15, inputs.bsw / 100)).toFixed(2);
+  const inhibOp = ((inputs.inhib_avail / 100) * 0.9).toFixed(2);
+  const rCo2 = (1.5 + Math.min(2.2, inputs.y_co2 / 3)).toFixed(1);
+  const rH2s = (1.4 + Math.min(2.5, inputs.y_h2s * 4)).toFixed(1);
+  const opH2s = inputs.y_h2s > 0.001 ? Math.min(0.95, 0.4 + inputs.y_h2s * 1.2).toFixed(2) : "0";
+
+  // Coordenadas maestras del esquema (viewBox 0 0 760 900)
+  // - Superficie: y = 38 a 335
+  // - Línea de suelo (0 m): y = 335
+  // - Subsuelo: y = 335 (0 m) a y = 855 (depth_shoe)
+  const surfY = 335;
+  const botY = 855;
+  const wellH = botY - surfY;
+  const cx = 250; // Eje central del pozo vertical
+  const yDepth = (m) => surfY + Math.min(1, Math.max(0, m / Math.max(100, inputs.depth_shoe))) * wellH;
+
+  const tocY = yDepth(inputs.depth_toc);
+  const pkrY = yDepth(inputs.depth_packer);
+  const pmpY = yDepth(inputs.depth_pump);
+
+  // Anchos radiales en subsuelo
+  const csgHw = 56; // Casing 7"
+  const csgL = cx - csgHw, csgR = cx + csgHw;
+  const tbgHw = 20; // Tubing 2 7/8"
+  const tbgL = cx - tbgHw, tbgR = cx + tbgHw;
+  const cemW = 28;  // Anular externo C3 / Cemento
+
+  // Función auxiliar para color de estado de cada módulo
+  const stColor = (id) => {
+    const m = modules[id - 1];
+    if (!m) return "var(--ok)";
+    return m.status === "danger" ? "var(--bad)" : (m.status === "warn" ? "var(--warn)" : "var(--ok)");
+  };
+  const isSel = (id) => id === activeModuleId ? "selected-mod" : "";
+
+  // Escala graduada de profundidad a la izquierda (x = 58)
+  const stepM = [100, 200, 250, 500].find(s => inputs.depth_shoe / s <= 10) || 500;
+  let depthTicks = "";
+  for (let m = 0; m <= inputs.depth_shoe; m += stepM) {
+    const ym = yDepth(m);
+    depthTicks += `
+      <line x1="62" x2="70" y1="${ym}" y2="${ym}" stroke="var(--mut)" stroke-width="1"/>
+      <text x="58" y="${ym + 3}" text-anchor="end" style="font:10px var(--mono);fill:var(--mut)">${m}m</text>
+    `;
+  }
+
+  svg.innerHTML = `
+    <defs>
+      <!-- Gradiente Dinámico del Fluido Producido (Corriente 1) -->
+      <linearGradient id="c1GradVert" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${c1Bot}" stop-opacity="0.95"/>
+        <stop offset="55%" stop-color="${c1Top}" stop-opacity="0.86"/>
+        <stop offset="100%" stop-color="${inputs.bsw >= 65 ? '#0284c7' : c1Top}" stop-opacity="0.82"/>
+      </linearGradient>
+      <linearGradient id="c1GradHoriz" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${c1Top}" stop-opacity="0.88"/>
+        <stop offset="60%" stop-color="${inputs.bsw >= 65 ? '#0ea5e9' : c1Top}" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="${c1Bot}" stop-opacity="0.92"/>
+      </linearGradient>
+
+      <!-- Patrón de Flujo Vertical Ascendente (Chevrons + Vetas de Agua + Burbujas CO2/H2S) -->
+      <pattern id="patFlowUp" width="40" height="52" patternUnits="userSpaceOnUse">
+        <path d="M 8 46 C 5 32, 11 18, 8 4" stroke="#38bdf8" stroke-width="2" fill="none" opacity="${waterOp}"/>
+        <path d="M 32 48 C 35 34, 29 18, 32 4" stroke="#0ea5e9" stroke-width="1.6" fill="none" opacity="${waterOp}"/>
+        <path d="M 15 32 L 20 24 L 25 32" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <path d="M 16 14 L 20 8 L 24 14" stroke="${c1Glow}" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.75"/>
+        <!-- Burbujas de CO2 (Blanco/Cian) -->
+        <circle cx="12" cy="40" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="0.8"/>
+        <circle cx="27" cy="18" r="${(rCo2 * 0.8).toFixed(1)}" fill="#e0f2fe" opacity="0.75"/>
+        <!-- Burbujas de H2S (Amarillo Azufre) -->
+        <circle cx="29" cy="42" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.8" opacity="${opH2s}"/>
+        <circle cx="13" cy="20" r="${(rH2s * 0.82).toFixed(1)}" fill="#bef264" stroke="#84cc16" stroke-width="0.7" opacity="${opH2s}"/>
+        <!-- Partículas de Arena (Sólidos) -->
+        ${inputs.solids > 5 ? `<circle cx="20" cy="45" r="1.3" fill="#fcd34d" opacity="0.85"/><circle cx="23" cy="27" r="1.1" fill="#d97706" opacity="0.85"/>` : ""}
+      </pattern>
+
+      <!-- Patrón de Flujo Horizontal Derecha (Brazo Lateral SSV -> Choque -> A2) -->
+      <pattern id="patFlowRight" width="52" height="28" patternUnits="userSpaceOnUse">
+        <path d="M 4 7 Q 26 4 48 7" stroke="#38bdf8" stroke-width="1.8" fill="none" opacity="${waterOp}"/>
+        <path d="M 6 21 Q 26 24 46 21" stroke="${c1Glow}" stroke-width="1.4" fill="none" stroke-dasharray="6 4" opacity="0.7"/>
+        <path d="M 20 9 L 28 14 L 20 19" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.7"/>
+        <path d="M 38 10 L 44 14 L 38 18" stroke="#fde047" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.75"/>
+        <circle cx="12" cy="14" r="${(rCo2 * 0.8).toFixed(1)}" fill="#f8fafc" opacity="0.8"/>
+        <circle cx="33" cy="8" r="${(rH2s * 0.8).toFixed(1)}" fill="#fde047" opacity="${opH2s}"/>
+      </pattern>
+
+      <!-- Patrón de Fluido de Empaque C4 (Anular Superior 0 a 1500 m) -->
+      <pattern id="patPackerC4" width="24" height="24" patternUnits="userSpaceOnUse">
+        <rect width="24" height="24" fill="#065f46" opacity="0.32"/>
+        <path d="M 3 12 Q 12 7 21 12" stroke="#34d399" stroke-width="1.1" fill="none" opacity="0.5"/>
+      </pattern>
+
+      <!-- Patrón de Gas Húmedo Anular C2 (Bajo el Packer) -->
+      <pattern id="patGasC2" width="24" height="36" patternUnits="userSpaceOnUse">
+        <rect width="24" height="36" fill="#713f12" opacity="0.28"/>
+        <circle cx="8" cy="26" r="2" fill="#fde047" opacity="0.55"/>
+        <circle cx="17" cy="12" r="1.6" fill="#bae6fd" opacity="0.5"/>
+      </pattern>
+
+      <!-- Patrón de Acuífero Somero C3 (0 a TOC 800 m) y Cemento (TOC a 2300 m) -->
+      <pattern id="patAquiferC3" width="18" height="18" patternUnits="userSpaceOnUse">
+        <rect width="18" height="18" fill="${inputs.ext_env === 'aerated' ? '#0284c7' : (inputs.ext_env === 'corrosive' ? '#ea580c' : '#475569')}" opacity="0.32"/>
+        <path d="M 2 9 Q 9 4 16 9" stroke="#7dd3fc" stroke-width="1" fill="none" opacity="0.55"/>
+      </pattern>
+      <pattern id="patCement" width="14" height="14" patternUnits="userSpaceOnUse">
+        <rect width="14" height="14" fill="#475569" opacity="0.45"/>
+        <circle cx="4" cy="4" r="1" fill="#cbd5e1" opacity="0.45"/>
+        <circle cx="10" cy="10" r="1.2" fill="#1e293b" opacity="0.5"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #systemSvg text { font-family: var(--mono); fill: var(--tx); }
+      #systemSvg .mut { fill: var(--mut); font-size: 9.5px; }
+      #systemSvg .mod-hitbox { fill: transparent; stroke: transparent; stroke-width: 1.5px; rx: 6px; transition: all .15s; }
+      #systemSvg .svg-mod:hover .mod-hitbox { stroke: var(--acc); stroke-dasharray: 4 2; fill: rgba(140,196,214,0.07); }
+      @keyframes animUp { from { transform: translateY(0px); } to { transform: translateY(-52px); } }
+      @keyframes animRight { from { transform: translateX(0px); } to { transform: translateX(52px); } }
+      @keyframes animGasC2 { from { transform: translateY(0px); } to { transform: translateY(-36px); } }
+      @keyframes animRod { 0%, 100% { transform: translateY(-7px); } 50% { transform: translateY(7px); } }
+      @keyframes animInflow { 0%, 100% { opacity: 0.35; transform: translateX(0px); } 50% { opacity: 1; transform: translateX(4px); } }
+      @keyframes animInflowR { 0%, 100% { opacity: 0.35; transform: translateX(0px); } 50% { opacity: 1; transform: translateX(-4px); } }
+      .flow-v { animation: animUp ${flowDur}s linear infinite; }
+      .flow-h { animation: animRight ${flowDur}s linear infinite; }
+      .flow-jet { animation: animRight ${jetDur}s linear infinite; }
+      .flow-c2 { animation: animGasC2 ${(flowDur * 1.3).toFixed(2)}s linear infinite; }
+      .rod-recip { animation: animRod ${rodCycleDur}s ease-in-out infinite; }
+      .inflow-l { animation: animInflow 1.4s ease-in-out infinite; }
+      .inflow-r { animation: animInflowR 1.4s ease-in-out infinite; }
+    </style>
+
+    <!-- ================================================================== -->
+    <!-- ZONA DE FONDO Y SUBSUELO (y = 335 a 855)                           -->
+    <!-- ================================================================== -->
+    <!-- Fondo de Atmósfera Exterior C5 (Superficie y = 0 a 335) -->
+    <rect x="0" y="0" width="760" height="${surfY}" fill="var(--panel)" opacity="0.35"/>
+    <text x="14" y="22" style="font:700 10.5px var(--head);fill:var(--acc);letter-spacing:.04em">SUPERFICIE · CORRIENTE 5 (ATMÓSFERA ISO 9223 ${inputs.atm_cat}) · CABEZAL, ÁRBOL Y LÍNEA LATERAL</text>
+    <text x="742" y="${surfY + 18}" text-anchor="end" style="font:700 10.5px var(--head);fill:var(--warn);letter-spacing:.04em;paint-order:stroke;stroke:var(--sunk);stroke-width:3px;stroke-linejoin:round">SUBSUELO · COMPLETAMIENTO VERTICAL (0 m a ${inputs.depth_shoe} m)</text>
+
+    <!-- Línea de Nivel del Suelo (0 m) -->
+    <line x1="10" x2="750" y1="${surfY}" y2="${surfY}" stroke="var(--tx)" stroke-width="2"/>
+    <text x="742" y="${surfY - 6}" text-anchor="end" class="mut">Nivel de Superficie (0 m) — Barrancabermeja</text>
+
+    <!-- Escala graduada de profundidad (m) -->
+    <line x1="70" x2="70" y1="${surfY}" y2="${botY}" stroke="var(--mut)" stroke-width="1"/>
+    ${depthTicks}
+
+    <!-- Anular Externo C3 (Acuífero Somero 0 a TOC) y Cemento (TOC a Zapata) -->
+    ${inputs.depth_toc > 0 ? `
+      <rect x="${csgL - cemW}" y="${surfY}" width="${cemW}" height="${tocY - surfY}" fill="url(#patAquiferC3)"/>
+      <rect x="${csgR}" y="${surfY}" width="${cemW}" height="${tocY - surfY}" fill="url(#patAquiferC3)"/>
+      <text x="${csgL - cemW - 6}" y="${(surfY + tocY) / 2}" text-anchor="end" style="font-size:9.5px;fill:#38bdf8">C3 Acuífero (O₂)</text>
+    ` : ""}
+    <rect x="${csgL - cemW}" y="${tocY}" width="${cemW}" height="${botY - tocY}" fill="url(#patCement)"/>
+    <rect x="${csgR}" y="${tocY}" width="${cemW}" height="${botY - tocY}" fill="url(#patCement)"/>
+    <line x1="${csgL - cemW - 8}" x2="${csgR + cemW + 8}" y1="${tocY}" y2="${tocY}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="5 3"/>
+    <text x="${csgL - cemW - 6}" y="${tocY - 4}" text-anchor="end" style="font-size:9.5px;fill:var(--warn);font-weight:700">TOC ${inputs.depth_toc} m</text>
+
+    <!-- Espacio Anular Interno (C4 arriba del Packer / C2 debajo del Packer) -->
+    ${inputs.has_packer ? `
+      <rect x="${csgL}" y="${surfY}" width="${tbgL - csgL}" height="${pkrY - surfY}" fill="url(#patPackerC4)"/>
+      <rect x="${tbgR}" y="${surfY}" width="${csgR - tbgR}" height="${pkrY - surfY}" fill="url(#patPackerC4)"/>
+      <g style="overflow:hidden">
+        <rect x="${csgL}" y="${pkrY}" width="${tbgL - csgL}" height="${pmpY - pkrY}" fill="url(#patGasC2)"/>
+        <rect x="${tbgR}" y="${pkrY}" width="${csgR - tbgR}" height="${pmpY - pkrY}" fill="url(#patGasC2)"/>
+      </g>
+    ` : `
+      <rect x="${csgL}" y="${surfY}" width="${tbgL - csgL}" height="${pmpY - surfY}" fill="url(#patGasC2)"/>
+      <rect x="${tbgR}" y="${surfY}" width="${csgR - tbgR}" height="${pmpY - surfY}" fill="url(#patGasC2)"/>
+    `}
+
+    <!-- Fluido Producido C1 en el Fondo del Casing (de Zapata 2300 m a Succión de Bomba 1850 m) -->
+    <svg x="${csgL}" y="${pmpY}" width="${2 * csgHw}" height="${botY - pmpY}" style="overflow:hidden">
+      <rect width="100%" height="100%" fill="url(#c1GradVert)"/>
+      <rect width="100%" height="160%" fill="url(#patFlowUp)" class="flow-v"/>
+    </svg>
+
+    <!-- Flechas de Entrada del Yacimiento (Cañoneos en Fondo) -->
+    <g class="inflow-l" stroke="${c1Glow}" stroke-width="2" fill="none">
+      <path d="M ${csgL - 24} ${botY - 38} L ${csgL + 8} ${botY - 38} M ${csgL + 2} ${botY - 43} L ${csgL + 9} ${botY - 38} L ${csgL + 2} ${botY - 33}"/>
+      <path d="M ${csgL - 24} ${botY - 18} L ${csgL + 8} ${botY - 18} M ${csgL + 2} ${botY - 23} L ${csgL + 9} ${botY - 18} L ${csgL + 2} ${botY - 13}"/>
+    </g>
+    <g class="inflow-r" stroke="${c1Glow}" stroke-width="2" fill="none">
+      <path d="M ${csgR + 24} ${botY - 38} L ${csgR - 8} ${botY - 38} M ${csgR - 2} ${botY - 43} L ${csgR - 9} ${botY - 38} L ${csgR - 2} ${botY - 33}"/>
+      <path d="M ${csgR + 24} ${botY - 18} L ${csgR - 8} ${botY - 18} M ${csgR - 2} ${botY - 23} L ${csgR - 9} ${botY - 18} L ${csgR - 2} ${botY - 13}"/>
+    </g>
+
+    <!-- Fluido Producido C1 Ascendiendo por el Tubing (1850 m -> 0 m -> Árbol -> Te Lateral) -->
+    <svg x="${tbgL}" y="128" width="${2 * tbgHw}" height="${pmpY - 128}" style="overflow:hidden">
+      <rect width="100%" height="100%" fill="url(#c1GradVert)"/>
+      <rect width="100%" height="120%" fill="url(#patFlowUp)" class="flow-v"/>
+      <!-- Película protectora de inhibidor adherida a la cara interna del tubing -->
+      <line x1="2" x2="2" y1="0" y2="100%" stroke="#22d3ee" stroke-width="2.2" opacity="${inhibOp}"/>
+      <line x1="${2 * tbgHw - 2}" x2="${2 * tbgHw - 2}" y1="0" y2="100%" stroke="#22d3ee" stroke-width="2.2" opacity="${inhibOp}"/>
+    </svg>
+
+    <!-- Fluido Producido C1 en el Brazo Lateral de Superficie (Te -> SSV -> Choque -> Salida A2) -->
+    <svg x="${tbgR}" y="172" width="${705 - tbgR}" height="28" style="overflow:hidden">
+      <rect width="100%" height="100%" fill="url(#c1GradHoriz)"/>
+      <rect x="-52" width="120%" height="100%" fill="url(#patFlowRight)" class="flow-h"/>
+    </svg>
+    <!-- Chorro Acelerado (Vena Contracta) aguas abajo del Choque (x = 575 a 705) -->
+    <svg x="578" y="175" width="126" height="22" style="overflow:hidden">
+      <rect x="-52" width="150%" height="100%" fill="url(#patFlowRight)" class="flow-jet"/>
+      <line x1="0" y1="11" x2="125" y2="11" stroke="#fef08a" stroke-width="1.8" stroke-dasharray="8 4" class="flow-jet"/>
+    </svg>
+
+    <!-- Línea Capilar de Inyección Química 3/8" Alloy 625 (de Cabezal a Succión de Bomba 1850 m) -->
+    <path d="M ${csgL - 18} 310 L ${tbgL - 7} 325 L ${tbgL - 7} ${pmpY + 12} L ${cx - 8} ${pmpY + 12}" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-dasharray="5 2"/>
+    <circle cx="${cx - 8}" cy="${pmpY + 12}" r="3.5" fill="#22d3ee"/>
+    <text x="10" y="310" style="font-size:9px;fill:#22d3ee;font-weight:700;paint-order:stroke;stroke:var(--sunk);stroke-width:3px;stroke-linejoin:round">Capilar 3/8" Alloy 625</text>
+    <text x="10" y="321" style="font-size:9px;fill:#22d3ee;font-weight:700;paint-order:stroke;stroke:var(--sunk);stroke-width:3px;stroke-linejoin:round">(Inhibidor)</text>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 1: CASING DE PRODUCCIÓN 7" (2300 m a 0 m)                   -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(1)}" data-mod="1" onclick="handleModuleClick(1)">
+      <title>Módulo 1: Casing de Producción 7" — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${csgL - 14}" y="${surfY + 4}" width="${2 * csgHw + 28}" height="${wellH - 4}"/>
+      <!-- Paredes de acero del Casing 7" L80-1 -->
+      <rect x="${csgL - 7}" y="${surfY}" width="7" height="${wellH}" fill="var(--acc)" stroke="#0f172a" stroke-width="1"/>
+      <rect x="${csgR}" y="${surfY}" width="7" height="${wellH}" fill="var(--acc)" stroke="#0f172a" stroke-width="1"/>
+      <!-- Zapata guía a 2300 m -->
+      <polygon points="${csgL - 16},${botY} ${csgL},${botY} ${csgL},${botY - 18}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+      <polygon points="${csgR + 16},${botY} ${csgR},${botY} ${csgR},${botY - 18}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+      <!-- Etiqueta interactiva M1 -->
+      <g class="mod-badge" transform="translate(${csgR + cemW + 14}, ${botY - 34})">
+        <rect width="235" height="32" rx="5" fill="var(--panel)" stroke="${stColor(1)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(1)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M1] Casing Producción 7"</text>
+        <text x="24" y="26" class="mut">L80-1 29 lb/ft · Zapata ${inputs.depth_shoe} m</text>
+      </g>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 4: TUBING 2 7/8" Y NIPLE DE ASIENTO (1850 m a 0 m)          -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(4)}" data-mod="4" onclick="handleModuleClick(4)">
+      <title>Módulo 4: Tubing 2 7/8" y Niple de Asiento — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${tbgL - 8}" y="${surfY + 12}" width="${2 * tbgHw + 16}" height="${pmpY - surfY - 18}"/>
+      <!-- Paredes del Tubing 2 7/8" -->
+      <rect x="${tbgL - 4}" y="${surfY}" width="4" height="${pmpY - surfY}" fill="#cbd5e1"/>
+      <rect x="${tbgR}" y="${surfY}" width="4" height="${pmpY - surfY}" fill="#cbd5e1"/>
+      <!-- Niple de asiento a 1850 m -->
+      <rect x="${tbgL - 7}" y="${pmpY - 10}" width="10" height="16" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <rect x="${tbgR - 3}" y="${pmpY - 10}" width="10" height="16" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <!-- Etiqueta interactiva M4 -->
+      <g class="mod-badge" transform="translate(${csgR + cemW + 14}, ${surfY + 85})">
+        <rect width="235" height="32" rx="5" fill="var(--panel)" stroke="${stColor(4)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(4)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M4] Tubing 2 7/8" y Niple</text>
+        <text x="24" y="26" class="mut">${calc.needs_hdpe_liner ? 'Exige Liner PEAD' : 'L80-1 6,5 lb/ft Inhibido'} · 0-${inputs.depth_pump}m</text>
+      </g>
+      <line x1="${tbgR + 4}" y1="${surfY + 101}" x2="${csgR + cemW + 14}" y2="${surfY + 101}" stroke="${stColor(4)}" stroke-width="1.2" stroke-dasharray="3 2"/>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 3: PACKER Y ANCLA DE TUBERÍA (1500 m)                       -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(3)}" data-mod="3" onclick="handleModuleClick(3)">
+      <title>Módulo 3: Packer y Ancla de Tubería (${inputs.depth_packer} m) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${csgL - 6}" y="${pkrY - 22}" width="${2 * csgHw + 12}" height="58"/>
+      ${inputs.has_packer ? `
+        <!-- Elementos elastoméricos HNBR/FKM y cuñas del Packer -->
+        <rect x="${csgL}" y="${pkrY - 12}" width="${tbgL - csgL - 4}" height="24" fill="var(--warn)" stroke="var(--tx)" stroke-width="1.2"/>
+        <rect x="${tbgR + 4}" y="${pkrY - 12}" width="${csgR - tbgR - 4}" height="24" fill="var(--warn)" stroke="var(--tx)" stroke-width="1.2"/>
+        <line x1="${csgL}" x2="${tbgL - 4}" y1="${pkrY - 4}" y2="${pkrY - 4}" stroke="#101316" stroke-width="2"/>
+        <line x1="${csgL}" x2="${tbgL - 4}" y1="${pkrY + 4}" y2="${pkrY + 4}" stroke="#101316" stroke-width="2"/>
+        <line x1="${tbgR + 4}" x2="${csgR}" y1="${pkrY - 4}" y2="${pkrY - 4}" stroke="#101316" stroke-width="2"/>
+        <line x1="${tbgR + 4}" x2="${csgR}" y1="${pkrY + 4}" y2="${pkrY + 4}" stroke="#101316" stroke-width="2"/>
+        <!-- Ancla de Tubería debajo del Packer -->
+        <polygon points="${csgL},${pkrY + 26} ${tbgL - 4},${pkrY + 16} ${tbgL - 4},${pkrY + 30}" fill="#94a3b8" stroke="var(--tx)" stroke-width="1"/>
+        <polygon points="${csgR},${pkrY + 26} ${tbgR + 4},${pkrY + 16} ${tbgR + 4},${pkrY + 30}" fill="#94a3b8" stroke="var(--tx)" stroke-width="1"/>
+      ` : `
+        <rect x="${csgL + 4}" y="${pkrY - 8}" width="${2 * csgHw - 8}" height="16" fill="none" stroke="var(--warn)" stroke-dasharray="4 3"/>
+      `}
+      <!-- Etiqueta interactiva M3 -->
+      <g class="mod-badge" transform="translate(${csgR + cemW + 14}, ${pkrY - 16})">
+        <rect width="235" height="32" rx="5" fill="var(--panel)" stroke="${stColor(3)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(3)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M3] Packer y Ancla (${inputs.depth_packer} m)</text>
+        <text x="24" y="26" class="mut">${inputs.has_packer ? 'API 11D1 L80-1 + HNBR/FKM · 44 kN' : 'Sin Packer (Anular C2 Abierto)'}</text>
+      </g>
+      <line x1="${csgR}" y1="${pkrY}" x2="${csgR + cemW + 14}" y2="${pkrY}" stroke="${stColor(3)}" stroke-width="1.2" stroke-dasharray="3 2"/>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 2: BOMBA DE SUBSUELO API 11AX (1850 m)                      -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(2)}" data-mod="2" onclick="handleModuleClick(2)">
+      <title>Módulo 2: Bomba de Subsuelo API 11AX (${inputs.depth_pump} m) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${tbgL - 12}" y="${pmpY - 78}" width="${2 * tbgHw + 24}" height="92"/>
+      <!-- Barril de la bomba -->
+      <rect x="${cx - 15}" y="${pmpY - 72}" width="30" height="72" rx="3" fill="#1e293b" stroke="var(--ok)" stroke-width="2"/>
+      <!-- Válvula Fija (Standing Valve) en la base -->
+      <polygon points="${cx - 10},${pmpY - 2} ${cx + 10},${pmpY - 2} ${cx + 6},${pmpY - 10} ${cx - 6},${pmpY - 10}" fill="#94a3b8"/>
+      <circle cx="${cx}" cy="${pmpY - 14}" r="4.5" fill="#38bdf8" stroke="#fff" stroke-width="1"/>
+      <!-- Pistón (Plunger) y Válvula Viajera animados con las varillas -->
+      <g class="rod-recip">
+        <rect x="${cx - 11}" y="${pmpY - 52}" width="22" height="24" rx="2" fill="var(--warn)" stroke="#fff" stroke-width="1"/>
+        <circle cx="${cx}" cy="${pmpY - 40}" r="4" fill="#fde047" stroke="#101316" stroke-width="1"/>
+      </g>
+      <!-- Etiqueta interactiva M2 -->
+      <g class="mod-badge" transform="translate(${csgR + cemW + 14}, ${pmpY - 42})">
+        <rect width="235" height="32" rx="5" fill="var(--panel)" stroke="${stColor(2)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(2)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M2] Bomba Subsuelo (${inputs.depth_pump} m)</text>
+        <text x="24" y="26" class="mut">API 11AX 1 3/4" · Carburo WC · ${inputs.p_pump} bar</text>
+      </g>
+      <line x1="${cx + 15}" y1="${pmpY - 26}" x2="${csgR + cemW + 14}" y2="${pmpY - 26}" stroke="${stColor(2)}" stroke-width="1.2" stroke-dasharray="3 2"/>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 5: SARTA DE VARILLAS DE BOMBEO Y BARRA PULIDA               -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(5)}" data-mod="5" onclick="handleModuleClick(5)">
+      <title>Módulo 5: Varillas de Bombeo 7/8" y Barra Pulida 1 1/4" — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${cx - 14}" y="52" width="28" height="260"/>
+      <g class="rod-recip">
+        <!-- Barra Pulida superior (1 1/4" con Spray Metal) saliendo sobre el prensaestopas -->
+        <line x1="${cx}" x2="${cx}" y1="45" y2="145" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+        <!-- Sarta de Varillas 7/8" Grado K desde 0 m hasta la bomba a 1850 m -->
+        <line x1="${cx}" x2="${cx}" y1="145" y2="${pmpY - 52}" stroke="#f8fafc" stroke-width="3.2"/>
+        <!-- Acoples Clase SM (Spray Metal) distribuidos en la sarta -->
+        <rect x="${cx - 4.5}" y="${surfY + 45}" width="9" height="14" rx="1.5" fill="var(--warn)" stroke="#101316" stroke-width="0.8"/>
+        <rect x="${cx - 4.5}" y="${surfY + 155}" width="9" height="14" rx="1.5" fill="var(--warn)" stroke="#101316" stroke-width="0.8"/>
+        <rect x="${cx - 4.5}" y="${surfY + 265}" width="9" height="14" rx="1.5" fill="var(--warn)" stroke="#101316" stroke-width="0.8"/>
+        <rect x="${cx - 4.5}" y="${surfY + 375}" width="9" height="14" rx="1.5" fill="var(--warn)" stroke="#101316" stroke-width="0.8"/>
+        <!-- Flecha de movimiento alternativo en cabeza -->
+        <path d="M ${cx - 16} 62 L ${cx - 16} 88 M ${cx - 20} 67 L ${cx - 16} 60 L ${cx - 12} 67 M ${cx - 20} 83 L ${cx - 16} 90 L ${cx - 12} 83" stroke="#38bdf8" stroke-width="1.6" fill="none"/>
+      </g>
+      <!-- Etiqueta interactiva M5 -->
+      <g class="mod-badge" transform="translate(10, 102)">
+        <rect width="202" height="32" rx="5" fill="var(--panel)" stroke="${stColor(5)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(5)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M5] Varillas y Barra Pulida</text>
+        <text x="24" y="26" class="mut">API 11B Gr. K (${calc.goodman_K_pct.toFixed(0)}% Goodman)</text>
+      </g>
+      <line x1="212" y1="118" x2="${cx - 5}" y2="92" stroke="${stColor(5)}" stroke-width="1.2" stroke-dasharray="3 2"/>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 6: CABEZAL DE POZO Y COLGADORES (0 m)                       -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(6)}" data-mod="6" onclick="handleModuleClick(6)">
+      <title>Módulo 6: Cabezal de Pozo y Colgadores (API 6A) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${cx - 82}" y="252" width="164" height="84"/>
+      <!-- Placa base estructural y Carrete Inferior / Casing Spool -->
+      <rect x="${cx - 74}" y="325" width="148" height="10" rx="2" fill="#475569" stroke="var(--tx)" stroke-width="1.2"/>
+      <!-- Carrete de Tubing (Tubing Head Spool) -->
+      <polygon points="${cx - 58},325 ${cx + 58},325 ${cx + 46},265 ${cx - 46},265" fill="#334155" stroke="var(--acc)" stroke-width="1.8"/>
+      <!-- Brida Superior del Cabezal con Ranura Inlay Alloy 625 -->
+      <rect x="${cx - 64}" y="255" width="128" height="12" rx="2" fill="#475569" stroke="var(--acc)" stroke-width="1.6"/>
+      <!-- Colgador de Tubing (Mandril) y Cuñas -->
+      <polygon points="${cx - 42},268 ${cx - 22},268 ${cx - 22},292 ${cx - 34},292" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <polygon points="${cx + 42},268 ${cx + 22},268 ${cx + 22},292 ${cx + 34},292" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <!-- Tomas laterales anulares M3 y M4 -->
+      <rect x="${cx - 72}" y="288" width="18" height="8" fill="#64748b" stroke="var(--tx)" stroke-width="1"/>
+      <rect x="${cx + 54}" y="288" width="18" height="8" fill="#64748b" stroke="var(--tx)" stroke-width="1"/>
+      <!-- Paso vertical del fluido C1 a través del cabezal -->
+      <rect x="${tbgL}" y="255" width="${2 * tbgHw}" height="80" fill="url(#c1GradVert)" opacity="0.75"/>
+      <!-- Etiqueta interactiva M6 -->
+      <g class="mod-badge" transform="translate(10, 266)">
+        <rect width="164" height="32" rx="5" fill="var(--panel)" stroke="${stColor(6)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(6)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M6] Cabezal y Colg.</text>
+        <text x="24" y="26" class="mut">API 6A Cl. ${calc.api6aClass.code} · Inlay 625</text>
+      </g>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 7: ÁRBOL DE PRODUCCIÓN, TE DE BOMBEO Y PRENSAESTOPAS        -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(7)}" data-mod="7" onclick="handleModuleClick(7)">
+      <title>Módulo 7: Árbol de Producción, Te y Prensaestopas — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${cx - 56}" y="112" width="128" height="142"/>
+      <!-- Válvula Maestra Inferior (sobre el cabezal) -->
+      <rect x="${cx - 34}" y="214" width="68" height="36" rx="4" fill="#1e293b" stroke="var(--ok)" stroke-width="1.8"/>
+      <circle cx="${cx - 44}" cy="232" r="9" fill="none" stroke="var(--ok)" stroke-width="2"/>
+      <line x1="${cx - 34}" y1="232" x2="${cx - 53}" y2="232" stroke="var(--ok)" stroke-width="2"/>
+      <!-- Te de Bombeo / Flow Tee Central (Desvío lateral a SSV/Choque) -->
+      <rect x="${cx - 30}" y="162" width="60" height="48" rx="4" fill="#334155" stroke="var(--acc)" stroke-width="1.8"/>
+      <!-- Válvula Lateral (Wing Valve) a la derecha de la Te -->
+      <rect x="${cx + 30}" y="168" width="38" height="36" rx="3" fill="#1e293b" stroke="var(--ok)" stroke-width="1.6"/>
+      <!-- Prensaestopas (Stuffing Box) en el tope del Árbol -->
+      <rect x="${cx - 22}" y="118" width="44" height="40" rx="4" fill="#475569" stroke="var(--warn)" stroke-width="1.8"/>
+      <rect x="${cx - 14}" y="124" width="28" height="12" fill="var(--warn)" opacity="0.85"/>
+      <!-- Brida Aislante Dieléctrica en Frontera A1 <-> A2 (x = 702) -->
+      <rect x="698" y="162" width="14" height="48" rx="2" fill="var(--warn)" stroke="var(--tx)" stroke-width="1.5"/>
+      <text x="705" y="154" text-anchor="middle" style="font-size:9px;fill:var(--warn);font-weight:700">Kit Dieléctrico</text>
+      <text x="735" y="190" text-anchor="middle" style="font-weight:700;font-size:11px;fill:var(--acc)">→ A2</text>
+      <!-- Etiqueta interactiva M7 -->
+      <g class="mod-badge" transform="translate(10, 184)">
+        <rect width="176" height="32" rx="5" fill="var(--panel)" stroke="${stColor(7)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(7)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M7] Árbol Prod. y Tee</text>
+        <text x="24" y="26" class="mut">2 9/16" Clase ${calc.api6aClass.code} · v=${calc.v_tree_ms.toFixed(2)}m/s</text>
+      </g>
+      <line x1="186" y1="200" x2="${cx - 30}" y2="200" stroke="${stColor(7)}" stroke-width="1.2" stroke-dasharray="3 2"/>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 8: VÁLVULA DE AGUJA Y MANÓMETRO M5 (TOPE DEL ÁRBOL)         -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(8)}" data-mod="8" onclick="handleModuleClick(8)">
+      <title>Módulo 8: Válvula de Aguja y Manómetro (Punto M5) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="${cx + 28}" y="42" width="255" height="76"/>
+      <!-- Toma de presión desde el Árbol hacia el Sello de Diafragma y Manómetro -->
+      <path d="M ${cx + 22} 132 L ${cx + 58} 132 L ${cx + 58} 82" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+      <!-- Cuerpo Válvula de Aguja (Alloy 625) -->
+      <polygon points="${cx + 48},112 ${cx + 68},112 ${cx + 62},96 ${cx + 54},96" fill="var(--acc)" stroke="var(--tx)" stroke-width="1.2"/>
+      <line x1="${cx + 58}" y1="104" x2="${cx + 74}" y2="104" stroke="var(--warn)" stroke-width="2.5"/>
+      <!-- Sello de Diafragma (Alloy C-276) -->
+      <rect x="${cx + 46}" y="82" width="24" height="10" rx="2" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+      <!-- Carátula del Manómetro M5 -->
+      <circle cx="${cx + 58}" cy="62" r="18" fill="#0f172a" stroke="var(--acc)" stroke-width="2"/>
+      <line x1="${cx + 58}" y1="62" x2="${cx + 58 + 11 * Math.cos((inputs.p_head_op / 100) * Math.PI - Math.PI)}" y2="${62 + 11 * Math.sin((inputs.p_head_op / 100) * Math.PI - Math.PI)}" stroke="var(--bad)" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="${cx + 58}" cy="62" r="2.2" fill="#fff"/>
+      <!-- Etiqueta interactiva M8 -->
+      <g class="mod-badge" transform="translate(${cx + 84}, 48)">
+        <rect width="195" height="32" rx="5" fill="var(--panel)" stroke="${stColor(8)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(8)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M8] Válvula Aguja y Manóm.</text>
+        <text x="24" y="26" class="mut">Alloy 625 / C-276 · P=${inputs.p_head_op} bar</text>
+      </g>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 9: VÁLVULA DE SEGURIDAD DE SUPERFICIE SSV (AGUAS ARRIBA)    -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(9)}" data-mod="9" onclick="handleModuleClick(9)">
+      <title>Módulo 9: Válvula de Seguridad SSV (API 6A PR2) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="318" y="92" width="186" height="170"/>
+      <!-- Cuerpo de la Válvula SSV en la línea lateral -->
+      <rect x="385" y="160" width="68" height="52" rx="5" fill="#1e293b" stroke="var(--ok)" stroke-width="2"/>
+      <!-- Compuerta interna con paso abierto al flujo C1 -->
+      <rect x="411" y="172" width="16" height="28" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="3 2"/>
+      <!-- Bonete y Actuador Hidráulico Superior (1500 psi Fail-Safe) -->
+      <rect x="404" y="138" width="30" height="22" fill="#475569" stroke="var(--tx)" stroke-width="1.2"/>
+      <rect x="392" y="98" width="54" height="40" rx="6" fill="#7f1d1d" stroke="var(--bad)" stroke-width="1.8"/>
+      <!-- Resorte de falla segura dentro del actuador -->
+      <path d="M 402 106 L 436 112 L 402 118 L 436 124 L 402 130" fill="none" stroke="#fca5a5" stroke-width="1.6"/>
+      <!-- Etiqueta interactiva M9 -->
+      <g class="mod-badge" transform="translate(326, 224)">
+        <rect width="172" height="32" rx="5" fill="var(--panel)" stroke="${stColor(9)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(9)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M9] Válv. Seguridad SSV</text>
+        <text x="24" y="26" class="mut">API 6A PR2 · Act. 1500 psi</text>
+      </g>
+    </g>
+
+    <!-- ================================================================== -->
+    <!-- MÓDULO 10: CHOQUE / ESTRANGULADOR (AGUAS ABAJO HACIA A2)           -->
+    <!-- ================================================================== -->
+    <g class="svg-mod ${isSel(10)}" data-mod="10" onclick="handleModuleClick(10)">
+      <title>Módulo 10: Choque / Estrangulador (API 6A) — Clic para abrir simulador</title>
+      <rect class="mod-hitbox" x="506" y="108" width="182" height="154"/>
+      <!-- Cuerpo del Portachoque -->
+      <rect x="536" y="160" width="76" height="52" rx="5" fill="#1e293b" stroke="var(--warn)" stroke-width="2"/>
+      <!-- Garganta Venturi / Bean de Carburo de Tungsteno Sólido -->
+      <polygon points="552,164 576,164 570,179 558,179" fill="var(--warn)" stroke="#101316" stroke-width="1"/>
+      <polygon points="552,208 576,208 570,193 558,193" fill="var(--warn)" stroke="#101316" stroke-width="1"/>
+      <!-- Volante y Vástago Regulador del Choque -->
+      <rect x="562" y="132" width="22" height="28" fill="#475569" stroke="var(--tx)" stroke-width="1.2"/>
+      <line x1="552" y1="126" x2="594" y2="126" stroke="var(--warn)" stroke-width="4" stroke-linecap="round"/>
+      <!-- Etiqueta interactiva M10 -->
+      <g class="mod-badge" transform="translate(508, 224)">
+        <rect width="172" height="32" rx="5" fill="var(--panel)" stroke="${stColor(10)}" stroke-width="1.8"/>
+        <circle cx="13" cy="16" r="4.5" fill="${stColor(10)}"/>
+        <text x="24" y="14" style="font-weight:700;font-size:10.5px">[M10] Choque (Estrangul.)</text>
+        <text x="24" y="26" class="mut">Bean WC/Si₃N₄ · ΔP=${calc.dp_choke_bar.toFixed(0)} bar</text>
+      </g>
+    </g>
+  `;
+}
+
+// ============================================================================
+// 7. INTERACCIÓN AL CLICAR UN COMPONENTE Y VISOR DE MÓDULOS (.HTML)
+// ============================================================================
+let lastModClick = { id: null, t: 0 };
+function handleModuleClick(modId) {
+  const now = performance.now();
+  const isDouble = lastModClick.id === modId && (now - lastModClick.t) < 450;
+  lastModClick = isDouble ? { id: null, t: 0 } : { id: modId, t: now };
+  activeModuleId = modId;
+  document.querySelectorAll("#systemSvg .svg-mod").forEach(g =>
+    g.classList.toggle("selected-mod", Number(g.dataset.mod) === modId));
+  if (lastComputedSystem) {
+    renderModulePillsAndTable(lastComputedSystem);
+    renderModuleInspector(modId);
+  }
+  if (isDouble) openModuleViewer(modId);
+}
+
+function openModuleViewer(modId) {
+  activeModuleId = modId;
+  if (!lastComputedSystem) runSystemSimulation();
+  const m = lastComputedSystem.modules.find(x => x.id === modId) || lastComputedSystem.modules[0];
+
+  document.getElementById("modalTitle").textContent = `${m.id}. ${m.name}`;
+
+  // Rellenar barra lateral del modal con los detalles de ingeniería del módulo
+  document.getElementById("modalSideContent").innerHTML = `
+    <div style="margin-bottom:10px">
+      <span class="tag ${m.status}">${m.statusTxt}</span>
+      <span class="tag info" style="margin-left:4px">${m.streams}</span>
+    </div>
+    <h4 style="font:600 1rem var(--head);margin-bottom:4px">Selección Recomendada</h4>
+    <p style="font-size:.82rem;color:var(--ok);margin-bottom:12px;font-weight:600">${m.selection}</p>
+
+    <h4 style="font:600 .92rem var(--head);margin-bottom:6px;color:var(--mut)">Parámetros Locales Calculados</h4>
+    ${m.kpis.map(([k, v]) => `
+      <div class="section-box" style="padding:8px 10px;margin-bottom:6px">
+        <div style="font-size:.72rem;color:var(--mut)">${k}</div>
+        <div style="font:600 .83rem var(--mono);margin-top:2px">${v}</div>
+      </div>
+    `).join("")}
+
+    <h4 style="font:600 .92rem var(--head);margin:12px 0 6px;color:var(--mut)">Especificación por Subcomponente</h4>
+    ${m.parts.map(([t, d]) => `
+      <div class="section-box" style="padding:9px 10px;margin-bottom:6px">
+        <div style="font:600 .82rem var(--head);color:var(--acc);margin-bottom:3px">${t}</div>
+        <p style="font-size:.77rem;color:var(--tx)">${d}</p>
+      </div>
+    `).join("")}
+  `;
+
+  loadModalIframeContent(m);
+  document.getElementById("modModal").classList.add("open");
+  currentModalModId = modId;
+  fitModalIframe();
+}
+
+// Ancho de diseño (px) de los módulos cuya página no cabe en el visor; se reduce la escala para verlos completos
+const MODULE_DESIGN_WIDTH = { 2: 1600, 3: 1600, 8: 1600, 9: 1600 };
+let currentModalModId = null;
+function fitModalIframe() {
+  const stage = document.getElementById("iframeStage");
+  const iframe = document.getElementById("modIframe");
+  if (!stage || !iframe) return;
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const base = MODULE_DESIGN_WIDTH[currentModalModId] || 0;
+  const k = base && w > 0 ? Math.min(1, w / base) : 1;
+  if (k < 1) {
+    iframe.style.width = (w / k) + "px";
+    iframe.style.height = (h / k) + "px";
+    iframe.style.transform = `scale(${k})`;
+  } else {
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.transform = "none";
+  }
+}
+window.addEventListener("resize", () => {
+  if (document.getElementById("modModal").classList.contains("open")) fitModalIframe();
+});
+
+function loadModalIframeContent(m) {
+  const iframe = document.getElementById("modIframe");
+  const noticeTxt = document.getElementById("iframeNoticeTxt");
+  const stamp = document.getElementById("iframeSyncStamp");
+  stamp.textContent = `pCO₂=${lastComputedSystem.calc.pCO2_bot_bar.toFixed(2)}bar | pH₂S=${lastComputedSystem.calc.pH2S_bot_kPa.toFixed(1)}kPa | Reg.${lastComputedSystem.calc.reg_bot}`;
+
+  iframe.removeAttribute("srcdoc");
+  iframe.src = moduleUrl(m, true);
+  noticeTxt.innerHTML = `Cargando <strong>${m.file}</strong>`;
+}
+
+function closeModal() {
+  document.getElementById("modModal").classList.remove("open");
+}
+
+// ============================================================================
+// 9. SINCRONIZACIÓN DE ESTADO GLOBAL, ARCHIVOS LOCALES Y ESCENARIOS RÁPIDOS
+// ============================================================================
+function syncGlobalWellStreamState(sys) {
+  const { inputs, calc, modules } = sys;
+  window.wellStreamState = {
+    project: "Proyecto A — Sistema A1 (Barrancabermeja, Bombeo Mecánico)",
+    updatedAt: new Date().toISOString(),
+    fluidStream_C1_C2: {
+      p_bottom_op_bar: inputs.p_pump,
+      p_pump_bar: inputs.p_pump,
+      p_bottom_design_bar: num('p_pump_design', 112),
+      temp_surface_design_c: num('temp_surf_design', 85),
+      has_packer: inputs.has_packer,
+      depth_pump_m: inputs.depth_pump,
+      depth_packer_m: inputs.depth_packer,
+      design_life_yr: inputs.life_perm,
+      p_head_design_bar: inputs.p_head_des,
+      p_head_op_bar: inputs.p_head_op,
+      p_out_a2_bar: inputs.p_out_a2,
+      temp_bottom_c: inputs.temp_bot,
+      temp_surface_c: inputs.temp_surf,
+      y_co2_pct: inputs.y_co2,
+      y_h2s_pct: inputs.y_h2s,
+      pCO2_bottom_bar: Number(calc.pCO2_bot_bar.toFixed(4)),
+      pH2S_bottom_kPa: Number(calc.pH2S_bot_kPa.toFixed(3)),
+      pCO2_surface_bar: Number(calc.pCO2_surf_des_bar.toFixed(4)),
+      pH2S_surface_kPa: Number(calc.pH2S_surf_des_kPa.toFixed(3)),
+      pH: inputs.pH,
+      chlorides_mgL: inputs.chlorides,
+      solids_lb_1000bbl: inputs.solids,
+      bsw_pct: inputs.bsw,
+      iso15156_region_bottom: calc.reg_bot,
+      iso15156_region_surface: calc.reg_surf_des,
+      inhibitor_availability_pct: inputs.inhib_avail,
+      v_inhibited_mm_yr: inputs.v_inhib,
+      wet_factor_pct: inputs.wet_factor
+    },
+    aquiferStream_C3: {
+      uncemented_top_m: inputs.depth_toc,
+      environment: inputs.ext_env,
+      v_ext_mm_yr: inputs.v_ext_eff
+    },
+    packerStream_C4: {
+      installed: inputs.has_packer,
+      depth_m: inputs.depth_packer,
+      fluid: "Agua tratada inhibida pH 9.5-10.5"
+    },
+    atmosphere_C5: {
+      iso9223_category: inputs.atm_cat
+    },
+    modulesSummary: Object.fromEntries(modules.map(m => [m.code, {
+      name: m.name,
+      file: m.file,
+      status: m.statusTxt,
+      recommendedMaterial: m.selection
+    }]))
+  };
+
+  const jsonTxt = JSON.stringify(window.wellStreamState, null, 2);
+  document.getElementById("json_output").textContent = jsonTxt;
+
+  try {
+    localStorage.setItem("wellStreamState", jsonTxt);
+    localStorage.setItem("wellStreamState_A1", jsonTxt);
+  } catch (e) {
+    // Ignorar restricciones de almacenamiento en modo privado
+  }
+}
+
+// Escenarios preconfigurados de ingeniería
+function applyPreset(key) {
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  if (key === "base_today") {
+    setVal("p_pump", 45); setVal("p_pump_design", 112); setVal("temp_surf_design", 85); setVal("p_head_des", 50); setVal("p_head_op", 45); setVal("p_out_a2", 35);
+    setVal("temp_bot", 68); setVal("temp_surf", 68); setVal("y_co2", 3.1); setVal("y_h2s", 0.15);
+    setVal("ph", 4.6); setVal("chlorides", 42000); setVal("solids", 12); setVal("bsw", 78);
+    setVal("inhib_avail", 90); setVal("has_packer", "yes");
+    document.getElementById("preset_status").textContent = "Escenario: Caso Base Hoy (0,15% H₂S)";
+  } else if (key === "year_10") {
+    applyPreset("base_today");
+    setVal("y_h2s", 0.3); setVal("bsw", 78); setVal("inhib_avail", 90);
+    document.getElementById("preset_status").textContent = "Escenario: Año 10 con Actividad SRB (0,30% H₂S)";
+  } else if (key === "low_inhib") {
+    setVal("inhib_avail", 92); setVal("y_h2s", 0.15);
+    document.getElementById("preset_status").textContent = "Escenario: Baja Disponibilidad Química (A = 92% · revisar selección de tubing)";
+  } else if (key === "high_sand") {
+    setVal("solids", 35); setVal("has_packer", "no"); setVal("p_out_a2", 20);
+    document.getElementById("preset_status").textContent = "Escenario: Alta Arena (35 lb/1000 bbl), Sin Packer y Alto ΔP en Choque";
+  } else if (key === "sweet_well") {
+    setVal("y_h2s", 0); setVal("y_co2", 1.2); setVal("ph", 5.4); setVal("inhib_avail", 98);
+    document.getElementById("preset_status").textContent = "Escenario: Pozo Dulce (0% H₂S · Región 0 ISO 15156)";
+  }
+  runSystemSimulation();
+}
+
+// Copiar JSON del estado global
+function copyGlobalState(btn) {
+  const txt = document.getElementById("json_output").textContent;
+  const ta = document.createElement("textarea");
+  ta.value = txt;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  const old = btn.textContent;
+  btn.textContent = "¡JSON Copiado!";
+  setTimeout(() => { btn.textContent = old; }, 1600);
+}
+
+// Cerrar modal con tecla Escape
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
+
+// Escuchar cambios en todos los controles del formulario
+document.querySelectorAll("#form input, #form select").forEach(el => {
+  el.addEventListener("input", runSystemSimulation);
+  el.addEventListener("change", runSystemSimulation);
+});
+
+// Inicializar simulación al cargar
+runSystemSimulation();
+</script>
+</body>
+</html>

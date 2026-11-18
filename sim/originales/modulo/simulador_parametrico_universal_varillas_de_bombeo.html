@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 5: Varillas y Barra Pulida (API 11B / API RP 11BR / ISO 15156)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(260px,300px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.3rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.1rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:560px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#casingSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div><h1>Varillas de bombeo y barra pulida</h1>
+  <p>Módulo 5 de 10, sistema A1. Corrosión-fatiga (Goodman modificado), severidad amarga (SSC), acoples Clase SM y sello dinámico en superficie.</p></div>
+  <ul class="norms"><li>API Spec 11B / ISO 10428</li><li>API RP 11BR</li><li>NACE MR0176 / ISO 15156-2</li><li>ISO 21457</li></ul>
+</header>
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card"><h2>Esquema recíproco del pozo</h2>
+        <svg id="casingSvg" viewBox="0 0 330 580" role="img" aria-label="Esquema vertical de sarta de varillas, acoples SM, barra pulida, prensaestopas y fluido multifásico ascendente"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido ascendente en tubing (C1)</span></li>
+          <li><i style="background:#38bdf8;opacity:.75"></i>Corte de agua (BSW) y película de inhibidor fílmico</li>
+          <li><i style="background:var(--acc);opacity:.85"></i>Sarta de varillas recíproca y acoples Clase SM</li>
+          <li><i style="background:var(--warn);opacity:.85"></i>Barra pulida (Ni-Cr-B) y prensaestopas en cabezal (C5)</li>
+        </ul>
+      </section>
+      <section class="card"><h2>Diagnóstico de corrosión-fatiga y severidad</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presión parcial CO₂ (bomba / cab.)</div><div class="val" id="kpi_pco2">-</div><div class="sub" id="kpi_pco2_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Presión parcial H₂S (bomba / cab.)</div><div class="val" id="kpi_ph2s">-</div><div class="sub" id="kpi_ph2s_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Utilización Goodman (Grado ópt.)</div><div class="val" id="kpi_goodman">-</div><div class="sub" id="kpi_goodman_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Cinemática y ciclos acumulados</div><div class="val" id="kpi_cycles">-</div><div class="sub" id="kpi_vel_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+    <section class="card"><h2>Elegibilidad de grados de varilla (API Spec 11B, API RP 11BR, ISO 15156-2 y NACE MR0176)</h2>
+      <div class="scroll"><table><thead><tr><th>Grado API / Aleación</th><th>UTS (T<sub>a</sub>)</th><th>Dureza máx.</th><th>SF ef.</th><th>S<sub>a</sub> adm. (MPa)</th><th>Goodman (%)</th><th>Estado</th><th>Justificación metalúrgica y fatiga</th></tr></thead><tbody id="grades_tbody"></tbody></table></div></section>
+    <section class="card"><h2>Verificación dimensional de sarta de varillas y barra pulida (API RP 11BR)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Calculado con el grado elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong> | Barra pulida seleccionada: <strong id="selected_pr_lbl" style="color:var(--warn)">-</strong></p>
+      <div class="scroll"><table><thead><tr><th>Diámetro / Sarta</th><th>Área (mm²)</th><th>Acople OD (mm)</th><th>σ<sub>máx</sub> / σ<sub>mín</sub> (MPa)</th><th>S<sub>a</sub> adm. (MPa)</th><th>Utilización Goodman</th><th>FS Tensión estática</th><th>Veredicto</th></tr></thead><tbody id="weights_tbody"></tbody></table></div></section>
+    <section class="card"><h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2><pre id="json_output"></pre></section>
+  </main>
+</div>
+
+<script>
+const FORM=[
+["Fluido producido y atmósfera (C1, C5)",[
+ ["p_int","Presión en bomba (1850m)","bar",incomingValue("p_bottom_op_bar", 45),1,500,1],["p_wh","Presión en cabezal (0m)","bar",incomingValue("p_head_op_bar", 45),1,300,1],
+ ["temp_c","Temperatura operativa","°C",incomingValue("temp_bottom_c", 68),5,250,1],["y_co2","CO₂ en gas","% mol",incomingValue("y_co2_pct", 3.1),0,100,0.1],
+ ["y_h2s","H₂S en gas","% mol",incomingValue("y_h2s_pct", 0.15),0,100,0.01],["ph","pH in situ","",incomingValue("pH", 4.6),1,14,0.1],
+ ["chlorides","Cloruros","mg/L",incomingValue("chlorides_mgL", 42000),0,250000,500],["solids","Sólidos / Arena","lb/1000 bbl",incomingValue("solids_lb_1000bbl", 12),0,500,1],
+ ["atm_cat","Atmósfera externa (C5)",[["C4","ISO 9223 C4 (Tropical / Industrial)"],["C3","ISO 9223 C3 (Moderada)"],["C5","ISO 9223 C5 (Severa / Marina)"]],"C4"]]],
+["Control químico y cinemática de bombeo",[
+ ["wet_factor","Corte de agua (BSW)","%",incomingValue("bsw_pct", 78),0,100,1],["inhib_avail","Disponibilidad inhibidor (A)","%",incomingValue("inhibitor_availability_pct", 90),0,100,0.5],
+ ["v_inhib","Velocidad con inhibidor","mm/a",incomingValue("v_inhibited_mm_yr", 0.1),0,2,0.01],["sf_base","Factor servicio base (SF)","",0.90,0.40,1.00,0.02],
+ ["stroke_in","Carrera de bombeo (S)","in",100,20,240,5],["spm","Velocidad de bombeo","spm",6.0,0.5,20,0.5],
+ ["dogleg","Severidad dogleg","°/30m",1.0,0,15,0.5],
+ ["has_guides","¿Guías poliméricas instaladas?",[["yes","Sí, centralizadores moldeados"],["no","No, sin guías en sarta"]],"yes"]]],
+["Geometría y cargas (Varillas y Barra Pulida)",[
+ ["rod_select","Diámetro nominal sarta API 11B",[["0.625","5/8 in (15,9 mm - 198 mm²)"],["0.750","3/4 in (19,1 mm - 285 mm²)"],["0.875","7/8 in (22,2 mm - 388 mm²)"],["1.000","1 in (25,4 mm - 507 mm²)"],["1.125","1 1/8 in (28,6 mm - 641 mm²)"],["76","Sarta Combinada 76 (7/8\" - 3/4\")"],["86","Sarta Combinada 86 (1\" - 7/8\" - 3/4\")"]],"0.875"],
+ ["pr_select","Diámetro barra pulida",[["1.125","1 1/8 in (28,6 mm - 641 mm²)"],["1.250","1 1/4 in (31,8 mm - 792 mm²)"],["1.500","1 1/2 in (38,1 mm - 1140 mm²)"],["1.750","1 3/4 in (44,5 mm - 1552 mm²)"]],"1.250"],
+ ["cpl_type","Tipo de acople en tubing 2 7/8\"",[["full","Full Size (OD 46,0 mm en 7/8\")"],["slim","Slim Hole (OD 41,3 mm en 7/8\")"]],"full"],
+ ["depth_pump","Profundidad de asentamiento","m",incomingValue("depth_pump_m", 1850),100,4500,50],["design_life","Vida útil entre intervenciones","años",6,1,20,1],
+ ["pprl_kn","Carga máx. barra pulida (PPRL)","kN",62,5,350,1],["mprl_kn","Carga mín. barra pulida (MPRL)","kN",28,0,250,1],
+ ["misalign_deg","Desalineación prensaestopas","°",0.25,0,3,0.05],
+ ["goodman_max","Límite utilización Goodman","%",100,60,120,5],["fs_pr_req","FS mín. barra pulida","",1.50,1.1,3.0,0.05]]]];
+
+function buildForm(){
+  document.getElementById("form").innerHTML=FORM.map(([t,fs])=>`<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f=>{
+    const [id,lb,u]=f,sel=Array.isArray(u);
+    const ctl=sel?`<select id="${id}">${u.map(o=>`<option value="${o[0]}"${o[0]===f[3]?" selected":""}>${o[1]}</option>`).join("")}</select>`
+      :`<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel?" w":""}"><label for="${id}">${lb}</label>${ctl}</div>`}).join("")}</div></details>`).join("");
+}
+buildForm();
+
+// Sincronizar con window.wellStreamState.fluidStream_C1_C2 si existe previamente
+
+
+const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:d;};
+
+// 1. Catálogo Comercial de Sartas de Varillas API Spec 11B
+const ROD_CATALOG = [
+  { key: "0.625", name: "5/8 in (Código 55)", d_in: 0.625, d_mm: 15.88, area_mm2: 198, w_kgm: 1.68, cpl_full_mm: 38.1, cpl_slim_mm: 32.5 },
+  { key: "0.750", name: "3/4 in (Código 66)", d_in: 0.750, d_mm: 19.05, area_mm2: 285, w_kgm: 2.43, cpl_full_mm: 41.3, cpl_slim_mm: 38.1 },
+  { key: "0.875", name: "7/8 in (Código 77)", d_in: 0.875, d_mm: 22.23, area_mm2: 388, w_kgm: 3.30, cpl_full_mm: 46.0, cpl_slim_mm: 41.3 },
+  { key: "1.000", name: "1 in (Código 88)",   d_in: 1.000, d_mm: 25.40, area_mm2: 507, w_kgm: 4.32, cpl_full_mm: 55.6, cpl_slim_mm: 50.8 },
+  { key: "1.125", name: "1 1/8 in (Código 99)", d_in: 1.125, d_mm: 28.58, area_mm2: 641, w_kgm: 5.46, cpl_full_mm: 60.3, cpl_slim_mm: 55.6 },
+  { key: "76",    name: "Taper 76 (7/8\" sup. / 3/4\" inf.)", d_in: 0.875, d_mm: 22.23, area_mm2: 388, w_kgm: 2.82, cpl_full_mm: 46.0, cpl_slim_mm: 41.3, isTaper: true },
+  { key: "86",    name: "Taper 86 (1\" sup. / 7/8\" / 3/4\")", d_in: 1.000, d_mm: 25.40, area_mm2: 507, w_kgm: 3.35, cpl_full_mm: 55.6, cpl_slim_mm: 50.8, isTaper: true }
+];
+
+// 2. Catálogo de Barras Pulidas API Spec 11B
+const PR_CATALOG = {
+  "1.125": { name: "1 1/8 in (28,6 mm)", d_mm: 28.58, area_mm2: 641 },
+  "1.250": { name: "1 1/4 in (31,8 mm)", d_mm: 31.75, area_mm2: 792 },
+  "1.500": { name: "1 1/2 in (38,1 mm)", d_mm: 38.10, area_mm2: 1140 },
+  "1.750": { name: "1 3/4 in (44,5 mm)", d_mm: 44.45, area_mm2: 1552 }
+};
+
+// 3. Catálogo de Grados Metalúrgicos de Varillas (API Spec 11B / ISO 15156-2 / NACE MR0176)
+const GRADES_CATALOG = [
+  {
+    id: "GradeC",
+    name: "API 11B Grado C (AISI 1036 C-Mn)",
+    uts_mpa: 620,
+    yp_mpa: 415,
+    hardness: "≤ 22 HRC (185 HBW)",
+    type: "CS",
+    sourPenalty: 0.556, // En salmuera ácida con H2S/CO2 sin Ni-Mo sufre nucleación por picadura (sobrecarga ~163% en 7/8")
+    costRank: 1
+  },
+  {
+    id: "GradeK",
+    name: "API 11B Grado K (AISI 46XX Ni-Mo)",
+    uts_mpa: 586,
+    yp_mpa: 380,
+    hardness: "≤ 22 HRC (185 HBW)",
+    type: "NiMo",
+    sourPenalty: 1.00, // Aleación Ni-Mo resistente a corrosión-fatiga amarga e inhibible
+    costRank: 2
+  },
+  {
+    id: "GradeKD",
+    name: "API 11B Grado KD (AISI 46XX Q&T Sour)",
+    uts_mpa: 793,
+    yp_mpa: 586,
+    hardness: "≤ 22 HRC controlada",
+    type: "NiMo",
+    sourPenalty: 0.96,
+    costRank: 3
+  },
+  {
+    id: "GradeD_Sour",
+    name: "API 11B Grado D Especial (AISI 4142 ≤22 HRC)",
+    uts_mpa: 793,
+    yp_mpa: 586,
+    hardness: "≤ 22 HRC (Templado/Revenido)",
+    type: "CrMo",
+    sourPenalty: 0.92,
+    costRank: 4
+  },
+  {
+    id: "GradeD_Std",
+    name: "API 11B Grado D Estándar (Cr-Mo > 23 HRC)",
+    uts_mpa: 793,
+    yp_mpa: 586,
+    hardness: "23 a 28 HRC (248-270 HBW)",
+    type: "CrMo_Hard",
+    sourPenalty: 0.70,
+    costRank: 5
+  },
+  {
+    id: "UHS_Electra",
+    name: "Alta Resistencia HS / E (AISI 4330M)",
+    uts_mpa: 965,
+    yp_mpa: 793,
+    hardness: "32 a 37 HRC",
+    type: "UHS",
+    sourPenalty: 0.50,
+    costRank: 6
+  },
+  {
+    id: "CRA_13Cr",
+    name: "Inoxidable Martensítico 13Cr (UNS S41425)",
+    uts_mpa: 793,
+    yp_mpa: 586,
+    hardness: "≤ 23 HRC",
+    type: "CRA",
+    sourPenalty: 1.00,
+    costRank: 7
+  },
+  {
+    id: "CRA_K500",
+    name: "Aleación Níquel K-500 / 718 (UNS N05500)",
+    uts_mpa: 1035,
+    yp_mpa: 760,
+    hardness: "≤ 35 HRC (ISO 15156-3)",
+    type: "CRA",
+    sourPenalty: 1.05,
+    costRank: 8
+  }
+];
+
+// 4. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 5. Cálculo de Esfuerzos y Fatiga por Goodman Modificado (API RP 11BR)
+function calcGoodmanAPI11BR(rod, grade, state) {
+  const { pprl_kn, mprl_kn, dogleg, sf_eff_env, region } = state;
+
+  // Ajuste de carga efectiva si es sarta combinada (menor peso muerto propio que sarta monotrama)
+  const loadFactor = rod.isTaper ? 0.92 : 1.00;
+  const F_max_N = pprl_kn * 1000 * loadFactor;
+  const F_min_N = mprl_kn * 1000 * loadFactor;
+
+  // Esfuerzo axial directo (MPa)
+  const sigma_axial_max = F_max_N / rod.area_mm2;
+  const sigma_min = F_min_N / rod.area_mm2;
+
+  // Esfuerzo adicional de flexión por severidad de dogleg (API RP 11BR / Lubinski)
+  // E = 207000 MPa; curvatura c = dogleg (°/30m) convertida a rad/mm
+  const sigma_bend = dogleg > 0 ? (0.5 * 207000 * rod.d_mm * (dogleg * Math.PI / 180) / 30000) * 12 : 0;
+  const sigma_max = sigma_axial_max + sigma_bend;
+
+  // Factor de servicio efectivo del grado (combina el SF ambiental con la susceptibilidad del acero en medio amargo)
+  const isSourOrCorrosive = (region >= 1 || state.pCO2_bar >= 0.5);
+  const sf_grade = isSourOrCorrosive
+    ? (grade.type === "CRA" ? Math.min(1.0, sf_eff_env * 1.08) : sf_eff_env * grade.sourPenalty)
+    : sf_eff_env;
+
+  // Ecuación de Goodman Modificado (API RP 11BR): Sa = (Ta / 4 + 0.5625 * sigma_min) * SF
+  const Sa_mpa = (grade.uts_mpa / 4 + 0.5625 * sigma_min) * sf_grade;
+  const goodman_pct = Sa_mpa > 0 ? (sigma_max / Sa_mpa) * 100 : 999;
+  const fs_static = sigma_max > 0 ? grade.yp_mpa / sigma_max : 99;
+
+  return {
+    sigma_max,
+    sigma_min,
+    sigma_bend,
+    sf_grade,
+    Sa_mpa,
+    goodman_pct,
+    fs_static
+  };
+}
+
+// 6. Evaluación de Elegibilidad Metalúrgica de cada Grado de Varilla
+function evaluateRodGradeEligibility(grade, state) {
+  const { region, temp_c, pH2S_kPa, pH, chlorides, pCO2_bar } = state;
+
+  if (grade.id === "GradeC") {
+    if (region === 0 && pCO2_bar < 0.5) {
+      return {
+        eligible: true,
+        status: "Apto (Dulce)",
+        reason: "Acero C-Mn (AISI 1036 ≤ 22 HRC) económico para ambientes dulces de baja carga."
+      };
+    }
+    return {
+      eligible: true, // Cumple dureza ≤ 22 HRC por SSC, pero sufre fuerte penalización en fatiga corrosiva (163% Goodman)
+      status: "Penalizado por Picadura",
+      reason: `Cumple dureza ≤ 22 HRC, pero carece de Ni-Mo; en salmuera ácida (${chlorides} mg/L Cl⁻, CO₂/H₂S) sufre nucleación de grietas por corrosión-fatiga.`
+    };
+  }
+
+  if (grade.id === "GradeK" || grade.id === "GradeKD") {
+    return {
+      eligible: true,
+      status: "Apto Amargo (Ni-Mo)",
+      reason: `Acero al Níquel-Molibdeno AISI 46XX (${grade.hardness}) según API 11B / NACE MR0176; óptima resistencia a SSC en Región ${region} y a corrosión-fatiga inhibida.`
+    };
+  }
+
+  if (grade.id === "GradeD_Sour") {
+    return {
+      eligible: true,
+      status: "Apto Control SSC",
+      reason: `Cr-Mo AISI 4142 templado y revenido a ≤ 22 HRC (ISO 15156-2); apto para cargas medias-altas en Región ${region}.`
+    };
+  }
+
+  if (grade.id === "GradeD_Std") {
+    if (region <= 1) {
+      return {
+        eligible: true,
+        status: "Apto (Región 0-1)",
+        reason: "Válido en servicio dulce o amargo muy leve (Región 0/1)."
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (SSC >22 HRC)",
+      reason: `Dureza típica 23–28 HRC sin control SSC; alto riesgo de rotura frágil por sulfuros en Región ${region} (pH₂S = ${pH2S_kPa.toFixed(1)} kPa).`
+    };
+  }
+
+  if (grade.id === "UHS_Electra") {
+    if (region === 0) {
+      return {
+        eligible: true,
+        status: "Apto (Solo Dulce)",
+        reason: "Alta resistencia a tracción en ausencia de H₂S."
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (SSC Severo)",
+      reason: `Alta dureza (32–37 HRC); inaceptable en Región ${region} amarga por fragilización por hidrógeno y SSC.`
+    };
+  }
+
+  if (grade.id === "CRA_13Cr") {
+    if (pH2S_kPa <= 10 && pH >= 3.5) {
+      return {
+        eligible: true,
+        status: "Apto CRA (≤10 kPa H₂S)",
+        reason: "Resiste CO₂ sin inhibidor cuando pH₂S ≤ 10 kPa y pH ≥ 3.5 (ISO 15156-3)."
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (ISO 15156-3)",
+      reason: `Supera el límite de pH₂S ≤ 10 kPa para aceros martensíticos 13Cr (actual: ${pH2S_kPa.toFixed(1)} kPa en bomba) y propenso a picadura con ${chlorides} mg/L Cl⁻.`
+    };
+  }
+
+  if (grade.id === "CRA_K500") {
+    return {
+      eligible: true,
+      status: "Apto CRA Extremo",
+      reason: "Aleación base níquel (UNS N05500 / N07718 ≤ 35 HRC, ISO 15156-3 Tabla A.34) inmune a CO₂/H₂S y Cl⁻; reservada para barra pulida o pozos extremos por su alto CAPEX."
+    };
+  }
+}
+
+// 7. Motor Principal de Simulación
+function runSimulation() {
+  const p_int = num("p_int", 112);
+  const p_wh = num("p_wh", 45);
+  const temp_c = num("temp_c", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const solids = num("solids", 12);
+  const atm_cat = document.getElementById("atm_cat").value;
+
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+  const sf_base = num("sf_base", 0.90);
+  const stroke_in = num("stroke_in", 100);
+  const spm = num("spm", 6.0);
+  const dogleg = num("dogleg", 1.0);
+  const has_guides = document.getElementById("has_guides").value === "yes";
+
+  const rod_key = document.getElementById("rod_select").value;
+  const pr_key = document.getElementById("pr_select").value;
+  const cpl_type = document.getElementById("cpl_type").value;
+  const depth_pump = num("depth_pump", 1850);
+  const design_life = num("design_life", 6);
+  const pprl_kn = num("pprl_kn", 62);
+  const mprl_kn = Math.min(pprl_kn, num("mprl_kn", 28));
+  const misalign_deg = num("misalign_deg", 0.25);
+  const goodman_max = num("goodman_max", 100);
+  const fs_pr_req = num("fs_pr_req", 1.50);
+
+  // Presiones parciales en asiento de bomba (1850 m) y en cabezal (0 m)
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_wh_bar = (y_co2 / 100) * (p_wh + 1.01325);
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_wh_kPa = ((y_h2s / 100) * (p_wh + 1.01325)) * 100;
+
+  // Región SSC ISO 15156-2 en bomba y en cabezal
+  const region_pump = getISO15156Region(pH2S_kPa, pH);
+  const region_wh = getISO15156Region(pH2S_wh_kPa, pH);
+  const region = Math.max(region_pump, region_wh);
+
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+  let regimeTxt = "Dominio CO₂ (> 500)";
+  if (pH2S_bar > 0 && ratio_co2_h2s < 20) regimeTxt = `Dominio H₂S (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+  else if (pH2S_bar > 0 && ratio_co2_h2s <= 500) regimeTxt = `Mixto (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + ISO 21457 en el fluido producido (C1)
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const v_uncontrolled = v_base_co2 * (wet_factor / 100);
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_design_int = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+
+  // Penalización al Factor de Servicio (SF) si cae la disponibilidad del inhibidor
+  const inhibPenalty = inhib_avail >= 95 ? 1.0 : Math.max(0.55, 1.0 - (95 - inhib_avail) * 0.012);
+  const sf_eff_env = Math.min(1.0, Math.max(0.35, sf_base * inhibPenalty));
+
+  // Cinemática de bombeo y ciclos de fatiga
+  const stroke_m = stroke_in * 0.0254;
+  const v_mean_ms = (2 * stroke_m * spm) / 60;
+  const v_peak_ms = (Math.PI / 2) * v_mean_ms;
+  const cycles_per_yr = spm * 60 * 24 * 365;
+  const total_cycles = cycles_per_yr * design_life;
+
+  // Cálculos de la Barra Pulida y Prensaestopas en Cabezal (0 m)
+  const prData = PR_CATALOG[pr_key];
+  const sigma_pr_axial = (pprl_kn * 1000) / prData.area_mm2;
+  const sigma_pr_min = (mprl_kn * 1000) / prData.area_mm2;
+  // Esfuerzo por desalineación angular en prensaestopas
+  const sigma_pr_bend = misalign_deg > 0 ? misalign_deg * 42 : 0;
+  const sigma_pr_tot = sigma_pr_axial + sigma_pr_bend;
+  const yp_pr_mpa = 655; // AISI 4140 Q&T ≤ 22 HRC (SMYS ~95 ksi = 655 MPa, UTS ~825 MPa)
+  const fs_pr = sigma_pr_tot > 0 ? yp_pr_mpa / sigma_pr_tot : 99;
+  const Sa_pr = (825 / 4 + 0.5625 * sigma_pr_min) * 0.90;
+  const goodman_pr_pct = (sigma_pr_tot / Sa_pr) * 100;
+
+  // Potencia disipada por fricción en empaquetaduras del prensaestopas (W)
+  const mu_pack = 0.12;
+  const contact_len_m = 0.14;
+  const contact_area_m2 = Math.PI * (prData.d_mm / 1000) * contact_len_m;
+  const friction_W = mu_pack * (p_wh * 1e5) * contact_area_m2 * v_mean_ms;
+
+  // Evaluar todos los grados de varillas sobre el diámetro seleccionado por el usuario
+  const currentRod = ROD_CATALOG.find(r => r.key === rod_key) || ROD_CATALOG[2];
+  const stateObj = {
+    region, temp_c, pH2S_kPa, pH, chlorides, pCO2_bar,
+    pprl_kn, mprl_kn, dogleg, sf_eff_env
+  };
+
+  const gradesEval = GRADES_CATALOG.map(g => {
+    const envCheck = evaluateRodGradeEligibility(g, stateObj);
+    const mech = calcGoodmanAPI11BR(currentRod, g, stateObj);
+    const passesGoodman = mech.goodman_pct <= goodman_max && mech.fs_static >= 1.25;
+    const fullEligible = envCheck.eligible && passesGoodman;
+
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !passesGoodman) {
+      finalReason += ` Falla por fatiga en ${currentRod.name}: utilización de Goodman al ${mech.goodman_pct.toFixed(0)}% (máx. ${goodman_max}%).`;
+    } else if (fullEligible) {
+      finalReason += ` Cumple fatiga API RP 11BR al ${mech.goodman_pct.toFixed(1)}% de Goodman (Sₐ = ${mech.Sa_mpa.toFixed(0)} MPa).`;
+    }
+    return { ...g, envCheck, mech, passesGoodman, fullEligible, finalReason };
+  });
+
+  // Elegir el grado elegible de menor costo; si ninguno pasa, usar Grado K para diagnóstico
+  const chosenGrade = gradesEval.find(g => g.fullEligible) || gradesEval.find(g => g.id === "GradeK");
+  const gradeC_Eval = gradesEval.find(g => g.id === "GradeC");
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pco2").textContent = `${pCO2_bar.toFixed(2)} / ${pCO2_wh_bar.toFixed(2)} bar`;
+  document.getElementById("kpi_pco2_sub").textContent = `Sin inhib.: ${v_uncontrolled.toFixed(1)} mm/a | Diseño: ${v_design_int.toFixed(2)} mm/a`;
+
+  document.getElementById("kpi_ph2s").textContent = `${pH2S_kPa.toFixed(2)} / ${pH2S_wh_kPa.toFixed(2)} kPa`;
+  document.getElementById("kpi_ph2s_sub").textContent = `Bomba (${depth_pump}m) vs Cabezal (Umbral: 0.3 kPa)`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Bomba Reg. ${region_pump} / Cab. Reg. ${region_wh}</span>`;
+  document.getElementById("kpi_regime").textContent = regimeTxt;
+
+  document.getElementById("kpi_goodman").textContent = `${chosenGrade.mech.goodman_pct.toFixed(1)}% (${chosenGrade.id.replace('Grade','Gr. ')})`;
+  document.getElementById("kpi_goodman_sub").textContent = `σ = ${chosenGrade.mech.sigma_max.toFixed(0)}/${chosenGrade.mech.sigma_min.toFixed(0)} MPa | Gr. C: ${gradeC_Eval.mech.goodman_pct.toFixed(0)}%`;
+
+  document.getElementById("kpi_cycles").textContent = `${(total_cycles / 1e6).toFixed(1)} × 10⁶ ciclos`;
+  document.getElementById("kpi_vel_sub").textContent = `v media: ${v_mean_ms.toFixed(2)} m/s (${(cycles_per_yr / 1e6).toFixed(2)}M ciclos/a)`;
+
+  // Renderizar Tabla 1: Elegibilidad de grados
+  const gradesTbody = document.getElementById("grades_tbody");
+  gradesTbody.innerHTML = gradesEval.map(g => {
+    const badgeClass = g.fullEligible ? "ok" : (g.envCheck.eligible ? "warn" : "danger");
+    const statusLabel = g.fullEligible
+      ? `Óptimo (${g.mech.goodman_pct.toFixed(0)}%)`
+      : (g.envCheck.eligible ? `Sobrecarga (${g.mech.goodman_pct.toFixed(0)}%)` : g.envCheck.status);
+    return `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.uts_mpa} MPa (${(g.uts_mpa / 6.895).toFixed(0)} ksi)</td>
+        <td>${g.hardness}</td>
+        <td>${g.mech.sf_grade.toFixed(2)}</td>
+        <td>${g.mech.Sa_mpa.toFixed(0)} MPa</td>
+        <td><strong>${g.mech.goodman_pct.toFixed(1)}%</strong></td>
+        <td><span class="tag ${badgeClass}">${statusLabel}</span></td>
+        <td>${g.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("selected_grade_lbl").textContent = chosenGrade.name;
+  document.getElementById("selected_pr_lbl").textContent = `${prData.name} — AISI 4140 ≤ 22 HRC + Spray Metal Ni-Cr-B`;
+
+  // Renderizar Tabla 2: Verificación de diámetros comerciales de varillas + barra pulida
+  const weightsTbody = document.getElementById("weights_tbody");
+  const rodRowsHTML = ROD_CATALOG.map(r => {
+    const m = calcGoodmanAPI11BR(r, chosenGrade, stateObj);
+    const cplOd = cpl_type === "full" ? r.cpl_full_mm : r.cpl_slim_mm;
+    const passes = m.goodman_pct <= goodman_max && m.fs_static >= 1.25;
+    const isSelected = r.key === rod_key;
+    return `
+      <tr style="${isSelected ? 'background:color-mix(in srgb,var(--acc) 10%,transparent)' : ''}">
+        <td><strong>${r.name}${isSelected ? ' ★' : ''}</strong></td>
+        <td>${r.area_mm2}</td>
+        <td>${cplOd.toFixed(1)} (${cpl_type === 'full' ? 'Full' : 'Slim'})</td>
+        <td>${m.sigma_max.toFixed(0)} / ${m.sigma_min.toFixed(0)}</td>
+        <td>${m.Sa_mpa.toFixed(0)}</td>
+        <td><strong>${m.goodman_pct.toFixed(1)}%</strong></td>
+        <td>${m.fs_static.toFixed(2)}</td>
+        <td><span class="tag ${passes ? 'ok' : 'danger'}">${passes ? 'CUMPLE' : 'FALLA FATIGA'}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  const prPasses = fs_pr >= fs_pr_req && goodman_pr_pct <= goodman_max;
+  const prRowHTML = `
+    <tr style="border-top:2px solid var(--line);background:color-mix(in srgb,var(--warn) 8%,transparent)">
+      <td><strong>Barra Pulida ${prData.name}</strong></td>
+      <td>${prData.area_mm2}</td>
+      <td>Acople PR (46,0 mm)</td>
+      <td>${sigma_pr_tot.toFixed(0)} / ${sigma_pr_min.toFixed(0)}</td>
+      <td>${Sa_pr.toFixed(0)}</td>
+      <td><strong>${goodman_pr_pct.toFixed(1)}%</strong></td>
+      <td>${fs_pr.toFixed(2)} [Mín ${fs_pr_req}]</td>
+      <td><span class="tag ${prPasses ? 'ok' : 'danger'}">${prPasses ? 'CUMPLE' : 'REVISAR PR'}</span></td>
+    </tr>
+  `;
+  weightsTbody.innerHTML = rodRowsHTML + prRowHTML;
+
+  // Veredicto Global Superior
+  const vd = document.getElementById("verdict");
+  const cplOdSelected = cpl_type === "full" ? currentRod.cpl_full_mm : currentRod.cpl_slim_mm;
+  if (chosenGrade.fullEligible && prPasses) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Varilla recomendada</span><strong>${chosenGrade.name.split('(')[0]} (${currentRod.d_in}")</strong></div>
+      <div><span>Utilización Goodman</span><strong>${chosenGrade.mech.goodman_pct.toFixed(1)}% (Sₐ=${chosenGrade.mech.Sa_mpa.toFixed(0)} MPa)</strong></div>
+      <div><span>Acoples y Barra Pulida</span><strong>Clase SM (${cplOdSelected} mm) / PR ${pr_key}"</strong></div>
+      <div><span>Esfuerzo Barra Pulida</span><strong>${sigma_pr_tot.toFixed(0)} MPa (FS ${fs_pr.toFixed(2)})</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `
+      <div class="msg"><strong>Configuración actual excede límites de fatiga o integridad metalúrgica</strong>
+      <span>En ${currentRod.name}, el mejor grado elegible presenta ${chosenGrade.mech.goodman_pct.toFixed(1)}% de utilización Goodman (límite ${goodman_max}%) o FS de barra pulida ${fs_pr.toFixed(2)}. Aumente el diámetro de varilla (ej. 1 in o sarta combinada 86), verifique la disponibilidad del inhibidor (≥ 97.5%) o reduzca las cargas PPRL/dogleg.</span></div>
+    `;
+  }
+
+  // Recomendación detallada por los 5 Subcomponentes del Módulo 5
+  const cplClearance_mm = ((62.0 - cplOdSelected) / 2).toFixed(1); // ID tubing 2 7/8" (6.5 lb/ft) = 62.0 mm
+  const guideSpec = (dogleg >= 1.0 || solids >= 10 || has_guides)
+    ? `Instalar centralizadores/guías poliméricas moldeadas en <strong>Poliftalamida (PPA) o Sulfuro de Polifenileno (PPS) reforzado</strong> (4 por varilla en zonas de dogleg ≥ ${dogleg}°/30m y tercio inferior) para impedir el contacto metal-metal con el tubing de 2 7/8" y proteger el recubrimiento de los acoples frente a ${solids} lb/1000 bbl de arena.`
+    : "Baja desviación; se recomiendan guías de Poliamida 12 (PA12) o PPA en las varillas inferiores sobre la bomba.";
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Sarta de Varillas de Bombeo (0 m a ${depth_pump} m — Corriente C1)</h3>
+      <p><strong>Material Recomendado:</strong> <span style="color:var(--ok);">${chosenGrade.name}</span>, ${chosenGrade.hardness}, diámetro <strong>${currentRod.name}</strong> (Área = ${currentRod.area_mm2} mm², rosca laminada en frío con alivio de tensiones según API Spec 11B e ISO 15156-2 A.2.1.7 y granallado controlado <em>shot-peening</em>).</p>
+      <p><strong>Desempeño a Corrosión-Fatiga:</strong> Esfuerzo cíclico σ<sub>máx</sub> = ${chosenGrade.mech.sigma_max.toFixed(0)} MPa / σ<sub>mín</sub> = ${chosenGrade.mech.sigma_min.toFixed(0)} MPa durante ${(total_cycles / 1e6).toFixed(1)} × 10⁶ ciclos (${design_life} años a ${spm} spm). Utilización de Goodman Modificado: <strong>${chosenGrade.mech.goodman_pct.toFixed(1)}%</strong> (frente a ${gradeC_Eval.mech.goodman_pct.toFixed(0)}% en Grado C sin aleación Ni-Mo). Requiere inyección continua de inhibidor fílmico (disponibilidad A = ${inhib_avail}%).</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Varillas Cortas de Ajuste (Pony Rods — Espaciamiento en Superficie)</h3>
+      <p><strong>Especificación:</strong> Mismo grado metalúrgico (<span style="color:var(--ok);">${chosenGrade.name}</span>, ${chosenGrade.hardness}) y mismo diámetro que el tramo superior de la sarta (${currentRod.d_in} in). Hasta 3 varillas cortas (longitudes API 11B de 508 mm a 3 556 mm) para ajustar el espaciamiento del pistón sin introducir pares galvánicos ni concentradores de esfuerzo.</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Acoples de Varilla (Sucker Rod Couplings — Clase SM)</h3>
+      <p><strong>Material Recomendado:</strong> <span style="color:var(--ok);">API Spec 11B Clase SM (Spray Metal)</span> con núcleo de acero templado y revenido <strong>≤ 22 HRC</strong> (resistente a SSC en Región ${region}) y banda exterior de recubrimiento duro por aspersión térmica y fusión de aleación <strong>Ni-Cr-B-Si</strong> (55–62 HRC superficial, espesor ≥ 0.25 mm) resistente a la abrasión por sólidos (${solids} lb/1000 bbl) y corrosión por CO₂/H₂S.</p>
+      <p><strong>Geometría y Holgura:</strong> Tipo <strong>${cpl_type === 'full' ? 'Full Size' : 'Slim Hole'}</strong> (OD = ${cplOdSelected.toFixed(1)} mm, longitud = 101.6 mm), dejando una holgura radial de ${cplClearance_mm} mm dentro del tubing de 2 7/8" (ID 62.0 mm).</p>
+    </div>
+    <div class="section-box">
+      <h3>D. Barra Pulida (Polished Rod) y Acople de Barra Pulida (Interfaz C1 ↔ C5)</h3>
+      <p><strong>Material Barra Pulida:</strong> <span style="color:var(--ok);">AISI 4140 templado y revenido (≤ 22 HRC en sustrato)</span> con recubrimiento duro por aspersión térmica (Spray Metal base Níquel UNS N06625 / Ni-Cr-B, acabado espejo R<sub>a</sub> ≤ 0.2 μm), diámetro <strong>${prData.name}</strong> (Área = ${prData.area_mm2} mm²).</p>
+      <p><strong>Verificación Mecánica y Acople:</strong> Soporta σ<sub>máx</sub> = ${sigma_pr_tot.toFixed(0)} MPa (axial ${sigma_pr_axial.toFixed(0)} MPa + flexión ${sigma_pr_bend.toFixed(0)} MPa) con <strong>FS = ${fs_pr.toFixed(2)}</strong> y Goodman al ${goodman_pr_pct.toFixed(1)}%. Resiste la exposición alternada en cada embolada de ${stroke_in} in (${stroke_m.toFixed(2)} m) al fluido ácido del prensaestopas (C1, Región ${region_wh}) y a la atmósfera exterior ${atm_cat} (C5). El <strong>acople de barra pulida</strong> (sección subsuperficial) debe ser API 11B Clase SM o Clase T con dureza controlada ≤ 22 HRC.</p>
+    </div>
+    <div class="section-box">
+      <h3>E. Prensaestopas (Stuffing Box) y Guías Centralizadoras</h3>
+      <p><strong>Sellado Dinámico:</strong> Empaquetaduras en <strong>HNBR reforzado con fibra de aramida (Kevlar) + anillos limpiadores en PTFE/FKM</strong> aptos para H₂S (${pH2S_wh_kPa.toFixed(1)} kPa en cabeza), crudo de 18 °API, ${temp_c} °C y disipación friccional de ${friction_W.toFixed(0)} W a v<sub>m</sub> = ${v_mean_ms.toFixed(2)} m/s. Bujes guía en bronce aluminio o PEEK para evitar excentricidad.</p>
+      <p><strong>Guías de Varilla:</strong> ${guideSpec}</p>
+    </div>
+  `;
+
+  // Actualizar Esquema SVG con fluido ascendente y movimiento recíproco de varillas/barra pulida
+  drawRodsSVG({
+    depth_pump,
+    region,
+    region_wh,
+    chosenGrade,
+    currentRod,
+    prData,
+    cplOdSelected,
+    p_int,
+    p_wh,
+    temp_c,
+    y_co2,
+    y_h2s,
+    pCO2_bar,
+    pH2S_kPa,
+    pH,
+    wet_factor,
+    inhib_avail,
+    v_design_int,
+    stroke_in,
+    spm,
+    v_mean_ms,
+    has_guides,
+    pprl_kn,
+    mprl_kn
+  });
+
+  // Exportar Estado Global JSON manteniendo interoperabilidad con los demás módulos
+  const prevState = window.wellStreamState || {};
+  window.wellStreamState = {
+    ...prevState,
+    updatedAt: new Date().toISOString(),
+    fluidStream_C1_C2: {
+      p_int_bar: p_int,
+      p_wh_bar: p_wh,
+      temp_c: temp_c,
+      y_co2_pct: y_co2,
+      y_h2s_pct: y_h2s,
+      pCO2_bar: Number(pCO2_bar.toFixed(4)),
+      pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+      pH: pH,
+      chlorides_mgL: chlorides,
+      solids_lb_1000bbl: solids,
+      iso15156_region: region,
+      inhibitor_availability_pct: inhib_avail,
+      wet_factor_pct: wet_factor,
+      v_inhibited_mm_yr: v_inhib,
+      design_life_yr: design_life
+    },
+    externalAtmosphere_C5: {
+      iso9223_category: atm_cat,
+      surface_temp_c: temp_c
+    },
+    suckerRodsAndPolishedRod_M5: {
+      rodNominalDiameter: currentRod.name,
+      rodArea_mm2: currentRod.area_mm2,
+      recommendedRodGrade: chosenGrade.name,
+      couplingSpec: `API 11B Clase SM (${cpl_type === 'full' ? 'Full Size' : 'Slim Hole'}, OD ${cplOdSelected} mm, núcleo <= 22 HRC)`,
+      ponyRodsSpec: `API 11B ${chosenGrade.id} (${currentRod.d_in} in, <= 22 HRC)`,
+      polishedRodDiameter: prData.name,
+      polishedRodMaterial: "AISI 4140 Q&T (<= 22 HRC) + Spray Metal Ni-Cr-B (UNS N06625)",
+      stroke_in: stroke_in,
+      spm: spm,
+      meanVelocity_ms: Number(v_mean_ms.toFixed(3)),
+      cyclesTotal_6yr: Math.round(total_cycles),
+      pprl_kN: pprl_kn,
+      mprl_kN: mprl_kn,
+      sigmaMaxRod_MPa: Number(chosenGrade.mech.sigma_max.toFixed(1)),
+      sigmaMinRod_MPa: Number(chosenGrade.mech.sigma_min.toFixed(1)),
+      allowableStressSa_MPa: Number(chosenGrade.mech.Sa_mpa.toFixed(1)),
+      goodmanUtilization_pct: Number(chosenGrade.mech.goodman_pct.toFixed(1)),
+      gradeC_OverloadComparison_pct: Number(gradeC_Eval.mech.goodman_pct.toFixed(1)),
+      sigmaPolishedRod_MPa: Number(sigma_pr_tot.toFixed(1)),
+      polishedRodSafetyFactor: Number(fs_pr.toFixed(2))
+    }
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 8. Esquema vectorial técnico con fluido ascendente reactivo y sarta de varillas + barra pulida recíproca
+function drawRodsSVG(d) {
+  const svg = document.getElementById("casingSvg");
+  const {
+    depth_pump, region, chosenGrade, currentRod, prData, cplOdSelected,
+    p_int, p_wh, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int, stroke_in, spm, v_mean_ms,
+    has_guides, pprl_kn, mprl_kn
+  } = d;
+
+  // Coordenadas del esquema vertical: Zona de Cabezal/Prensaestopas arriba (42 a 125) y Columna de Tubing/Varillas (125 a 516)
+  const whTop = 44, surfY = 122, bot = 516, H = bot - surfY, cx = 152;
+  const tbHw = 30; // Semiancho visual del Tubing 2 7/8"
+  const tbL = cx - tbHw, tbR = cx + tbHw;
+  const wl = 5;    // Espesor pared tubing
+  const y = m => surfY + Math.min(1, Math.max(0, m / Math.max(1, depth_pump))) * H;
+
+  // Escalar grosor visual de la varilla y de la barra pulida según selección
+  const rodHw = Math.round(4.5 + ((currentRod.d_mm - 15.88) / (28.58 - 15.88)) * 3.5);
+  const prHw = Math.round(rodHw + 2.5 + ((prData.d_mm - 28.58) / (44.45 - 28.58)) * 3);
+  const cplHw = rodHw + (cplOdSelected >= 45 ? 4.5 : 3.2);
+
+  // 1. Dinámica cromática del fluido producido (C1) según Región ISO 15156-2 y CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.5) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+    } else {
+      fluidTopColor = "#d4a338"; fluidBotColor = "#785316"; fluidGlow = "#eab308"; fluidLabel = "Dulce (Región 0)";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+  const tempNorm = Math.min(1, Math.max(0, (temp_c - 20) / 180));
+
+  // Actualizar leyenda inferior
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido C1: ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | ${spm} spm (${v_mean_ms.toFixed(2)} m/s)`;
+  }
+
+  // 2. Velocidades de animación (fluido ascendente y movimiento recíproco de la sarta a SPM real)
+  const flowDrive = Math.min(1, Math.max(0.15, (v_mean_ms / 1.2) * 0.65 + (p_int / 150) * 0.35));
+  const flowDur = (3.2 - flowDrive * 2.1).toFixed(2);
+  const bubbleDur = (2.7 - flowDrive * 1.8).toFixed(2);
+  // Ciclo recíproco de las varillas proporcional a las emboladas por minuto (SPM)
+  const strokeDur = Math.max(0.8, Math.min(5.0, 12 / Math.max(1, spm))).toFixed(2);
+  const strokeAmpPx = Math.round(6 + Math.min(10, (stroke_in / 200) * 10));
+
+  // 3. Burbujas de CO2 y H2S
+  const co2Intensity = Math.min(1, y_co2 / 10);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const rCo2 = (1.3 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.4).toFixed(1);
+  const opCo2 = (0.30 + co2Intensity * 0.60).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.40 + h2sIntensity * 0.55 : 0).toFixed(2);
+
+  // 4. Película de inhibidor fílmico sobre las varillas y el interior del tubing
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+  const inhibDash = inhib_avail >= 97 ? "none" : "6 4";
+
+  // Color metalúrgico de la varilla según aleación recomendada
+  const rodColor = chosenGrade.type === "CRA" ? "#a78bfa" : (chosenGrade.type === "NiMo" ? "#6fcf97" : "#8cc4d6");
+
+  // Escala de profundidad (0 m en prensaestopas hasta depth_pump en bomba)
+  const step = [200, 250, 500, 1000].find(s => depth_pump / s <= 8) || 500;
+  let ticks = "";
+  for (let m = 0; m <= depth_pump; m += step) {
+    const ty = y(m);
+    ticks += `<line x1="48" x2="54" y1="${ty}" y2="${ty}" stroke="var(--mut)"/>
+              <text x="44" y="${ty + 3}" text-anchor="end">${m}</text>`;
+  }
+
+  // Generar acoples Clase SM y centralizadores a lo largo de la sarta
+  const couplingDepths = [0.16, 0.34, 0.52, 0.70, 0.86];
+  let couplingsAndGuidesSVG = "";
+  couplingDepths.forEach((frac, idx) => {
+    const cy = Math.round(surfY + frac * H);
+    // Acople Clase SM con banda de Spray Metal Ni-Cr-B
+    couplingsAndGuidesSVG += `
+      <rect x="${cx - cplHw}" y="${cy - 7}" width="${2 * cplHw}" height="14" rx="1.5" fill="#d4af37" stroke="var(--tx)" stroke-width="0.9"/>
+      <line x1="${cx - cplHw}" x2="${cx + cplHw}" y1="${cy}" y2="${cy}" stroke="#101316" stroke-width="1"/>
+    `;
+    // Guías poliméricas moldeadas si están activadas
+    if (has_guides) {
+      const gy = cy + 24;
+      couplingsAndGuidesSVG += `
+        <polygon points="${cx - rodHw - 5},${gy - 5} ${cx + rodHw + 5},${gy - 5} ${cx + rodHw + 3},${gy + 5} ${cx - rodHw - 3},${gy + 5}" fill="#38bdf8" stroke="#0284c7" stroke-width="0.8" opacity="0.9"/>
+      `;
+    }
+  });
+
+  const lx = tbR + wl + 12;
+
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipTubingBore"><rect x="${tbL}" y="${surfY}" width="${2 * tbHw}" height="${H}"/></clipPath>
+
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.92"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.78"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.5 ? '#0284c7' : fluidTopColor}" stop-opacity="0.68"/>
+      </linearGradient>
+
+      <linearGradient id="prMetalGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#94a3b8"/>
+        <stop offset="50%" stop-color="#f8fafc"/>
+        <stop offset="100%" stop-color="#64748b"/>
+      </linearGradient>
+
+      <pattern id="upStreamPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <path d="M 7 42 Q 11 24 7 6" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.48" stroke-dasharray="6 4"/>
+        <path d="M 29 46 Q 25 26 29 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.48" stroke-dasharray="6 4"/>
+        <path d="M 7 24 L 10 18 L 13 24" stroke="#ffffff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.6"/>
+        <path d="M 23 14 L 26 8 L 29 14" stroke="${fluidGlow}" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.65"/>
+      </pattern>
+
+      <pattern id="waterCutPat" width="28" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 5 36 C 3 26, 8 16, 5 4" stroke="#38bdf8" stroke-width="2.0" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <path d="M 23 38 C 25 28, 19 14, 23 2" stroke="#0ea5e9" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.55"/>
+        <circle cx="9" cy="14" r="1.6" fill="#7dd3fc" opacity="0.7"/>
+      </pattern>
+
+      <pattern id="gasBubblesPat" width="44" height="56" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="44" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="33" cy="22" r="${(rCo2 * 0.85).toFixed(1)}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="35" cy="48" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.8" opacity="${opH2s}"/>
+        <circle cx="11" cy="26" r="${(rH2s * 0.85).toFixed(1)}" fill="#bef264" stroke="#84cc16" stroke-width="0.7" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #casingSvg text { font: 10px var(--mono); fill: var(--mut); }
+      #casingSvg .b { fill: var(--tx); font-weight: 700; }
+      @keyframes svgFlowUp {
+        from { transform: translateY(0px); }
+        to   { transform: translateY(-48px); }
+      }
+      @keyframes svgWaterUp {
+        from { transform: translateY(0px); }
+        to   { transform: translateY(-40px); }
+      }
+      @keyframes svgBubblesUp {
+        0%   { transform: translate(0px, 0px); }
+        50%  { transform: translate(1.2px, -28px); }
+        100% { transform: translate(0px, -56px); }
+      }
+      @keyframes svgRodRecip {
+        0%, 100% { transform: translateY(-${strokeAmpPx}px); }
+        50%      { transform: translateY(${strokeAmpPx}px); }
+      }
+      #casingSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #casingSvg .flow-up-fast { animation: svgWaterUp ${(flowDur * 0.85).toFixed(2)}s linear infinite; }
+      #casingSvg .bubbles-up { animation: svgBubblesUp ${bubbleDur}s linear infinite; }
+      #casingSvg .rod-recip { animation: svgRodRecip ${strokeDur}s ease-in-out infinite; }
+    </style>
+
+    <!-- Cabecera dinámica superior -->
+    <rect x="8" y="6" width="314" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" style="fill:var(--tx);font-weight:600;font-size:9.3px">${fluidLabel}</text>
+    <text x="314" y="21" text-anchor="end" style="fill:var(--acc);font-size:9.1px">↕${stroke_in}"@${spm}spm | PPRL=${pprl_kn}kN</text>
+
+    <!-- Escala vertical de profundidad (0 m en cabezal a depth_pump m) -->
+    <text x="54" y="${surfY - 8}" text-anchor="middle">m</text>
+    <line x1="54" x2="54" y1="${surfY}" y2="${bot}" stroke="var(--mut)"/>
+    ${ticks}
+
+    <!-- Interior del Tubing (2 7/8") con el fluido producido C1 fluyendo hacia arriba -->
+    <g clip-path="url(#clipTubingBore)">
+      <rect x="${tbL}" y="${surfY}" width="${2 * tbHw}" height="${H}" fill="url(#prodFluidGrad)"/>
+      <rect x="${tbL}" y="${surfY}" width="${2 * tbHw}" height="${H}" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.88).toFixed(2)}" class="flow-up-fast"/>
+      <rect x="${tbL}" y="${surfY}" width="${2 * tbHw}" height="${H}" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${tbL}" y="${surfY}" width="${2 * tbHw}" height="${H}" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+
+    <!-- Película protectora de inhibidor adherida a pared interna del tubing -->
+    <line x1="${tbL + 1.5}" x2="${tbL + 1.5}" y1="${surfY}" y2="${bot}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    <line x1="${tbR - 1.5}" x2="${tbR - 1.5}" y1="${surfY}" y2="${bot}" stroke="#22d3ee" stroke-width="2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+
+    <!-- Paredes del Tubing de Producción (2 7/8" L80-1) -->
+    <rect x="${tbL - wl}" y="${surfY}" width="${wl}" height="${H}" fill="#64748b"/>
+    <rect x="${tbR}" y="${surfY}" width="${wl}" height="${H}" fill="#64748b"/>
+
+    <!-- Te de Bombeo y Salida Lateral hacia Línea de Flujo A2 en Cabezal -->
+    <rect x="${tbR}" y="${surfY + 6}" width="26" height="14" fill="url(#prodFluidGrad)" stroke="#64748b" stroke-width="2"/>
+    <path d="M ${tbR + 4} ${surfY + 13} L ${tbR + 22} ${surfY + 13} M ${tbR + 18} ${surfY + 10} L ${tbR + 23} ${surfY + 13} L ${tbR + 18} ${surfY + 16}" stroke="#ffffff" stroke-width="1.3" fill="none"/>
+
+    <!-- Cuerpo del Prensaestopas (Stuffing Box) y Empaquetaduras HNBR en Superficie (0 m) -->
+    <rect x="${cx - 20}" y="${surfY - 30}" width="40" height="30" rx="3" fill="var(--panel)" stroke="var(--tx)" stroke-width="1.8"/>
+    <!-- Anillos de empaque elastoméricos HNBR/PTFE -->
+    <rect x="${cx - 15}" y="${surfY - 24}" width="${15 - prHw}" height="6" fill="var(--warn)"/>
+    <rect x="${cx + prHw}" y="${surfY - 24}" width="${15 - prHw}" height="6" fill="var(--warn)"/>
+    <rect x="${cx - 15}" y="${surfY - 16}" width="${15 - prHw}" height="6" fill="#38bdf8"/>
+    <rect x="${cx + prHw}" y="${surfY - 16}" width="${15 - prHw}" height="6" fill="#38bdf8"/>
+    <rect x="${cx - 15}" y="${surfY - 8}" width="${15 - prHw}" height="6" fill="var(--warn)"/>
+    <rect x="${cx + prHw}" y="${surfY - 8}" width="${15 - prHw}" height="6" fill="var(--warn)"/>
+
+    <!-- Conjunto Móvil Recíproco: Barra Pulida + Acople PR + Pony Rods + Sarta de Varillas + Acoples SM + Pistón -->
+    <g class="rod-recip">
+      <!-- Abrazadera superior (Polished Rod Clamp) y flecha de carga PPRL/MPRL -->
+      <rect x="${cx - prHw - 5}" y="${whTop + 4}" width="${2 * (prHw + 5)}" height="8" rx="1.5" fill="var(--tx)"/>
+      <!-- Barra Pulida (AISI 4140 + Spray Metal Ni-Cr-B) atravesando prensaestopas (C5 <-> C1) -->
+      <rect x="${cx - prHw}" y="${whTop + 12}" width="${2 * prHw}" height="${surfY - whTop + 18}" fill="url(#prMetalGrad)" stroke="#cbd5e1" stroke-width="0.9"/>
+
+      <!-- Acople de Barra Pulida (Polished Rod Coupling) bajo el prensaestopas -->
+      <rect x="${cx - cplHw - 1}" y="${surfY + 28}" width="${2 * (cplHw + 1)}" height="14" rx="1.5" fill="#e6b450" stroke="var(--tx)" stroke-width="1"/>
+
+      <!-- Pony Rod (Varilla corta de espaciamiento) -->
+      <rect x="${cx - rodHw}" y="${surfY + 42}" width="${2 * rodHw}" height="28" fill="${rodColor}" stroke="#101316" stroke-width="0.7"/>
+      <rect x="${cx - cplHw}" y="${surfY + 70}" width="${2 * cplHw}" height="12" rx="1.5" fill="#d4af37" stroke="var(--tx)" stroke-width="0.9"/>
+
+      <!-- Cuerpo Principal de la Sarta de Varillas (Grado recomendado) -->
+      <rect x="${cx - rodHw}" y="${surfY + 82}" width="${2 * rodHw}" height="${bot - (surfY + 82) - 18}" fill="${rodColor}" stroke="#101316" stroke-width="0.7"/>
+      <!-- Película de inhibidor sobre la sarta de varillas -->
+      <line x1="${cx - rodHw - 1}" x2="${cx - rodHw - 1}" y1="${surfY + 82}" y2="${bot - 18}" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+      <line x1="${cx + rodHw + 1}" x2="${cx + rodHw + 1}" y1="${surfY + 82}" y2="${bot - 18}" stroke="#22d3ee" stroke-width="1.2" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+
+      <!-- Acoples Clase SM y Guías Poliméricas distribuidas -->
+      ${couplingsAndGuidesSVG}
+
+      <!-- Conexión inferior al Émbolo/Pistón de la Bomba de Subsuelo (1850 m) -->
+      <rect x="${cx - tbHw + 4}" y="${bot - 22}" width="${2 * (tbHw - 4)}" height="18" rx="2" fill="var(--warn)" stroke="var(--tx)" stroke-width="1.2"/>
+    </g>
+
+    <!-- Niple de Asiento de la Bomba en el fondo de la columna (1850 m) -->
+    <polygon points="${tbL - wl - 6},${bot} ${tbL + 5},${bot} ${tbL + 5},${bot - 10} ${tbL - wl},${bot - 10}" fill="var(--tx)"/>
+    <polygon points="${tbR + wl + 6},${bot} ${tbR - 5},${bot} ${tbR - 5},${bot - 10} ${tbR + wl},${bot - 10}" fill="var(--tx)"/>
+
+    <!-- Referencias técnicas a la derecha del esquema -->
+    <line x1="${tbL - wl - 14}" x2="${tbR + wl + 14}" y1="${surfY}" y2="${surfY}" stroke="var(--tx)" stroke-width="2"/>
+    <text x="${lx}" y="${whTop + 18}" style="fill:var(--warn);font-weight:700">Barra Pulida ${prData.d_mm.toFixed(1)}mm</text>
+    <text x="${lx}" y="${whTop + 30}" style="font-size:9px">AISI 4140 + Spray Ni (C5)</text>
+    <text x="${lx}" y="${surfY - 8}" class="b">Prensaestopas 0 m</text>
+    <text x="${lx}" y="${surfY + 38}" style="fill:var(--acc)">Pony Rod + Acople PR</text>
+    <text x="${lx}" y="${surfY + Math.round(H * 0.35)}" style="fill:#d4af37;font-weight:600">Acoples Clase SM</text>
+    <text x="${lx}" y="${surfY + Math.round(H * 0.35) + 12}" style="font-size:9px">OD ${cplOdSelected.toFixed(1)}mm (≤22 HRC)</text>
+    ${has_guides ? `<text x="${lx}" y="${surfY + Math.round(H * 0.56)}" style="fill:#38bdf8">Guías PPA / PPS</text>` : ""}
+    <text x="${lx}" y="${bot - 2}" class="b">Bomba ${depth_pump} m</text>
+
+    <!-- Etiqueta inferior con grado recomendado y parámetros de fatiga -->
+    <text x="${cx}" y="${bot + 26}" text-anchor="middle" style="fill:${rodColor};font-weight:700">${chosenGrade.name} (${currentRod.d_in}")</text>
+    <text x="${cx}" y="${bot + 40}" text-anchor="middle" style="font-size:9px;fill:var(--mut)">Goodman: ${chosenGrade.mech.goodman_pct.toFixed(1)}% · CO₂: ${pCO2_bar.toFixed(2)} bar · H₂S: ${pH2S_kPa.toFixed(1)} kPa · Inhib: ${inhib_avail}%</text>
+  `;
+}
+
+function copyGlobalState(btn){
+  const t=JSON.stringify(window.wellStreamState,null,2),done=()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar JSON",1500)};
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(done).catch(()=>{
+    const r=document.createRange();r.selectNodeContents(document.getElementById("json_output"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Texto seleccionado: Ctrl+C";});
+}
+
+// Escuchar cambios en todos los inputs y selects
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+// Inicializar al cargar
+runSimulation();
+</script>
+</body>
+</html>

@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selección de materiales · Proyecto A</title>
+<style>
+
+:root{
+  --plano:#eef2f8;
+  --hoja:#ffffff;
+  --tinta:#12233a;
+  --acero:#586b82;
+  --trazo:#d3dce9;
+  --trazo-suave:#e6ecf4;
+  --azul:#1f6feb;
+  --a1:#f2a900;
+  --a2:#27a9e1;
+  --a3:#2fb67a;
+  --alerta:#d6452a;
+  --supuesto:#b7791f;
+  --ok:#15803d;
+  --radio:10px;
+  --cond:'Barlow Condensed','Arial Narrow','Segoe UI',system-ui,sans-serif;
+  --cuerpo:'Barlow','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--plano);color:var(--tinta);font-family:var(--cuerpo);font-size:15px;line-height:1.45;color-scheme:only light}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--azul);outline-offset:2px;border-radius:6px}
+h1,h2,h3,h4{font-family:var(--cond);font-weight:600;margin:0;letter-spacing:.01em}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:620px}
+
+/* barra superior */
+.barra{display:flex;align-items:center;gap:20px;padding:10px 20px;background:var(--hoja);border-bottom:1px solid var(--trazo)}
+.marca{font-family:var(--cond);font-size:21px;font-weight:700;color:var(--tinta);white-space:nowrap}
+.pestanas{display:flex;gap:4px;margin-left:12px}
+.pestana{background:none;border:0;padding:7px 14px;border-radius:8px;font-weight:500;color:var(--acero)}
+.pestana:hover{background:var(--plano)}
+.pestana[aria-selected="true"]{background:var(--tinta);color:#fff}
+.firma{margin-left:auto;font-size:13px;color:var(--acero);white-space:nowrap}
+.firma b{color:var(--tinta);font-weight:600}
+
+main{min-height:0;overflow:hidden}
+.vista{display:none;height:100%}
+.vista.activa{display:block}
+
+/* sala */
+.sala{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(360px,.8fr);gap:16px;padding:16px;height:100%}
+.col-escena{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-height:0}
+.escena{background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);overflow:hidden;min-height:0;position:relative}
+.escena svg{width:100%;height:100%;display:block}
+.ch{cursor:pointer}
+.ch .sh{fill:#12233a;opacity:.12}
+.ch:hover .nombre-fondo,.ch:focus-visible .nombre-fondo{stroke:var(--tinta)}
+.ch.seleccionado .nombre-fondo{stroke:var(--tinta);stroke-width:2}
+.nombre-fondo{fill:#fff;stroke:var(--trazo);stroke-width:1.2}
+.nombre-txt{font-family:var(--cond);font-weight:600;font-size:14px;fill:var(--tinta);text-anchor:middle}
+.ch .boca{transform-box:fill-box;transform-origin:center}
+.ch.habla .rebote{animation:rebote .55s ease-in-out infinite alternate}
+.ch.habla .boca{animation:habla .22s ease-in-out infinite alternate}
+.ch.escucha .anillo{opacity:1}
+.anillo{fill:none;stroke-width:3;opacity:0;transition:opacity .25s}
+.ch.habla .anillo{opacity:1}
+@keyframes rebote{from{transform:translateY(0)}to{transform:translateY(-5px)}}
+@keyframes habla{from{transform:scaleY(1)}to{transform:scaleY(2.8)}}
+.flujo{fill:none;stroke-width:2.6;stroke-dasharray:7 6;animation:corre 1s linear infinite;opacity:.9}
+.flujo.suave{opacity:.35;stroke-width:1.8}
+@keyframes corre{to{stroke-dashoffset:-26}}
+.globo-fondo{fill:#fff;stroke-width:2}
+.globo-tipo{font-family:var(--cond);font-weight:700;font-size:14px}
+.globo-tema{font-family:var(--cuerpo);font-size:12.5px;fill:var(--tinta)}
+.zona-nombre{font-family:var(--cond);font-weight:600;font-size:15px;fill:var(--acero)}
+.pildora{fill:#fff;stroke:var(--trazo);stroke-width:1.2}
+.pildora-txt{font-family:var(--cond);font-weight:600;font-size:13px;fill:var(--acero);text-anchor:middle}
+.vacio-escena{position:absolute;left:0;right:0;bottom:10px;text-align:center;color:var(--acero);font-size:13px;pointer-events:none}
+
+/* transporte */
+.transporte{background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);padding:10px 14px;display:grid;gap:8px}
+.t-fila{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{background:var(--hoja);border:1px solid var(--trazo);border-radius:8px;padding:6px 12px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--tinta)}
+.btn.principal{background:var(--azul);border-color:var(--azul);color:#fff}
+.btn.principal:hover{background:#1858bd}
+.btn svg{width:16px;height:16px;fill:currentColor}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip-ronda{border:1px solid var(--trazo);background:var(--hoja);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:500}
+.chip-ronda[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+input[type=range]{width:100%;accent-color:var(--azul)}
+.t-info{font-size:13px;color:var(--acero)}
+.t-info b{color:var(--tinta);font-weight:600}
+select,input[type=search]{border:1px solid var(--trazo);background:#fff;border-radius:8px;padding:6px 9px;font-family:var(--cuerpo)}
+
+/* panel derecho */
+.panel{background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;overflow:hidden}
+.filtros{padding:10px 12px;border-bottom:1px solid var(--trazo);display:grid;gap:8px}
+.f-fila{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.f-fila input[type=search]{flex:1;min-width:140px}
+.tipo-chip{border:1px solid var(--trazo);background:#fff;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
+.tipo-chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.tipo-chip[aria-pressed="true"]{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.lista{overflow:auto;padding:10px 12px 40px;display:grid;gap:8px;align-content:start}
+.ronda-titulo{font-family:var(--cond);font-weight:600;font-size:17px;color:var(--tinta);padding:10px 0 2px}
+.msg{border:1px solid var(--trazo-suave);border-left:5px solid var(--c,#999);border-radius:8px;padding:9px 11px;background:#fff;cursor:pointer;transition:opacity .2s}
+.msg.futuro{opacity:.38}
+.msg.actual{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 22%,transparent);background:#fbfdff}
+.msg-cab{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+.quien{font-weight:600}
+.flecha{color:var(--acero)}
+.pil{font-size:12px;font-weight:600;border-radius:999px;padding:1px 9px;color:#fff;background:var(--c2,#555)}
+.msg-tema{font-family:var(--cond);font-weight:600;font-size:17px;margin:3px 0 2px}
+.msg-txt{font-size:14px;color:#26364b;white-space:pre-wrap}
+.msg-txt.corto{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.mas{background:none;border:0;padding:2px 0;color:var(--azul);font-weight:600;font-size:13px}
+.refs{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:2px;font-size:12.5px;color:var(--acero)}
+.alertas{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.alerta{font-size:12px;border-radius:6px;padding:1px 7px;border:1px solid}
+.alerta.nv{color:var(--alerta);border-color:#f3c3b8;background:#fff4f1}
+.alerta.su{color:var(--supuesto);border-color:#ecd7a8;background:#fffaf0}
+.alerta.ot{color:var(--acero);border-color:var(--trazo);background:var(--plano)}
+
+/* ficha de agente */
+.ficha{overflow:auto;padding:14px 16px 40px;display:grid;gap:12px;align-content:start}
+.ficha h3{font-size:24px}
+.ficha-cab{display:flex;gap:12px;align-items:center}
+.sello{width:14px;height:44px;border-radius:5px;background:var(--c)}
+.ficha .rol{color:var(--acero);font-size:14px}
+.bloque{border:1px solid var(--trazo-suave);border-radius:8px;padding:10px 12px;background:#fbfcfe}
+.bloque h4{font-size:16px;margin-bottom:4px}
+.tabla-c{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabla-c td,.tabla-c th{padding:6px 4px;text-align:left;vertical-align:top;border-top:1px solid var(--trazo-suave)}
+.tabla-c th{font-family:var(--cond);font-weight:600;font-size:14px;border-top:0}
+.barra-p{height:8px;border-radius:4px;background:var(--trazo-suave);min-width:60px;position:relative}
+.barra-p>i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--c)}
+ul.simple{margin:4px 0 0 18px;padding:0;font-size:13.5px;display:grid;gap:3px}
+.conf{font-size:12.5px;font-weight:600;border-radius:999px;padding:1px 10px;border:1px solid var(--trazo)}
+.conf.alta{color:var(--ok);border-color:#b7e3c6;background:#f0fbf4}
+.conf.media{color:var(--supuesto);border-color:#ecd7a8;background:#fffaf0}
+.conf.baja{color:var(--alerta);border-color:#f3c3b8;background:#fff4f1}
+
+/* vistas con tablas */
+.pagina{height:100%;overflow:auto;padding:18px 22px 50px}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px}
+.tarjeta-ag{background:var(--hoja);border:1px solid var(--trazo);border-left:6px solid var(--c);border-radius:var(--radio);padding:12px 14px}
+.tarjeta-ag h3{font-size:20px;margin-bottom:6px}
+.linea-r{display:grid;grid-template-columns:78px minmax(0,1fr) auto;gap:10px;padding:8px 0;border-top:1px solid var(--trazo-suave);font-size:13.5px;align-items:start}
+.linea-r:first-of-type{border-top:0}
+.linea-r .rr{font-family:var(--cond);font-weight:600;color:var(--acero);font-size:15px}
+.linea-r .rec{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.linea-r .rec.abierto{-webkit-line-clamp:unset}
+.delta{font-weight:600;font-size:13px}
+.delta.sube{color:var(--ok)}
+.delta.baja{color:var(--alerta)}
+.delta.igual{color:var(--acero)}
+.tit-sec{font-size:24px;margin:22px 0 10px}
+.tit-sec:first-child{margin-top:0}
+.nota{color:var(--acero);font-size:13.5px;max-width:78ch;margin:0 0 10px}
+.matriz{border-collapse:separate;border-spacing:3px;font-size:13.5px;background:var(--hoja);padding:8px;border:1px solid var(--trazo);border-radius:var(--radio)}
+.matriz th{font-family:var(--cond);font-weight:600;font-size:14px;padding:4px 8px;text-align:center;white-space:nowrap}
+.matriz th.fila{text-align:right}
+.matriz td{text-align:center;min-width:64px;height:34px;border-radius:6px;font-weight:600}
+
+.resumen-ia{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.cont{background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);padding:8px 16px;min-width:130px}
+.cont b{font-family:var(--cond);font-size:28px;display:block;line-height:1.1}
+.tabla-ia{width:100%;border-collapse:collapse;background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);font-size:13.5px}
+.tabla-ia th{font-family:var(--cond);font-weight:600;font-size:15px;text-align:left;padding:9px 10px;background:#f6f9fd;position:sticky;top:0;border-bottom:1px solid var(--trazo)}
+.tabla-ia td{padding:8px 10px;border-top:1px solid var(--trazo-suave);vertical-align:top}
+.tabla-ia td .cel{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tabla-ia tr.abierta td .cel{-webkit-line-clamp:unset}
+.tabla-ia tr{cursor:pointer}
+.ver{font-weight:600;border-radius:999px;padding:1px 10px;font-size:12.5px;border:1px solid;white-space:nowrap}
+.ver.correcta{color:var(--ok);border-color:#b7e3c6;background:#f0fbf4}
+.ver.erronea{color:var(--alerta);border-color:#f3c3b8;background:#fff4f1}
+.ver.incompleta{color:var(--supuesto);border-color:#ecd7a8;background:#fffaf0}
+.ver.pendiente{color:var(--acero);border-color:var(--trazo);background:var(--plano)}
+
+@media (max-width:1000px){
+  .app{height:auto}
+  main{overflow:visible}
+  .sala{grid-template-columns:1fr;height:auto}
+  .escena{height:420px}
+  .panel{height:560px}
+  .barra{flex-wrap:wrap}
+  .firma{margin-left:0}
+  .rejilla{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+
+
+#v-envolvente{--ok:#15803d;--am:#c77700;--ro:#d6452a;--nv:#8b9bb0}
+.env{display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr);gap:14px;padding:14px;height:100%}
+.env-col{min-height:0;overflow:auto;padding-right:4px}
+.env-card{background:var(--hoja);border:1px solid var(--trazo);border-radius:var(--radio);padding:12px 14px;margin-bottom:12px}
+.env-card h3{font-size:18px;margin-bottom:8px}
+.env-card h4{font-size:15px;margin:10px 0 4px;color:var(--acero)}
+.env-pre{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.env-pre button{border:1px solid var(--trazo);background:#fff;border-radius:999px;padding:4px 11px;font-size:13px}
+.env-pre button:hover{border-color:var(--azul);color:var(--azul)}
+.env-pre button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+.env-sl{display:grid;grid-template-columns:1fr 78px;gap:2px 8px;align-items:center;margin:7px 0}
+.env-sl label{font-size:13.5px;color:var(--tinta)}
+.env-sl label small{color:var(--acero);display:block;font-size:12px}
+.env-sl input[type=range]{grid-column:1/3;width:100%;accent-color:var(--azul);margin:0}
+.env-sl input[type=number]{width:78px;border:1px solid var(--trazo);border-radius:6px;padding:3px 6px;font-family:var(--cuerpo);font-size:13.5px;text-align:right;background:#fff}
+.env-g{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.env-kpi{flex:1;min-width:84px;border-radius:8px;padding:7px 10px;color:#fff}
+.env-kpi b{display:block;font-family:var(--cond);font-size:28px;line-height:1}
+.env-kpi span{font-size:12.5px}
+.k-ok{background:var(--ok)}.k-am{background:var(--am)}.k-ro{background:var(--ro)}.k-nv{background:var(--nv)}
+.env-grp{font-family:var(--cond);font-weight:600;font-size:15px;margin:10px 2px 4px;display:flex;align-items:center;gap:6px}
+.env-grp i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.env-eq{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#fff;border:1px solid var(--trazo-suave);border-radius:8px;padding:5px 9px;margin-bottom:4px;font-size:13.5px}
+.env-eq:hover{border-color:var(--azul)}
+.env-eq.sel{border-color:var(--azul);box-shadow:0 0 0 2px #cfe0fb}
+.env-eq b{font-weight:600;min-width:62px}
+.env-eq span{color:var(--acero);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.dot{width:11px;height:11px;border-radius:50%;flex:none;background:var(--nv)}
+.d0{background:var(--ok)}.d1{background:var(--am)}.d2{background:var(--ro)}
+.env-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+.env-head h2{font-size:25px}
+.env-head p{margin:2px 0 0;color:var(--acero);font-size:13.5px;max-width:720px}
+.env-banner{background:#fff8e6;border:1px solid #f1d58a;border-radius:8px;padding:7px 11px;font-size:13px;margin-bottom:10px;color:#6b4a00}
+.env-tb{width:100%;border-collapse:collapse;font-size:13.5px}
+.env-tb th{font-family:var(--cond);font-weight:600;font-size:14.5px;text-align:left;padding:5px 7px;background:#f6f9fd;border-bottom:1px solid var(--trazo)}
+.env-tb td{padding:5px 7px;border-top:1px solid var(--trazo-suave);vertical-align:top}
+.env-tb tr.p{cursor:pointer}.env-tb tr.p:hover td{background:#f4f8ff}.env-tb tr.p.sel td{background:#e8f1ff}
+.pill{white-space:nowrap;display:inline-block;border-radius:999px;padding:1px 9px;font-size:12.5px;color:#fff;font-weight:600}
+.p0{background:var(--ok)}.p1{background:var(--am)}.p2{background:var(--ro)}.pn{background:var(--nv)}
+.env-tabs{display:flex;gap:4px;margin:10px 0 8px;border-bottom:1px solid var(--trazo)}
+.env-tabs button{background:none;border:0;padding:6px 12px;font-weight:600;color:var(--acero);border-bottom:3px solid transparent}
+.env-tabs button.on{color:var(--azul);border-bottom-color:var(--azul)}
+.env-chk{display:flex;gap:8px;align-items:flex-start;margin:4px 0;font-size:13.5px}
+.meter{height:7px;border-radius:4px;background:#e6ecf4;position:relative;min-width:90px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.sol{border:1px solid var(--trazo);border-left-width:5px;border-radius:8px;padding:8px 11px;margin:7px 0;background:#fff}
+.sol.operativa{border-left-color:var(--azul)}.sol.diseño{border-left-color:#7c3aed}.sol.material{border-left-color:#0e8f9c}.sol.seguimiento{border-left-color:var(--ok)}
+.sol h5{margin:0 0 2px;font-size:14.5px;font-weight:600}
+.sol small{color:var(--acero);display:block;font-size:12.5px;margin-top:3px}
+.sol .tg{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--acero);font-weight:600}
+.env-ap{margin-top:5px;border:1px solid var(--azul);background:#fff;color:var(--azul);border-radius:6px;padding:3px 11px;font-size:13px;font-weight:600}
+.env-ap:hover{background:var(--azul);color:#fff}
+.env-svg text{font-family:var(--cuerpo);font-size:11px;fill:#35506e}
+.env-planta{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.env-pl{border:1px solid var(--trazo-suave);border-left:5px solid var(--nv);border-radius:8px;padding:6px 10px;font-size:13px}
+.env-pl.ok{border-left-color:var(--ok)}.env-pl.ro{border-left-color:var(--ro)}
+.env-pl b{display:block;font-size:15px}
+@media(max-width:1000px){.env{grid-template-columns:1fr;height:auto}.env-col{overflow:visible}}
+
+:root {
+  --plano:#f5f8fb; --hoja:#fff; --tinta:#17222d; --acero:#4b5866;
+  --trazo:#dde4eb; --trazo-suave:#eaf0f6; --azul:#0b3a63;
+  --alerta:#b83a2a; --supuesto:#a86b12;
+  --cond:'Roboto Slab',Georgia,serif; --cuerpo:Inter,'Segoe UI',Arial,sans-serif;
+}
+#v-envolvente {--ok:#2b7336;--am:#a86b12;--ro:#b83a2a;--nv:#76838f}
+.sim h1,.sim h2,.sim h3,.sim h4 {color:var(--azul)}
+.sim {height:100%; display:grid; grid-template-rows:auto minmax(0,1fr) auto}
+.sim .barra {gap:12px; flex-wrap:wrap}
+.sim .barra p {margin:0; color:var(--acero)}
+html,body {height:100%; overflow:hidden}
+.sim .env {grid-template-columns:minmax(170px,23%) minmax(0,1fr); min-height:0; height:auto; overflow:hidden}
+.sim .env-col {min-width:0; min-height:0; padding:3px 5px 0 3px; overflow:auto; overflow-x:hidden}
+.sim label {display:block; font-weight:600}
+.sim select {display:block; width:100%; min-width:0; background:var(--hoja); border:1px solid var(--trazo); border-radius:6px; padding:5px 8px; margin-bottom:8px}
+.sim .env-sl {grid-template-columns:minmax(0,1fr) auto}
+.sim output,.sim small,.sim footer {color:var(--acero)}
+.sim footer {padding:6px 16px; border-top:1px solid var(--trazo); background:var(--hoja); font-size:12px}
+.chip {border-left:6px solid var(--grupo); padding:3px 8px; display:inline-block; background:var(--plano); border-radius:4px; font-weight:600}
+#chips {display:flex; flex-wrap:wrap; gap:5px}
+#esquema {background-color:var(--plano); background-image:radial-gradient(var(--trazo) 1px,transparent 1px); background-size:13px 13px; border:1px solid var(--trazo); border-radius:8px}
+.process {display:block;width:100%;height:auto;max-height:330px}
+.process .pipe {color:#607d91}
+.process .gas {color:#a05d16}
+.process .agua {color:#087aa8}
+.pipe>path {fill:none;stroke:currentColor;stroke-width:2}
+.gap>path {stroke-dasharray:4 4}
+.particle {fill:currentColor}
+.node {cursor:pointer;outline:none}
+.node .hit {fill:var(--plano);fill-opacity:.93;stroke:transparent}
+.node[aria-pressed=true] .hit,.node:focus-visible .hit {fill:var(--trazo-suave);stroke:var(--azul);stroke-width:2}
+.symbol {fill:none;stroke:currentColor;stroke-width:2}
+.symbol .terrain {stroke:#806a51}
+.symbol .water {stroke:#2198c4}
+.node text {fill:var(--azul);font:700 11px var(--cuerpo)}
+.dot {fill:currentColor}
+.damage {fill:#b92323;stroke:#b92323;pointer-events:none;animation:pulse 1.7s ease-in-out infinite alternate}
+.damage circle:first-child {fill:none;stroke-width:2;stroke-dasharray:4 4}
+@keyframes pulse {from{opacity:.25}to{opacity:.95}}
+.estado0 {color:var(--ok)} .estado1 {color:var(--am)} .estado2 {color:var(--ro)}
+.sim table {width:100%; table-layout:fixed}
+.sim td,.sim th {overflow-wrap:anywhere; vertical-align:top}
+.sim .pill {white-space:normal}
+.sim details {margin-top:8px}
+.sim summary {cursor:pointer; font-weight:600}
+.sim .resumen td,.sim .resumen th {text-align:center}
+.sim .resumen td:first-child,.sim .resumen th:first-child {width:40%; text-align:left}
+.sim .env-g {margin-bottom:8px}
+.sim .env-kpi {padding:6px 8px}
+.sim .env-kpi b {font-size:20px}
+.embedded .barra {display:none}
+.embedded.editor .barra {display:flex}
+.embedded .env {grid-row:2}
+.embedded footer {grid-row:3}
+.embed-only {display:none}
+.embed .embed-only {display:block}
+.embed {grid-template-rows:minmax(0,1fr);font-size:clamp(11px,1.25vw,17px)}
+.embed :is(.barra,footer,.global-card>h3) {display:none}
+.embed .env {grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px}
+.embed .env-col {padding:0;overflow:visible}
+.embed .env-card {margin:0}
+.embed .global-card {display:grid;grid-template-columns:max-content minmax(0,1fr) auto;align-items:center;gap:clamp(6px,1vw,16px);padding:7px 12px}
+.embed .scenario-field label {margin-bottom:2px}
+.embed select {font:inherit;color:var(--tinta)}
+.embed #escenario {width:auto;margin:0}
+.embed #globales {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(5px,1vw,14px)}
+.embed #globales .env-sl {margin:0;gap:2px 4px;grid-template-rows:1fr auto}
+.embed #globales label {font-size:clamp(10px,1.05vw,15px);line-height:1.15}
+.embed button {font:inherit;font-weight:600;white-space:nowrap;cursor:pointer;color:var(--azul);background:var(--plano);border:1px solid var(--trazo);border-radius:6px;padding:6px 9px}
+.embed .results-col {display:grid;grid-template-rows:minmax(0,1fr) minmax(0,clamp(105px,26vh,225px));gap:8px}
+.embed .diagram-card {min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:6px;padding:8px}
+.embed .diagram-head,.embed .pieces-head {display:flex;align-items:center;flex-wrap:wrap;gap:5px 12px}
+.embed .diagram-head {padding-inline:4px}
+.embed :is(.diagram-head,.pieces-head) h3 {margin:0;font-size:clamp(14px,1.45vw,21px)}
+.embed .diagram-head .nota {margin:0;max-width:none;font-size:clamp(10px,1.1vw,15px)}
+.embed #esquema {min-height:0;overflow:hidden}
+.embed .process {height:100%;max-height:none}
+.embed .pieces-card {display:grid;grid-template-rows:auto minmax(0,1fr);gap:5px;padding:6px 12px}
+.embed .pieces-head button {margin-left:auto}
+.embed #piezas {overflow:auto;scrollbar-width:none}
+.embed #piezas:focus-visible {outline:2px solid var(--azul);outline-offset:-2px}
+.embed #piezas th {position:sticky;top:0;background:var(--plano)}
+.embed #piezas .env-tb,.embed #piezas small {font-size:clamp(11px,1.17vw,16px)}
+.embed #piezas :is(th,td) {padding:4px 5px}
+.embed #piezas th:nth-child(-n+3) {width:18%}
+.embed [popover] {box-sizing:border-box;inset:60px 12px auto auto;margin:0;width:min(500px,calc(100% - 24px));max-height:calc(100% - 72px);overflow:auto;border:1px solid var(--trazo);border-radius:8px;background:var(--hoja);color:var(--tinta);box-shadow:0 8px 28px #17222d40;padding:12px}
+.embed #analisis {width:min(900px,calc(100% - 24px))}
+.embed .cerrar-panel {float:right;margin:0 0 6px 8px}
+@media (max-width:630px) {
+  .embed .global-card {grid-template-columns:minmax(0,1fr) auto}
+  .embed #globales {grid-row:2;grid-column:1/-1}
+  .embed #escenario {max-width:100%}
+}
+.sim .sol {overflow-wrap:anywhere}
+.compact {text-decoration:underline dotted; text-underline-offset:3px}
+.state-chip {display:inline-block;border-radius:20px;padding:2px 6px;font-weight:700;background:#edf2f5}
+.state-chip.estado0 {background:#e8f3ea}
+.state-chip.estado1 {background:#fbf1df}
+.state-chip.estado2 {background:#fbeae7}
+.matrix td:first-child,.matrix th:first-child {width:25%}
+.matrix table+table {margin-top:12px}
+#vida svg {width:100%;max-width:470px;display:block}
+@media (prefers-reduced-motion:reduce) {.damage {animation:none}}
+@media (max-width:630px) {
+  .sim .env {grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,34%) minmax(0,1fr)}
+  .sim .barra {padding:6px 10px}
+}
+</style>
+</head>
+<body>
+<div class="sim" id="v-envolvente">
+<header class="barra"><div id="chips"></div><div><h1 id="titulo"></h1><p id="alcance"></p></div></header>
+<main class="env">
+<aside class="env-col" aria-label="Controles de simulación">
+  <section class="env-card global-card">
+    <div class="scenario-field"><label for="escenario">Escenario</label><select id="escenario"></select></div>
+    <h3>Condiciones globales</h3><div id="globales"></div>
+    <button class="embed-only" type="button" popovertarget="config-equipo">Controles por equipo</button>
+  </section>
+  <section class="env-card" id="config-equipo">
+    <button class="embed-only cerrar-panel" type="button" popovertarget="config-equipo" popovertargetaction="hide" aria-label="Cerrar controles">×</button>
+    <h3>Condiciones por equipo</h3>
+    <div id="filtros"></div>
+    <label for="equipo">Equipo</label><select id="equipo"></select>
+    <div id="controles"></div>
+    <div id="totales" class="env-g"></div>
+  </section>
+</aside>
+<div class="env-col results-col" aria-label="Resultados de simulación">
+  <section class="env-card diagram-card"><div class="diagram-head"><h3>Esquema de equipos</h3>
+    <p class="nota">Selecciona un equipo para filtrar las piezas. Cada punto indica su estado. Línea discontinua: tramo fuera del alcance.</p></div>
+    <div id="esquema"></div>
+  </section>
+  <section class="env-card pieces-card"><div class="pieces-head"><h3>Evaluación de piezas</h3>
+    <button class="embed-only" type="button" popovertarget="analisis">Ver análisis</button></div>
+    <div id="piezas"></div>
+  </section>
+  <div id="analisis">
+  <button class="embed-only cerrar-panel" type="button" popovertarget="analisis" popovertargetaction="hide" aria-label="Cerrar análisis">×</button>
+  <div id="resumen"></div>
+  <section class="env-card"><h3>Límites de operación</h3>
+    <label for="pieza">Pieza del equipo seleccionado</label><select id="pieza"></select>
+    <h3>Vida vs. año del yacimiento</h3><div id="vida"></div>
+    <div id="limites"></div>
+  </section>
+  <section class="env-card"><h3>Material resultante</h3><div id="materiales"></div></section>
+  <section class="env-card matrix"><h3>Escenario → material resultante</h3>
+    <p class="nota">Escenarios predefinidos. Las alternativas del motor quedan sujetas a verificación.</p>
+    <div id="matriz"></div>
+  </section>
+  </div>
+</div>
+</main>
+<footer>Datos: Simulador integrado Proyecto A · motor de envolvente (SD-01 a SD-12), tamizaje no certificado</footer>
+</div>
+<script>
+(function(root){
+'use strict';
+const EXP=0.67;                       // escalado con pCO2 (De Waard-Milliams, NO_VERIFICADO)
+const KT=(13.25/7.66-1)/17;           // pendiente de la temperatura entre 68 y 85 C (SD-05)
+const fT=T=>Math.max(0.15,1+KT*(T-68));
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function region(p,pH){ if(p<0.3) return 0; const l=Math.log10(p); if(pH>=4.5+l) return 1; if(pH>=3.5+l) return 2; return 3; }
+function yH2S(G,anio){ return G.H2Shoy+(G.H2S10-G.H2Shoy)*Math.min(Math.max(anio,0),10)/10; }
+
+function Motor(D){
+  const EQ={}; D.eq.forEach(e=>EQ[e.tag]=e);
+  const P={};  D.piezas.forEach(p=>P[p.tag]=p);
+  const byEq={}; D.piezas.forEach(p=>(byEq[p.eq]=byEq[p.eq]||[]).push(p));
+
+  function condEq(st,tag){
+    const e=EQ[tag], o=(st.eq&&st.eq[tag])||{};
+    const pick=(k)=>o[k]!==undefined?o[k]:e[k];
+    return {P:pick('P'),T:pick('T'),A:e.A===null?null:pick('A'),O2:e.O2===null?null:pick('O2'),BSW:e.BSW===null?null:pick('BSW'),
+            H2S:o.H2S,CO2:o.CO2,def:e};
+  }
+  function condPieza(st,p,anioOverride){
+    const G=st.G, c=condEq(st,p.eq), m=p.m||{}, e=c.def;
+    const dP=c.P-e.P;
+    const P0=(m.Pas&&e.Pas)?e.Pas:(m.P!==undefined&&m.P!==null?m.P:e.P);
+    const Pp=Math.max(0.01,P0+dP);
+    const Pc=Math.max(0.01,e.P+dP+((m.P!==undefined&&m.P!==null)?m.P-e.P:0)); // presión en cabeza para H2S
+    const anio=anioOverride===undefined?G.anio:anioOverride;
+    let y2=(c.H2S!==undefined?c.H2S:yH2S(G,anio)); const fx=p.fix;
+    if(fx&&c.H2S===undefined){ y2=(fx[0]==='y')?fx[1]:fx[1]/Math.max(0.01,Pc); }
+    const yc=(c.CO2!==undefined?c.CO2:G.CO2);
+    let A=null; if(m.A!==undefined&&m.A!==null){ A=clamp(m.A+(c.A===null?0:(c.A-e.A)),0,0.9999); }
+    return {P:Pp,Phead:Pc,T:c.T,A,O2:c.O2,BSW:c.BSW,y2,yc,Pdis:(m.Pdis!==undefined?m.Pdis:e.Pdis),Tdis:e.Tdis,pH:G.pH,def:e,P0:P0};
+  }
+  // velocidad de corrosión sin inhibir
+  function Vsin(p,k){
+    const m=p.m, s=D.streams[m.stream];
+    if(m.stream==='C3') return (k.O2!==null&&k.O2>50)?3.0:1.0;
+    if(m.stream==='C5') return (k.BSW!==null&&k.BSW>1)?3.0:0.5;
+    if(m.stream==='C6') return 0.1;
+    const pref=m.pref||s[1], pco2=Math.max(1e-6,k.yc/100*k.P);
+    return s[0]*Math.pow(pco2/pref,EXP)*fT(k.T);
+  }
+  function corr(p,k,G){
+    const m=p.m; if(!m) return null;
+    const Vi=G.Vinh, t=m.t||G.vida, V=Vsin(p,k), out={V,modo:m.modo,t};
+    if(m.modo==='inh'){ out.Veff=k.A*Vi+(1-k.A)*V; out.CAreq=t*out.Veff+(m.extra||0); out.life=Math.max(0,(p.ca-(m.extra||0)))/out.Veff; out.ratio=out.life/t; out.req=t; out.unidad='años de vida'; }
+    else if(m.modo==='gasA'){ out.Veff=k.A*Vi+(1-k.A)*m.f*V+(m.vext||0); out.CAreq=t*out.Veff; out.life=p.ca/out.Veff; out.ratio=out.life/t; out.req=t; out.unidad='años de vida'; }
+    else if(m.modo==='gasS'){ out.Veff=(1-m.f)*Vi+m.f*V; out.CAreq=t*out.Veff; out.life=p.ca/out.Veff; out.ratio=out.life/t; out.req=t; out.unidad='años de vida'; }
+    else if(m.modo==='rev'){ out.Veff=V; out.CAreq=m.tinsp*V; out.life=p.ca/V; out.ratio=out.life/m.tinsp; out.req=m.tinsp; out.unidad='años entre inspecciones'; }
+    else if(m.modo==='repl'){ const ca=m.ca||p.ca; out.Veff=k.A*Vi+(1-k.A)*V; out.CAreq=m.req*out.Veff; out.life=ca/out.Veff; out.ratio=out.life/m.req; out.req=m.req; out.unidad='años entre reemplazos'; out.ca=ca; }
+    return out;
+  }
+  const sCA=r=>r>=0.9995?0:(r>=0.75?1:2);
+  function evalPieza(st,tag,anioOverride){
+    const p=P[tag], k=condPieza(st,p,anioOverride), G=st.G, res={tag,p,k,checks:[]};
+    const c=corr(p,k,G); res.c=c;
+    if(c){
+      const s=sCA(c.ratio);
+      res.checks.push({k:'ca',s,txt:`${c.unidad}: ${fmt(c.life)} (necesario ${fmt(c.req)}); espesor requerido ${fmt(c.CAreq)} mm contra ${fmt(c.ca||p.ca)} mm disponibles`});
+      if(['inh','gasA','gasS'].includes(c.modo)&&p.m.cap!==false&&c.CAreq>G.tope&&s===2)
+        res.checks.push({k:'cap',s:2,txt:`El sobreespesor requerido (${fmt(c.CAreq)} mm) supera el tope de ${G.tope} mm de ISO 21457, 8.2: el acero al carbono ya no cierra`});
+    }
+    if(p.ssc){
+      const pH=G.pH, Pu=(p.m&&p.m.Pas&&k.def.Pas)?k.P:k.Phead; const pp=k.y2*Pu, reg=region(pp,pH);
+      const pb=0.30*((p.m&&p.m.P!==undefined&&p.m.P!==null)?p.m.P:k.def.P)*((p.m&&p.m.Pas&&k.def.Pas)?k.def.Pas/k.def.P:1);
+      const pbase=0.30*(((p.m&&p.m.Pas&&k.def.Pas)?k.def.Pas:((p.m&&p.m.P!==undefined&&p.m.P!==null)?p.m.P:k.def.P)));
+      const fx=p.fix; const pb2=fx?(fx[0]==='y'?fx[1]*((p.m&&p.m.P)||k.def.P):fx[1]):pbase; const regB=region(pb2,4.6);
+      res.pp=pp; res.reg=reg; res.regB=regB; res.pbase=pbase;
+      const s=reg<=regB?0:(reg>=3?2:1);
+      res.checks.push({k:'ssc',s,txt:`pH₂S ${fmt(pp)} kPa a pH ${fmt(pH)}: región ${reg} (base de selección: región ${regB})`});
+    }
+    const sd=(k.Pdis===null?0:(k.P>k.Pdis+1e-9?2:((k.P>0.95*k.Pdis&&k.P>k.P0+0.01)?1:0))), st2=(k.T>k.Tdis+1e-9?2:((k.T>0.95*k.Tdis&&k.T>k.def.T+0.01)?1:0));
+    if(sd||st2||true){
+      let txt=(k.Pdis===null?'':`P ${fmt(k.P)} bar (diseño ${fmt(k.Pdis)}); `)+`T ${fmt(k.T)} °C (diseño ${fmt(k.Tdis)})`;
+      res.checks.push({k:'dis',s:Math.max(sd,st2),txt,sd,st:st2});
+    }
+    res.s=Math.max(...res.checks.map(c=>c.s));
+    res.evaluado=!!(c||p.ssc);
+    if(!res.evaluado){ res.s=Math.max(sd,st2); }
+    return res;
+  }
+  // ---- búsqueda de límites (bisección)
+  function bis(fn,lo,hi,okLow){ // fn(x)=true si cumple; devuelve frontera
+    let a=lo,b=hi; const fa=fn(a), fb=fn(b);
+    if(okLow){ if(!fa) return null; if(fb) return Infinity; } else { if(!fb) return null; if(fa) return -Infinity; }
+    for(let i=0;i<50;i++){ const m=(a+b)/2; if(fn(m)===okLow) a=m; else b=m; }
+    return (a+b)/2;
+  }
+  function limites(st,tag){
+    const p=P[tag], k=condPieza(st,p), G=st.G, rows=[], eqt=p.eq, c0=condEq(st,eqt);
+    const test=(mod)=>{ const s2=JSON.parse(JSON.stringify(st)); s2.eq=s2.eq||{}; s2.eq[eqt]=Object.assign({},(st.eq&&st.eq[eqt])||{},mod); const r=evalPieza(s2,tag); return r; };
+    const m=p.m;
+    if(m){
+      const scal=D.streams[m.stream]&&!['C3','C5','C6'].includes(m.stream);
+      const okCA=r=>r.c.ratio>=1;
+      if(scal){
+        const Pl=bis(x=>okCA(test({P:x})),0.05,400,true); rows.push({v:'P',lab:'Presión de operación',act:c0.P,lim:Pl,kind:'max',u:'bar'});
+        const Tl=bis(x=>okCA(test({T:x})),0,250,true); rows.push({v:'T',lab:'Temperatura de operación',act:c0.T,lim:Tl,kind:'max',u:'°C'});
+        const Cl=bis(x=>okCA(test({CO2:x})),0.001,60,true); rows.push({v:'CO2',lab:'CO₂ en el gas',act:(c0.CO2!==undefined?c0.CO2:G.CO2),lim:Cl,kind:'max',u:'% molar'});
+      }
+      if(k.A!==null&&c0.A!==null){
+        const Al=bis(x=>okCA(test({A:x})),0,0.9999,false); rows.push({v:'A',lab:'Disponibilidad del inhibidor',act:c0.A*100,lim:Al===null?null:(Al===-Infinity?0:Al*100),kind:'min',u:'%',noteMax:Al===null?'ni con 99,99 % cierra':null});
+      }
+      if(m.stream==='C3'&&k.O2!==null) rows.push({v:'O2',lab:'Oxígeno disuelto',act:k.O2,lim:50,kind:'max',u:'µg/l',nota:'objetivo de A3 (SD-06 / D6)'});
+      if(m.stream==='C5'&&k.BSW!==null) rows.push({v:'BSW',lab:'BS&W del crudo tratado',act:k.BSW,lim:1,kind:'max',u:'%',nota:'garantía SD-10'});
+      const c=corr(p,k,G);
+      if(m.modo==='rev') rows.push({v:'tinsp',lab:'Intervalo de inspección del revestimiento',act:m.tinsp,lim:c.life,kind:'max',u:'años'});
+      if(m.modo==='repl') rows.push({v:'tint',lab:'Intervalo de reemplazo',act:m.req,lim:c.life,kind:'max',u:'años'});
+    }
+    if(p.ssc&&!p.fix){
+      const pH=G.pH;
+      const regB=evalPieza(st,tag).regB;
+      const Pu=(m&&m.Pas&&k.def.Pas)?k.P:k.Phead;
+      const pmax=regB>=3?Infinity:Math.pow(10,pH-(regB>=2?3.5:4.5));
+      const lim=(regB===0?0.3:pmax);
+      rows.push({v:'y',lab:'H₂S en el gas (para no salir de la región base)',act:k.y2,lim:lim/Pu,kind:'max',u:'% molar',nota:(isFinite(lim)?`límite de pH₂S ${fmt(lim)} kPa`:'ya está en la región más severa de la base')});
+      rows.push({v:'pHm',lab:'pH del agua producida mínimo',act:pH,lim:(regB>=3?-Infinity:(Math.log10(Math.max(k.y2*Pu,0.3))+(regB>=2?3.5:4.5))),kind:'min',u:'',nota:'frontera de la figura de severidad'});
+    }
+    if(k.Pdis!==null) rows.push({v:'Pd',lab:'Presión máxima de diseño',act:c0.P,lim:k.Pdis,kind:'max',u:'bar',dis:true});
+    rows.push({v:'Td',lab:'Temperatura máxima de diseño',act:c0.T,lim:k.Tdis,kind:'max',u:'°C',dis:true});
+    rows.forEach(r=>{ if(r.lim===Infinity||r.lim===-Infinity||r.lim===null){r.hol=null;} else r.hol=(r.kind==='max'?r.lim-r.act:r.act-r.lim); r.ok=(r.lim===null)?false:(r.kind==='max'?r.act<=r.lim+1e-9:r.act>=r.lim-1e-9); });
+    return rows;
+  }
+  // ---- soluciones
+  function sol(st,tag){
+    const R=evalPieza(st,tag), p=P[tag], G=st.G, out=[], lim=limites(st,tag), L={}; lim.forEach(r=>L[r.v]=r);
+    const cat={}; D.cat.forEach(c=>cat[c.k]=c);
+    const holg=pl=>47.7-pl;
+    const mat=(k,why)=>{ const c=cat[k]; out.push({t:'material',tit:c.n,det:why,idx:c.i,pl:c.p,hol:holg(c.p),verif:'Límites de uso de este material: NO_VERIFICADO (no están en las normas del repositorio)'}); };
+    const failCA=R.checks.find(c=>c.k==='ca'&&c.s>0), failSSC=R.checks.find(c=>c.k==='ssc'&&c.s>0), failDis=R.checks.find(c=>c.k==='dis'&&c.s>0);
+    const failCap=R.checks.find(c=>c.k==='cap');
+    if(failCA&&R.c){
+      const m=p.m;
+      if(L.A&&L.A.lim!==null&&L.A.lim<=99.5) out.push({t:'operativa',tit:`Subir la disponibilidad del inhibidor a ${fmt(L.A.lim,1)} % o más`,det:`Hoy ${fmt(L.A.act,1)} %. Se logra con bomba N+1, alarma de bajo caudal, totalizador y registro; el dueño del tramo es quien lo opera (SD-07).`,apply:{eq:p.eq,A:Math.min(0.9999,L.A.lim/100+0.0005)}});
+      else if(L.A) out.push({t:'operativa',tit:'El inhibidor solo no alcanza',det:'Ni con disponibilidad de 99,99 % se cierra el espesor con estas condiciones: hay que cambiar condición, espesor o material.',apply:null});
+      if(L.P&&L.P.lim!==null&&L.P.lim<L.P.act) out.push({t:'operativa',tit:`Bajar la presión de operación a ${fmt(L.P.lim)} bar o menos`,det:'Reduce la presión parcial de CO₂ (escalado con exponente 0,67, NO_VERIFICADO). Depende del control de presión del proceso.',apply:{eq:p.eq,P:Math.max(0.1,L.P.lim-0.05)}});
+      if(L.T&&L.T.lim!==null&&L.T.lim<L.T.act) out.push({t:'operativa',tit:`Bajar la temperatura a ${fmt(L.T.lim)} °C o menos`,det:'Interpolación lineal entre 68 y 85 °C (SD-05). Requiere enfriar la corriente o cambiar el punto de calentamiento.',apply:{eq:p.eq,T:L.T.lim-0.1}});
+      if(L.O2&&L.O2.act>50) out.push({t:'operativa',tit:'Devolver el oxígeno a 50 µg/l o menos',det:'Restablecer el manto de gas dulce en tanques y filtros y dosificar el secuestrante solo para pulir (D6).',apply:{eq:p.eq,O2:50}});
+      if(L.BSW&&L.BSW.act>1) out.push({t:'operativa',tit:'Volver el BS&W tratado a 1 % o menos',det:'Garantía de A3 a A2 en la succión de P-301 (SD-10).',apply:{eq:p.eq,BSW:1}});
+      if(L.tinsp) out.push({t:'operativa',tit:`Acortar la inspección del revestimiento a ${fmt(Math.max(0.25,L.tinsp.lim),1)} años`,det:'Mismo espesor, más vigilancia: ultrasonido y cupones del defecto del revestimiento.',apply:null});
+      if(L.tint) out.push({t:'operativa',tit:`Reemplazar cada ${fmt(Math.max(0.25,L.tint.lim),1)} años`,det:'La pieza es reemplazable; el costo es de reacondicionamiento y se declara en el plan de pozo.',apply:null});
+      if(['inh','gasA','gasS'].includes(m.modo)){
+        const cr=R.c.CAreq;
+        if(cr<=G.tope) out.push({t:'diseño',tit:`Sobreespesor de ${fmt(Math.ceil(cr*2)/2,1)} mm`,det:`Pasa de ${fmt(p.ca,1)} a ${fmt(Math.ceil(cr*2)/2,1)} mm; aumenta peso y costo de soportes.`,idx:cat.ca.i,pl:cat.ca.p,hol:holg(cat.ca.p)});
+        else out.push({t:'diseño',tit:'El sobreespesor ya no cierra',det:`Se necesitan ${fmt(cr,1)} mm y el tope de ISO 21457, 8.2 es ${G.tope} mm (para tuberías de acero al carbono).`,apply:null});
+      }
+      if(R.c.ratio<0.75||failCap){ mat('cra','Mantiene el acero como estructura y pone la resistencia a la corrosión en una capa interna; es la rama que adoptó el acta donde el carbono no cerró.'); mat('13cr','Alternativa maciza para piezas pequeñas y bombas; revisar límites de H₂S y cloruros.'); }
+      if(R.c.ratio<0.75&&['C3','C5'].includes(m.stream)) mat('grp','Si la presión y la temperatura lo permiten (línea enterrada o de baja presión); necesita personal certificado.');
+    }
+    if(failSSC){
+      if(L.pHm&&isFinite(L.pHm.lim)) out.push({t:'operativa',tit:`Subir el pH del agua producida a ${fmt(L.pHm.lim,2)} o más`,det:'Con el pH que corresponde a la frontera de la figura de severidad para esta pH₂S. Depende de la estrategia de control bacteriano de A3 (vía química A3↔A1).',apply:null});
+      if(L.y&&L.y.lim!==null&&isFinite(L.y.lim)) out.push({t:'operativa',tit:`Mantener el H₂S del gas en ${fmt(L.y.lim,3)} % o menos`,det:'Tratamiento del gas o secuestrante de H₂S aguas arriba; lechos de FG-301 solo cubren el combustible, no el gas húmedo.',apply:null});
+      if(L.P&&L.P.v==='P'){}
+      out.push({t:'diseño',tit:'Acero con ensayo HIC y dureza controlada',det:'Pasa a la familia de servicio amargo con calificación HIC/SSC de la chapa y la soldadura.',idx:cat.hic.i,pl:cat.hic.p,hol:holg(cat.hic.p),verif:'Dureza, grado y región admisible: leer ISO 15156-2 antes de fijar (NO_VERIFICADO aquí)'});
+      mat('cra','Pared interna en aleación resistente: sale de las restricciones de acero en región 3.');
+    }
+    if(failDis){
+      if(failDis.sd) out.push({t:'operativa',tit:`Volver la presión a ${fmt(R.k.Pdis)} bar o menos`,det:'Ajuste de alarma, PSV y control de presión por debajo del diseño mecánico (el acta fija un ajuste de 48 bar(g) para FL-201).',apply:{eq:p.eq,P:condEq(st,p.eq).P-(R.k.P-0.97*R.k.Pdis)}});
+      if(failDis.st) out.push({t:'operativa',tit:`Volver la temperatura a ${fmt(R.k.Tdis)} °C o menos`,det:'La temperatura de diseño es 85 °C máxima, no continua (SD-05); sostenida arriba afecta elastómeros, recubrimientos y bridas.',apply:{eq:p.eq,T:EQ[p.eq].Tdis*0.97}});
+      out.push({t:'diseño',tit:'Rediseñar la clase de presión o temperatura',det:'Requiere nuevo cálculo mecánico del dueño del equipo; no se puede resolver con el material.',apply:null});
+    }
+    if(!out.length) out.push({t:'seguimiento',tit:'Sin acción: dentro de la envolvente',det:'Mantener monitoreo de corrosión (cupones, ER o UT) y registrar la disponibilidad del inhibidor.',apply:null});
+    return out;
+  }
+  function pronostico(st,tag){
+    const p=P[tag], out=[], years=[0,2,5,8,10,12,15,18,20];
+    years.forEach(y=>{ const r=evalPieza(st,tag,y); const c=r.c; const cons=c?Math.min(c.Veff*y,9999):null;
+      const modo=c?c.modo:null; let used=null; if(c){ if(modo==='rev'||modo==='repl') used=null; else used=cons/(p.ca||1); }
+      let s=r.s; if(c&&used!==null){ const other=Math.max(0,...r.checks.filter(q=>q.k!=='ca'&&q.k!=='cap').map(q=>q.s)); s=Math.max(other,used>=1?2:(used>=0.85?1:0)); }
+      out.push({y,reg:r.reg,pp:r.pp,s,cons,used,ca:p.ca}); });
+    return out;
+  }
+  // ---- planta: gas, energía y agua
+  function planta(st){
+    const G=st.G; const bsw=G.bsw/100;
+    const Qliq=G.npozos*G.qliq, Qoil=Qliq*(1-bsw), Qagua=Qliq*bsw;
+    const Qg=Qoil*G.GOR/35.31, Qgen=Math.max(0,Qg-G.Qdulce);
+    const Pt=G.nmt*G.Pnom*G.derr, Pg=Qgen*G.PCI*G.etae/86400*1000, Pfirme=Math.min(Pt,Pg);
+    const marg=Pfirme-G.demanda;
+    const Qm3=Qagua*0.158987, Qdis=1.34*Qm3;
+    const dPmax=G.dP_op*(Pfirme-G.Pbase_kW)/100;
+    const dPreq=(G.P_inj-3);
+    const Pbomba=1.49*dPreq*(Qdis/795);
+    return {Qliq,Qoil,Qagua,Qg,Qgen,Pt,Pg,Pfirme,marg,Qm3,Qdis,dPmax,dPreq,Pbomba,
+      gasOK:Qg>=G.gasmin, energiaOK:marg>=0, bombaOK:Pbomba<=Pfirme-G.Pbase_kW};
+  }
+  function resumen(st){
+    const c=[0,0,0,0], items=[];
+    D.piezas.forEach(p=>{ const r=evalPieza(st,p.tag); const s=r.evaluado||true?r.s:0; c[s]++; if(s>0) items.push(r); });
+    return {c,items};
+  }
+  return {EQ,P,byEq,evalPieza,limites,sol,pronostico,planta,resumen,condEq,condPieza,region,yH2S};
+}
+function fmt(x,d){ if(x===null||x===undefined||isNaN(x)) return '—'; if(!isFinite(x)) return x>0?'sin límite':'—'; const a=Math.abs(x); const n=d!==undefined?d:(a>=100?0:(a>=10?1:(a>=1?2:3))); return Number(x).toFixed(n).replace('.',','); }
+Motor.fmt=fmt; Motor.region=region;
+if(typeof module!=='undefined') module.exports=Motor; else root.Motor=Motor;
+})(typeof window!=='undefined'?window:globalThis);
+const D = {"eq":[{"tag":"BS-101","nombre":"Bomba de subsuelo","sistema":"A1","P":45,"Pdis":112,"T":68,"Tdis":85,"A":0.9,"O2":null,"BSW":null,"Pas":112,"nota":""}],"piezas":[{"tag":"BS-101-a","eq":"BS-101","sistema":"A1","familia":"WC","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","ca":null,"mec":["abrasión y desgaste","corrosión por CO2 en el defecto del recubrimiento (par galvánico recubrimiento/sustrato)","SSC (analogía)"],"costo":"NO_APLICA (sin fila de barril recubierto; base 1,0)","plazo":"SUPUESTO 8 sem (holgura 39,7)","servicio":"Asentada a 1 850 m, 112 bar, 68 °C; pCO2 3,47 bar; pH2S 16,8 kPa hoy y 33,6 kPa año 10 solo con gas libre; abrasión interna con 12 lb/1000 bbl.","ssc":false,"m":null,"fix":null,"mat_corto":"Acero 10XX \u003c= 22 HRC…","prot_corta":"Inhibidor T1; desmontaje y…"},{"tag":"BS-101-b","eq":"BS-101","sistema":"A1","familia":"CS","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","proteccion":"Inhibidor T1; reemplazo con el barril","ca":null,"mec":["abrasión","corrosión localizada en defectos","SSC (analogía)"],"costo":"NO_APLICA","plazo":"SUPUESTO 8 sem","servicio":"Igual que el barril; abrasión entre pistón y barril.","ssc":true,"m":null,"fix":null,"mat_corto":"Acero 10XX con núcleo…","prot_corta":"Inhibidor T1; reemplazo…"},{"tag":"BS-101-c","eq":"BS-101","sistema":"A1","familia":"WC","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","proteccion":"Reemplazo con la bomba","ca":null,"mec":["erosión-corrosión","lixiviación del ligante","SSC no aplica a piezas en compresión"],"costo":"NO_APLICA","plazo":"SUPUESTO 8 sem","servicio":"Erosión-corrosión por arena y caída de presión; carga de compresión.","ssc":false,"m":null,"fix":null,"mat_corto":"Carburo de tungsteno con…","prot_corta":"Reemplazo con la bomba"},{"tag":"BS-101-d","eq":"BS-101","sistema":"A1","familia":"CS","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","ca":null,"mec":["SSC en roscas y cambios de sección","corrosión-fatiga","erosión"],"costo":"NO_APLICA","plazo":"SUPUESTO 8 sem","servicio":"Mismo fluido; carga cíclica de las varillas; roscas con agua estancada.","ssc":true,"m":null,"fix":null,"mat_corto":"Acero 4130","prot_corta":"Reemplazo con la bomba;…"},{"tag":"BS-101-e","eq":"BS-101","sistema":"A1","familia":"NOMET","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","proteccion":"Reemplazo en cada reacondicionamiento","ca":null,"mec":["envejecimiento hidrolítico del nailon a 85 °C","ataque por el inhibidor"],"costo":"NO_APLICA","plazo":"SUPUESTO 8 sem","servicio":"Sello contra el niple por interferencia (plus 30 o plus 10), 68 a 85 °C, agua ácida con H2S.","ssc":false,"m":null,"fix":null,"mat_corto":"Copas de poliamida con…","prot_corta":"Reemplazo en cada reacondic…"}],"streams":{"C1":[7.7,1.395],"C2":[3,0.31],"C3":[1,null],"C4":[3,0.31],"C5":[0.5,null],"C6":[0.1,null]},"cat":[{"k":"ca","n":"Acero al carbono con sobreespesor aumentado","i":1.2,"p":6},{"k":"hic","n":"Acero para servicio amargo con ensayo HIC","i":1.6,"p":16},{"k":"cra","n":"Acero con revestimiento interno de CRA","i":3.8,"p":28},{"k":"w625","n":"Recubrimiento por soldadura de aleación 625","i":4.5,"p":24},{"k":"13cr","n":"Acero 13Cr","i":2.9,"p":22},{"k":"316","n":"Inoxidable 316","i":2.4,"p":10},{"k":"22cr","n":"Dúplex 22Cr","i":6.2,"p":30},{"k":"grp","n":"GRP / GRE epóxico","i":1.8,"p":12},{"k":"rec","n":"Sistema de recubrimiento de alto desempeño","i":0.4,"p":8},{"k":"pc","n":"Protección catódica por ánodos galvánicos","i":0.3,"p":10}],"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74}};
+const config = {"title":"Fredy Britto","scope":"estudiante","roster":[{"id":"britto","nombre":"Fredy Britto","descripcion":"Bomba de subsuelo","equipos":["BS-101"],"piezas":[],"grupo":"A1","key":"A1_britto","tags":["BS-101-a","BS-101-b","BS-101-c","BS-101-d","BS-101-e"]}],"description":"Bomba de subsuelo","groups":{"A1":{"color":"#f2a900","confirmada":true}}};
+const makeScenarios = (D, render) => {
+const G0=JSON.parse(JSON.stringify(D.G));
+let st={G:JSON.parse(JSON.stringify(D.G)),eq:{}}, selEq='FL-201', selPz='FL-201-b', tab='lim', preset='base';
+const PRE=[
+ ['base','Base de diseño'],['y10','Año 10 del yacimiento'],['adv','Yacimiento más agrio'],['inh','Inhibidor por debajo de lo acordado'],
+ ['o2','Manto de gas caído (oxígeno)'],['bsw','Crudo tratado con agua'],['calor','Temperatura sostenida en 85 °C'],['pres','Presión sobre el diseño']
+];
+function aplicarPreset(k){
+  st={G:JSON.parse(JSON.stringify(G0)),eq:{}}; preset=k;
+  const eq=(t,o)=>{st.eq[t]=Object.assign(st.eq[t]||{},o)};
+  if(k==='y10'){st.G.anio=10;}
+  if(k==='adv'){st.G.anio=10;st.G.H2S10=.60;st.G.CO2=4.5;st.G.pH=4.3;}
+  if(k==='inh'){D.eq.forEach(e=>{if(e.A!==null) eq(e.tag,{A:Math.max(0.5,e.A-(e.A>=.95?.05:.10))});});}
+  if(k==='o2'){D.eq.forEach(e=>{if(e.O2!==null) eq(e.tag,{O2:500});});}
+  if(k==='bsw'){D.eq.forEach(e=>{if(e.BSW!==null) eq(e.tag,{BSW:3});});}
+  if(k==='calor'){D.eq.forEach(e=>{ if(e.T>=60&&e.Pdis!==null) eq(e.tag,{T:85}); });}
+  if(k==='pres'){D.eq.forEach(e=>{ if(e.Pdis!==null&&e.P>5) eq(e.tag,{P:e.Pdis*1.1}); });}
+  render();
+}
+
+return {PRE, aplicarPreset, get estado(){return st;}};
+};
+const scenario = makeScenarios(D, actualizarControles);
+const M = Motor(D);
+const fmt = Motor.fmt;
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '—').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nombres = ['En envolvente', 'Atención', 'Fuera de envolvente'];
+const pill = s => '<span class="pill p' + s + '">' + nombres[s] + '</span>';
+const option = (value, label) => '<option value="' + esc(value) + '">' + esc(label) + '</option>';
+const params = new URLSearchParams(location.search);
+const editor = params.get('editor') === '1';
+const embed = params.get('embed') === '1';
+if (embed) {
+  $('v-envolvente').classList.add('embed');
+  $('config-equipo').setAttribute('popover', 'auto');
+  $('analisis').setAttribute('popover', 'auto');
+  $('piezas').tabIndex = 0;
+  $('piezas').setAttribute('role', 'region');
+  $('piezas').setAttribute('aria-label', 'Tabla de evaluación de piezas');
+}
+if (params.get('embedded') === '1') {
+  $('v-envolvente').classList.add('embedded');
+  if (editor) $('v-envolvente').classList.add('editor');
+}
+const groupLabel = key => key + (editor && !config.groups[key].confirmada ? ' · reparto provisional' : '');
+const chip = key => '<span class="chip" style="--grupo:' + esc(config.groups[key].color) + '">' + groupLabel(key) + '</span>';
+const table = (headers, rows) => '<table class="env-tb"><thead><tr>' +
+  headers.map(h => '<th scope="col">' + h + '</th>').join('') + '</tr></thead><tbody>' +
+  rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+
+$('titulo').textContent = config.title;
+document.title = config.title + ' · Selección de materiales';
+$('alcance').textContent = config.description;
+$('chips').innerHTML = Object.keys(config.groups).map(chip).join('');
+$('escenario').innerHTML = scenario.PRE.map(([key, label]) => option(key, label)).join('');
+if (config.scope !== 'estudiante') {
+  $('filtros').innerHTML =
+    (config.scope === 'integrado' ? '<label for="grupo">Grupo</label><select id="grupo">' +
+      option('', 'Todos los grupos') + Object.keys(config.groups).map(key => option(key, groupLabel(key))).join('') + '</select>' : '') +
+    '<label for="integrante">Integrante</label><select id="integrante"></select>';
+}
+
+let visibles = D.piezas;
+let equipo, pieza, frame;
+const globales = [
+  ['anio','Año del yacimiento',0,20,1],
+  ['CO2','CO₂ en el gas (% molar)',0,10,.1],
+  ['H2S10','H₂S al año 10 (% molar)',0,1.5,.01],
+  ['pH','pH del agua producida',3.4,6.5,.05]
+];
+const locales = [
+  ['P','Presión (bar)',.01,400,.01], ['T','Temperatura (°C)',0,250,.1],
+  ['A','Disponibilidad de inhibidor (%)',0,99.99,.01,100],
+  ['O2','Oxígeno disuelto (µg/l)',0,1000,1], ['BSW','BS&W (%)',0,100,.1]
+];
+function sliders(target, fields, values, update) {
+  target.replaceChildren();
+  for (const [key, title, low, high, step, scale = 1] of fields) {
+    if (values[key] == null) continue;
+    const id = target.id + '-' + key;
+    const row = document.createElement('div');
+    row.className = 'env-sl';
+    row.innerHTML = '<label for="' + id + '">' + title + '</label><output for="' + id + '"></output>' +
+      '<input type="range" id="' + id + '" min="' + low + '" max="' + high + '" step="' + step + '">';
+    const input = row.querySelector('input');
+    const output = row.querySelector('output');
+    const exact = values[key] * scale;
+    input.value = exact;
+    output.textContent = fmt(exact);
+    input.addEventListener('input', () => {
+      const value = input.valueAsNumber;
+      output.textContent = fmt(value);
+      update(key, value / scale);
+      if (frame === undefined) frame = requestAnimationFrame(mostrar);
+    });
+    target.append(row);
+  }
+}
+function actualizarControles() {
+  const state = scenario.estado;
+  sliders($('globales'), globales, state.G, (key, value) => { state.G[key] = value; });
+  controlesEquipo();
+  mostrar();
+}
+function controlesEquipo() {
+  const state = scenario.estado;
+  sliders($('controles'), locales, equipo ? M.condEq(state, equipo) : {}, (key, value) => {
+    (state.eq[equipo] ??= {})[key] = value;
+  });
+}
+function filtrarIntegrantes() {
+  if (!$('integrante')) return;
+  const grupo = $('grupo')?.value;
+  $('integrante').innerHTML = option('', 'Todos los integrantes') + config.roster
+    .filter(p => !grupo || p.grupo === grupo)
+    .map(p => option(p.key, (config.scope === 'integrado' ? p.grupo + ' · ' : '') + p.nombre)).join('');
+}
+function filtrar() {
+  const grupo = $('grupo')?.value;
+  const person = $('integrante')?.value;
+  const tags = new Set(config.roster.filter(p => (!grupo || p.grupo === grupo) && (!person || p.key === person)).flatMap(p => p.tags));
+  visibles = D.piezas.filter(p => tags.has(p.tag));
+  const equipment = new Set(visibles.map(p => p.eq));
+  $('equipo').innerHTML = D.eq.filter(e => equipment.has(e.tag)).map(e => option(e.tag, e.tag + ' · ' + e.nombre)).join('');
+  elegirEquipo(equipment.has(equipo) ? equipo : $('equipo').value);
+}
+function elegirEquipo(tag) {
+  equipo = tag;
+  $('equipo').value = tag;
+  const pieces = visibles.filter(p => p.eq === tag);
+  $('pieza').innerHTML = pieces.map(p => option(p.tag, p.tag + ' · ' + p.pieza)).join('');
+  if (pieces.some(p => p.tag === pieza)) $('pieza').value = pieza;
+  pieza = $('pieza').value;
+  controlesEquipo();
+  mostrar();
+}
+// Rutas de proceso y ramales. Las capas de protección y los soportes se muestran aparte.
+const routes = [
+  ['producción', 'BS-101 TB-101 WH-101 XT-101 SSV-101 FL-201 MF-201 V-301 H-301 L-302 T-301 T-302'],
+  ['prueba', 'FL-201 MF-202 V-201 FM-201'],
+  ['crudo tratado', 'T-302 P-301 PL-201 XV-201 TL-201 PL-202'],
+  ['agua', 'V-301 L-303 T-303 T-304 F-301 P-302 L-304 WH-301 WI-101'],
+  ['gas', 'V-301 V-302 L-301 FL-301'],
+  ['gas', 'V-301 V-302 L-301 FG-301'],
+  ['química', 'CI-201 FL-201'],
+  ['química', 'Q-301 L-304']
+];
+const lanes = [
+  'CS-101 CS-102 CS-103 VR-101 BP-101 PK-101 SL-101',
+  'BS-101 TB-101 WH-101 XT-101 SSV-101 FL-201 MF-201 V-301 H-301 L-302 T-301 T-302',
+  'CI-201 MF-202 V-201 FM-201 V-302 L-301 FL-301 FG-301',
+  'WI-101 WH-301 L-304 P-302 F-301 T-304 T-303 L-303',
+  'PL-202 TL-201 XV-201 PL-201 P-301 Q-301',
+  'SP-201 EC-201 EC-201-KA PC-A3 D-301 PC-301'
+];
+const symbols = {
+  tube: '<path d="M-34-5H34M-34 5H34M-23-8V8M23-8V8"/>',
+  buried: '<path class="terrain" d="M-36-11H36m-25 0-5 5m21-5-5 5m-35-5-5 5"/><path d="M-34 0H34M-34 8H34"/>',
+  creek: '<path class="terrain" d="M-35 0H-22L-13 13H16L24 0H35"/><path class="water" d="M-18 7q4-4 9 0t9 0t9 0t9 0"/><path d="M-34-8H34M-34-3H34M-25-3V0M26-3V0"/>',
+  vessel: '<rect x="-29" y="-13" width="58" height="26" rx="13"/><path d="M-17 13v6m34-6v6M-20 4h40M0-13v-6"/>',
+  heater: '<rect x="-30" y="-14" width="60" height="28" rx="8"/><path d="M-20 14v5m40-5v5M-20 4h6l5-10 8 14 8-14 5 10h8M16-14v-8h7v8"/>',
+  gasBoot: '<rect x="-13" y="-18" width="26" height="36" rx="11"/><path d="M0-18v-5m-13 14h-14m40 18h14M-8 6H8"/>',
+  filter: '<rect x="-22" y="-16" width="17" height="32" rx="5"/><rect x="5" y="-16" width="17" height="32" rx="5"/><path d="M-14-16v-5H14v5M-14 16v5H14v-5M-21 4h15M6 4h15"/>',
+  tank: '<path d="M-23-6 0-18l23 12v23h-46zM-23-6h46m-46 18h46"/>',
+  pump: '<path d="M0-15h25v7H13M-14 0h-14m17 14-5 5h31l-5-5"/><circle r="15"/><path d="M-5-6 6 0-5 6z"/>',
+  valve: '<path d="M-34 0h14m40 0h14m-54-11L20 11v-22l-40 22zM0 0v-19m-7 0H7"/>',
+  safetyValve: '<path d="M-34 1h16m36 0h16m-52-8L18 9V-7L-18 9zM0 1v-10"/><rect x="-10" y="-21" width="20" height="12" rx="4"/>',
+  wellhead: '<path d="M-8-19H8v8h9v9H-17v-9h9zM-20-2H20v8H-20zM-9 6v14m18-14v14m-26-26h-12m46 0h12"/>',
+  tree: '<path d="M-4 20v-37h8v37M-9 16H9M-9-17H9M-4-8h-8l-10-6v12l10-6m16 13h8l10-6v12l-10-6h19"/>',
+  trap: '<path d="M-34-10h47q7 0 7 9h14m-68 10h47q7 0 7-5h14m-54-17v25m-10-25v25m58-17v14M-17 9v10"/>',
+  tubing: '<path d="M-5-20v40M5-20v40M-9-12H9v5H-9zM-9 7H9v5H-9z"/>',
+  injector: '<path class="terrain" d="M-33-12H33"/><path d="M-20-18v36m40-36v36M-12-10v29m24-29v29"/><path class="water" d="M0-22v34m-6-6 6 6 6-6" stroke-width="3"/>',
+  packer: '<path d="M-5-20v40m10-40v40M-5-10h-9l-10 6v8l10 6h9m10-20h9l10 6v8l-10 6H5M-24-4h19M5-4h19M-24 4h19M5 4h19"/>',
+  seals: '<ellipse rx="22" ry="13"/><ellipse rx="13" ry="7"/><path d="M-22 0v5a22 13 0 0 0 44 0V0"/>',
+  rod: '<path d="M-29 0h58m-46-5h9v10h-9zm24 0h9v10H7zm-36-5v10m58-10v10"/>',
+  polishedRod: '<path d="M-32-3h64v6h-64zM-24-8v16m48-16v16M-9-11H9"/>',
+  manifold: '<path d="M-33 1h66m-66 6h66m-22-7v-15m11 15v-15m11 15v-15m11 15v-15"/>',
+  flare: '<path d="M-12 18h24M0 18V-5m0-3c-11-6 4-10 1-16 12 8 10 14-1 16z"/>',
+  insulatedJoint: '<path d="M-32-4h21m22 0h21M-32 4h21m22 0h21M-11-12h7v24h-7zM4-12h7v24H4zM0-14v28" stroke-dasharray="none"/>',
+  coating: '<rect x="-24" y="-9" width="48" height="18" rx="5"/><path d="M-33-4h66m-66 8h66m-45-13v18m24-18v18"/>',
+  accessory: '<rect x="-17" y="-10" width="34" height="20" rx="3"/><path d="M-29 0h12m34 0h12"/>'
+};
+function casing(name) {
+  const strings = [[27, 0], [19, 8], [11, 18]];
+  const count = /superficie/i.test(name) ? 1 : /intermedio/i.test(name) ? 2 : 3;
+  const profile = strings.slice(0, count).map(([radius, depth], i) =>
+    `<path d="M-${radius} -17V${depth}h-4M${radius} -17V${depth}h4" ${i === count - 1 ? 'stroke-width="3"' : 'opacity=".55"'}/>`
+  ).join('');
+  return '<path class="terrain" d="M-36-12H36"/>' + profile;
+}
+function symbol(e, rows) {
+  const tag = e.tag;
+  if (tag === 'TL-201') {
+    const parts = rows.filter(r => r.p.eq === tag).map(r => r.p.tag);
+    if (parts.includes('TL-201-c') && parts.includes('TL-201-a')) {
+      return '<g transform="translate(-16,0) scale(.48)">' + symbols.buried +
+        '</g><g transform="translate(16,0) scale(.48)">' + symbols.creek + '</g>';
+    }
+    if (parts.includes('TL-201-c')) return symbols.creek;
+    return parts.includes('TL-201-a') ? symbols.buried : symbols.tube;
+  }
+  if (tag === 'L-304') return symbols.buried;
+  if (/^CS-/.test(tag)) return casing(e.nombre);
+  if (/^WI-/.test(tag)) return symbols.injector;
+  if (/^TB-/.test(tag)) return symbols.tubing;
+  if (/^PK-/.test(tag)) return symbols.packer;
+  if (/^SL-/.test(tag)) return symbols.seals;
+  if (/^VR-/.test(tag)) return symbols.rod;
+  if (/^BP-/.test(tag)) return symbols.polishedRod;
+  if (/^(P|BS)-/.test(tag)) return symbols.pump;
+  if (/^(T|CI)-/.test(tag)) return symbols.tank;
+  if (/^PL-/.test(tag)) return symbols.trap;
+  if (/^FL-301$/.test(tag)) return symbols.flare;
+  if (/^H-/.test(tag)) return symbols.heater;
+  if (/^F-/.test(tag)) return symbols.filter;
+  if (tag === 'V-302') return symbols.gasBoot;
+  if (/^V-/.test(tag)) return symbols.vessel;
+  if (/^WH-/.test(tag)) return symbols.wellhead;
+  if (/^XT-/.test(tag)) return symbols.tree;
+  if (/^SSV-/.test(tag)) return symbols.safetyValve;
+  if (/^XV-/.test(tag)) return symbols.valve;
+  if (/^MF-/.test(tag)) return symbols.manifold;
+  if (/^(L|FL)-/.test(tag)) return symbols.tube;
+  if (tag === 'EC-201-KA') return symbols.insulatedJoint;
+  if (tag === 'EC-201') return symbols.coating;
+  return symbols.accessory;
+}
+function esquema(rows) {
+  const byEq = new Map();
+  for (const row of rows) {
+    if (!byEq.has(row.p.eq)) byEq.set(row.p.eq, []);
+    byEq.get(row.p.eq).push(row);
+  }
+  const shown = new Map();
+  const lines = [...lanes.map(lane => lane.split(' ')),
+    [...byEq.keys()].filter(tag => !lanes.some(lane => lane.split(' ').includes(tag)))];
+  const active = lines.map(line => line.filter(tag => byEq.has(tag))).filter(line => line.length);
+  const width = Math.max(330, Math.max(1, ...active.map(line => line.length)) * 104 + 18);
+  const height = active.length * 82 + 14;
+  active.forEach((line, j) => line.forEach((tag, i) => {
+    shown.set(tag, {x: 9 + (width - 18) * (i + .5) / line.length, y: 32 + j * 82});
+  }));
+  const drawn = new Set();
+  const pipes = [];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function pipe(d, tag, length, service, gap) {
+    const pressure = M.condEq(scenario.estado, tag).P;
+    const seconds = Math.max(.5, length / (32 + 2 * pressure));
+    const motion = reduced ? '' : `<circle r="2.8" class="particle"><animateMotion dur="${seconds.toFixed(2)}s" repeatCount="indefinite" path="${d}"/></circle>`;
+    pipes.push(`<g class="pipe ${gap ? 'gap' : ''} ${service === 'gas' ? 'gas' : service === 'agua' ? 'agua' : ''}"><title>${esc(service)}${gap ? ' · continuación fuera del alcance' : ''}</title><path d="${d}" marker-end="url(#arrow)"/>${motion}</g>`);
+  }
+  for (const [service, route] of routes) {
+    const tags = route.split(' ');
+    const visible = tags.filter(tag => shown.has(tag));
+    if (visible.length === 1) {
+      const [tag] = visible;
+      const {x, y} = shown.get(tag);
+      for (const [side, inRoute, d] of [
+        ['in', tag !== tags[0], `M${x-62} ${y}h28`],
+        ['out', tag !== tags.at(-1), `M${x+34} ${y}h28`]
+      ]) {
+        const id = tag + '/' + side;
+        if (!inRoute || drawn.has(id)) continue;
+        drawn.add(id);
+        pipe(d, tag, 28, service, true);
+      }
+    }
+    for (let i = 1; i < visible.length; i++) {
+      const from = visible[i - 1], to = visible[i], id = from + '/' + to;
+      if (drawn.has(id)) continue;
+      drawn.add(id);
+      const a = shown.get(from), b = shown.get(to);
+      const gap = tags.indexOf(to) - tags.indexOf(from) > 1;
+      const direction = Math.sign(b.x - a.x) || 1;
+      const ax = a.x + direction * 35, bx = b.x - direction * 35;
+      const bridge = b.y - 28;
+      const elbow = bx - direction * 10;
+      const d = a.y === b.y ? `M${ax} ${a.y}H${bx}` :
+        `M${ax} ${a.y}h${direction * 9}V${bridge}H${elbow}V${b.y}H${bx}`;
+      pipe(d, from, Math.abs(a.x - b.x) + Math.abs(a.y - b.y), service, gap);
+    }
+  }
+  const nodes = [...shown].map(([tag, {x, y}]) => {
+    const pieces = byEq.get(tag);
+    const e = M.EQ[tag];
+    const severity = Math.max(...pieces.map(r => r.s));
+    const dots = pieces.map((r, i) => `<circle cx="${(i - (pieces.length - 1) / 2) * Math.min(7, 83 / pieces.length)}" cy="38" r="2.6" class="dot estado${r.s}"><title>${esc(r.p.tag + ' · ' + nombres[r.s])}</title></circle>`).join('');
+    const damage = severity === 2 ? '<g class="damage"><circle r="23"/><circle cx="-7" cy="1" r="2.3"/><circle cx="3" cy="5" r="1.5"/><circle cx="10" cy="-5" r="1.6"/></g>' : '';
+    return `<g tabindex="0" role="button" aria-pressed="${tag === equipo}" aria-label="${esc(tag + ' · ' + e.nombre)}" data-equipo="${esc(tag)}" class="node estado${severity}" transform="translate(${x} ${y})"><title>${esc(e.nombre + ' · ' + nombres[severity])}</title><rect class="hit" x="-47" y="-24" width="94" height="69" rx="6"/><g class="symbol">${symbol(e, rows)}</g>${damage}<text y="28" text-anchor="middle">${esc(tag)}</text>${dots}</g>`;
+  });
+  $('esquema').innerHTML = `<svg class="process" viewBox="0 0 ${width} ${height}" height="${height}" aria-label="Esquema de proceso por alcance"><defs><marker id="arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0 0 5 2.5 0 5z" fill="#607d91"/></marker></defs>${pipes.join('')}${nodes.join('')}</svg>`;
+}
+
+const matrix = {"base":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"y10":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":3,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":3,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"adv":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":3,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":3,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"inh":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"o2":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"bsw":{"BS-101-a":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":0,"vida":null,"región":2,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":0,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"calor":{"BS-101-a":{"s":1,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":1,"vida":null,"región":2,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":1,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":1,"vida":null,"región":2,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":1,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}},"pres":{"BS-101-a":{"s":2,"vida":null,"región":null,"eq":"BS-101","pieza":"barril (B11 a B15)","material":"Acero 10XX \u003c= 22 HRC (A.2.1.2) con camisa interior de cromo duro o níquel-carburo aspergido, pared gruesa (B12/B13)","mat_corto":"Acero 10XX \u003c= 22 HRC…","proteccion":"Inhibidor T1; desmontaje y reacondicionamiento programado","prot_corta":"Inhibidor T1; desmontaje y…","familia":"WC","ca":null,"alternativas":[]},"BS-101-b":{"s":2,"vida":null,"región":3,"eq":"BS-101","pieza":"pistón (P21 a P24)","material":"Acero 10XX con núcleo hasta 23 HRC según ficha (Tabla H/I de API 11AX): pido \u003c= 22 HRC por A.2.1.2; metal aspergido o cromo duro","mat_corto":"Acero 10XX con núcleo…","proteccion":"Inhibidor T1; reemplazo con el barril","prot_corta":"Inhibidor T1; reemplazo…","familia":"CS","ca":null,"alternativas":[]},"BS-101-c":{"s":2,"vida":null,"región":null,"eq":"BS-101","pieza":"bolas y asientos de válvula (V11-125 a V11-375)","material":"Carburo de tungsteno con ligante de níquel (API 11AX C1 en la ficha); cobalto (B1) solo con certificación del proveedor de resistencia a agua ácida con 42 000 mg/l Cl","mat_corto":"Carburo de tungsteno con…","proteccion":"Reemplazo con la bomba","prot_corta":"Reemplazo con la bomba","familia":"WC","ca":null,"alternativas":[]},"BS-101-d":{"s":2,"vida":null,"región":3,"eq":"BS-101","pieza":"jaulas, barra de válvula, tubo de extracción, extractor, acoples, bujes, guías, tapones y mandril","material":"Acero 1018 a 1045 o baja aleación 4130 a 4145 con \u003c= 22 HRC (A.2.1.2), Ni \u003c 1 %, sin maquinado libre","mat_corto":"Acero 4130","proteccion":"Reemplazo con la bomba; roscas con compuesto compatible","prot_corta":"Reemplazo con la bomba;…","familia":"CS","ca":null,"alternativas":[]},"BS-101-e":{"s":2,"vida":null,"región":null,"eq":"BS-101","pieza":"copas de asiento (nailon, Tabla G de API 11AX)","material":"Copas de poliamida con datos de envejecimiento de nivel 2 y 3 en agua salada con H2S (ISO 23936-1); si el proveedor no los tiene, copas de PTFE (exentas de nivel 3 y 4)","mat_corto":"Copas de poliamida con…","proteccion":"Reemplazo en cada reacondicionamiento","prot_corta":"Reemplazo en cada reacondic…","familia":"NOMET","ca":null,"alternativas":[]}}};
+const short = (label, full) => '<span class="compact" tabindex="0" title="' + esc(full) + '">' + esc(label) + '</span>';
+const material = p => short(p.mat_corto, p.material);
+function mostrarMatriz(rows) {
+  const tables = [];
+  for (let i = 0; i < rows.length; i += 4) {
+    const tags = rows.slice(i, i + 4).map(r => r.p.tag);
+    tables.push(table(['Escenario', ...tags.map(esc)], scenario.PRE.map(([key, label]) =>
+      [esc(label), ...tags.map(tag => {
+        const r = matrix[key][tag];
+        return '<span class="state-chip estado' + r.s + '" title="' + esc(nombres[r.s]) + '">' +
+          ['✓','!','×'][r.s] + '</span> ' + material(r) +
+          (r.alternativas.length ? '<details><summary>Alternativas</summary>' + r.alternativas.map(esc).join('<br>') + '</details>' : '');
+      })])));
+  }
+  $('matriz').innerHTML = tables.join('');
+}
+function mostrarVida() {
+  const state = scenario.estado;
+  const out = $('vida');
+  const sample = M.evalPieza(state, pieza).c;
+  if (!sample) { out.textContent = 'El motor no calcula vida para esta pieza.'; return; }
+  const years = Math.max(1, state.G.vida);
+  const values = Array.from({length:21}, (_, i) => M.evalPieza(state, pieza, i * years / 20).c);
+  const max = Math.max(1, ...values.flatMap(c => [c.life, c.req]));
+  const y = v => 91 - 67 * v / max;
+  const xy = values.map((c, i) => (50 + i * 16) + ',' + y(c.life)).join(' ');
+  const current = 50 + 320 * Math.min(state.G.anio, years) / years;
+  out.innerHTML = '<small>' + esc(sample.unidad) + ' · vida estimada ' + fmt(sample.life) +
+    ' · requerida ' + fmt(sample.req) + ' · año ' + fmt(state.G.anio) + '</small>' +
+    `<svg viewBox="0 0 396 117" aria-label="Curva de vida estimada por año">
+      <path d="M50 18v73h320" fill="none" stroke="#8aa1b1"/>
+      <path d="M50 ${y(sample.req)}h320" stroke="#a46b16" stroke-dasharray="4 3"/>
+      <path d="M${current} 18v73" stroke="#9aabb8"/>
+      <polyline points="${xy}" fill="none" stroke="#1772a2" stroke-width="2.5"/>
+      <circle cx="${current}" cy="${y(sample.life)}" r="3.5" fill="#1772a2"/>
+      <g fill="#435768" font-size="10"><text x="5" y="26">${fmt(max)}</text><text x="40" y="93">0</text>
+      <text x="48" y="106">0</text><text x="204" y="106">${years / 2}</text><text x="360" y="106">${years}</text></g>
+    </svg>`;
+}
+function conteo(rows) {
+  const counts = [0,0,0];
+  for (const r of rows) counts[r.s]++;
+  return counts;
+}
+function resumen(byTag) {
+  if (config.scope === 'estudiante') return;
+  const summary = roster => conteo(roster.flatMap(p => p.tags.map(tag => byTag.get(tag))));
+  const headers = ['Alcance', ...nombres];
+  const groupRows = Object.keys(config.groups).map(key =>
+    [chip(key), ...summary(config.roster.filter(p => p.grupo === key))]);
+  const personRows = config.roster.map(p => [
+    esc(p.nombre) + ' ' + chip(p.grupo), ...summary([p])]);
+  let panel = $('resumen').querySelector('section');
+  if (!panel) {
+    $('resumen').innerHTML = '<section class="env-card resumen"><h3>Resumen del escenario</h3>' +
+      '<div id="por-grupo"></div><details><summary>Resultados por estudiante</summary><div id="por-persona"></div></details></section>';
+    panel = $('resumen').querySelector('section');
+    panel.querySelector('details').open = config.scope === 'grupo';
+  }
+  if (config.scope === 'integrado') $('por-grupo').innerHTML = table(headers, groupRows);
+  $('por-persona').innerHTML = table(headers, personRows);
+}
+const pieceName = p => '<b>' + esc(p.tag) + '</b><br><small>' + esc(p.pieza) + '</small>';
+function mostrar() {
+  if (frame !== undefined) cancelAnimationFrame(frame);
+  frame = undefined;
+  const state = scenario.estado;
+  const byTag = new Map(D.piezas.map(p => [p.tag, M.evalPieza(state, p.tag)]));
+  const rows = visibles.map(p => byTag.get(p.tag));
+  const selected = rows.filter(r => r.p.eq === equipo);
+  $('totales').innerHTML = conteo(rows).map((n,i) =>
+    '<div class="env-kpi k-' + ['ok','am','ro'][i] + '"><b>' + n + '</b><span>' + nombres[i] + '</span></div>').join('');
+  esquema(rows);
+  resumen(byTag);
+  $('piezas').innerHTML = table(['Pieza','Material seleccionado','Protección','Corrosión (mm/año)','Vida / requerida (años)','Región ISO 15156','Estado'],
+    selected.map(({p,c,reg,s}) => [pieceName(p),material(p),short(p.prot_corta,p.proteccion),fmt(c?.Veff),
+      c ? fmt(c.life) + ' / ' + fmt(c.req) + '<br><small>' + esc(c.unidad) + '</small>' : '—',
+      reg ?? '—',pill(s)]));
+  mostrarLimites();
+  mostrarMatriz(selected);
+  $('materiales').innerHTML = table(['Pieza','Material seleccionado','Resultado y alternativas'],
+    selected.map(({p,s,checks}) => {
+      if (!s) return [pieceName(p),material(p),pill(s)];
+      const options = M.sol(state,p.tag).filter(x => x.t !== 'seguimiento');
+      const reasons = checks.filter(x => x.s > 0).map(x => esc(x.txt)).join('<br>');
+      const advice = options.map(x => '<div class="sol ' + esc(x.t) + '"><b>' + esc(x.tit) + '</b><br>' +
+        esc(x.det) + (x.verif ? '<br><small>' + esc(x.verif) + '</small>' : '') + '</div>').join('');
+      return [pieceName(p),material(p),pill(s) + '<br>' + reasons + advice +
+        (s === 2 && !options.length ? '<p>requiere cambio de material</p>' : '')];
+    }));
+}
+function mostrarLimites() {
+  if (!pieza) { $('limites').replaceChildren(); return; }
+  mostrarVida();
+  const rows = M.limites(scenario.estado,pieza);
+  $('limites').innerHTML = table(['Variable','Actual','Límite','Holgura'],
+    rows.map(r => [esc(r.lab) + (r.nota ? '<br><small>' + esc(r.nota) + '</small>' : ''),
+      fmt(r.act) + ' ' + r.u,
+      r.lim === null ? esc(r.noteMax || 'No cierra') :
+        Number.isFinite(r.lim) ? (r.kind === 'min' ? '≥ ' : '≤ ') + fmt(r.lim) + ' ' + r.u : 'Sin límite en la búsqueda',
+      r.hol === null ? '—' : '<span class="' + (r.ok ? 'estado0' : 'estado2') + '">' + fmt(r.hol) + ' ' + r.u + '</span>']));
+}
+$('escenario').addEventListener('change', e => scenario.aplicarPreset(e.target.value));
+$('grupo')?.addEventListener('change', () => { filtrarIntegrantes(); filtrar(); });
+$('integrante')?.addEventListener('change', filtrar);
+$('equipo').addEventListener('change', e => elegirEquipo(e.target.value));
+$('pieza').addEventListener('change', e => { pieza = e.target.value; mostrarLimites(); });
+function activarEquipo(e) {
+  const button = e.target.closest('[data-equipo]');
+  if (button) {
+    elegirEquipo(button.dataset.equipo);
+    [...$('esquema').querySelectorAll('[data-equipo]')].find(b => b.dataset.equipo === equipo)?.focus();
+  }
+}
+$('esquema').addEventListener('click', activarEquipo);
+$('esquema').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  activarEquipo(e);
+});
+window.addEventListener('keydown', event => {
+  if (window.parent === window || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (!['ArrowLeft','ArrowRight'].includes(event.key) || event.target.closest('input,select,textarea,button,summary')) return;
+  event.preventDefault();
+  window.parent.postMessage({projectAKey:event.key}, '*');
+});
+const initial = new URLSearchParams(location.search).get('escenario');
+$('escenario').value = scenario.PRE.some(([key]) => key === initial) ? initial : 'base';
+filtrarIntegrantes();
+filtrar();
+scenario.aplicarPreset($('escenario').value);
+</script>
+</body>
+</html>

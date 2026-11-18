@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 6: Cabezal de Pozo y Colgadores (API 6A / ISO 10423)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(280px,330px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.1rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:600px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;display:block;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div><h1>Cabezal de pozo y colgadores</h1>
+  <p>Módulo 6 de 10, sistema A1 (Base de superficie 0 m). Selección de Clase de Material API 6A, soporte axial de sartas, sellos inter-anulares y empernado.</p></div>
+  <ul class="norms"><li>API Spec 6A / ISO 10423</li><li>ISO 15156-2 / -3</li><li>ISO 21457</li><li>ASTM A193 / A320</li></ul>
+</header>
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card"><h2>Corte técnico del cabezal (0 m)</h2>
+        <svg id="equipSvg" viewBox="0 0 340 580" role="img" aria-label="Corte técnico del cabezal de pozo, carrete de tubing, colgadores de cuñas y mandril, ranuras de anillo con Inconel 625 y línea capilar"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido producido ascendente en tubing (C1)</span></li>
+          <li><i style="background:var(--ok);opacity:.55"></i>Cámara anular superior: Fluido de empaque (C4) / Gas (C2)</li>
+          <li><i style="background:#a78bfa;opacity:.9"></i>Inlay de soldadura Alloy 625 (UNS N06625) en ranuras RX/BX</li>
+          <li><i style="background:#f59e0b;opacity:.85"></i>Colgador de tubing (mandril) y colgador de cuñas de casing</li>
+        </ul>
+      </section>
+      <section class="card"><h2>Diagnóstico de severidad y subcomponentes</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presión parcial CO₂ (Cabeza)</div><div class="val" id="kpi_pco2">-</div><div class="sub" id="kpi_pco2_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Presión parcial H₂S (Cabeza)</div><div class="val" id="kpi_ph2s">-</div><div class="sub" id="kpi_ph2s_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Código API 6A mínimo</div><div class="val" id="kpi_apiclass">-</div><div class="sub" id="kpi_psl_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Corrosión interna C1 (Acero)</div><div class="val" id="kpi_vint">-</div><div class="sub" id="kpi_caint">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+    <section class="card"><h2>Elegibilidad de Materiales según API Spec 6A / ISO 10423 (Códigos A a H) e ISO 15156</h2>
+      <div class="scroll"><table><thead><tr><th>Código API 6A (Servicio)</th><th>Cuerpo y Carretes</th><th>Partes Internas (Trim / Colgador)</th><th>Dureza / NACE</th><th>Estado</th><th>Justificación Técnica y Normativa</th></tr></thead><tbody id="grades_tbody"></tbody></table></div></section>
+    <section class="card"><h2>Verificación de series de presión, colgadores y espárragos (API 6A)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Evaluado con la especificación seleccionada de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong> | Brida nominal: <strong id="selected_flange_lbl" style="color:var(--tx)">-</strong></p>
+      <div class="scroll"><table><thead><tr><th>Serie API 6A</th><th>P admisible @ T (bar) [FS]</th><th>Colgador Casing (kN) [FS]</th><th>Colgador Tubing (kN) [FS]</th><th>Esfuerzo Espárragos (MPa) [FS]</th><th>Anillo Junta</th><th>Veredicto</th></tr></thead><tbody id="weights_tbody"></tbody></table></div></section>
+    <section class="card"><h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2><pre id="json_output"></pre></section>
+  </main>
+</div>
+
+<script>
+const S = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) || {};
+const FORM=[
+["Fluido en cabezal y cámara anular (C1, C2, C4)",[
+ ["p_int","Presión de cierre/diseño (SITP)","bar",incomingValue("p_head_design_bar", 50),1,1050,1],
+ ["temp_c","Temperatura máx. cabezal","°C",incomingValue("temp_surface_design_c", 85),5,250,1],
+ ["y_co2","CO₂ en gas","% mol",incomingValue("y_co2_pct", 3.1),0,100,0.1],
+ ["y_h2s","H₂S en gas (actual / año 10)","% mol",incomingValue("y_h2s_pct", 0.15),0,100,0.01],
+ ["ph","pH in situ","",incomingValue("pH", 4.6),1,14,0.1],
+ ["chlorides","Cloruros","mg/L",incomingValue("chlorides_mgL", S.chlorides_mgL||42000),0,250000,500],
+ ["wet_factor","Corte de agua / mojado (BSW)","%",incomingValue("bsw_pct", 78),0,100,1],
+ ["inhib_avail","Disponibilidad inhibidor (A)","%",incomingValue("inhibitor_availability_pct", 90),0,100,0.5],
+ ["v_inhib","Velocidad con inhibidor","mm/a",incomingValue("v_inhibited_mm_yr", 0.1),0,2,0.01]]],
+["Ambiente de superficie y sellado (C4, C5)",[
+ ["temp_rating","Clasificación térmica API 6A",[
+   ["K","K (-60 °C a 82 °C)"],
+   ["L","L (-46 °C a 82 °C)"],
+   ["P","P (-29 °C a 82 °C)"],
+   ["R","R (Ambiente a 60 °C)"],
+   ["S","S (-18 °C a 65 °C)"],
+   ["T","T (-18 °C a 82 °C)"],
+   ["U","U (-18 °C a 121 °C)"],
+   ["V","V (2 °C a 121 °C)"]
+ ],"U"],
+ ["annulus_fluid","Fluido en anular bajo carrete",[
+   ["packer_fluid","C4: Fluido de empaque inhibido (pH 9.5-10.5)"],
+   ["sour_gas","C2: Gas húmedo ácido (sin packer / fuga)"]
+ ],"packer_fluid"],
+ ["groove_overlay","Inlay en ranuras de anillo (Ring Groove)",[
+   ["in625","Weld Overlay Alloy 625 (UNS N06625, e ≥ 3 mm)"],
+   ["ss316","Inlay Acero Inoxidable 316L"],
+   ["none","Sin recubrimiento (Mismo metal base)"]
+ ],"in625"],
+ ["capillary_pen","Penetración capilar de química (3/8\")",[
+   ["yes","Sí, puerto continuo en colgador (Alloy 625)"],
+   ["no","No requiere pasamuros capilar"]
+ ],"yes"],
+ ["ext_atm","Atmósfera externa ISO 9223 (C5)",[
+   ["C4","Categoría C4 (Tropical industrial - Barrancabermeja)"],
+   ["C3","Categoría C3 (Urbana / Moderada)"],
+   ["C5","Categoría C5 (Marina / Industrial muy severa)"]
+ ],"C4"]]],
+["Geometría, cargas de sartas y seguridad",[
+ ["flange_size","Tamaño nominal brida carretes",[
+   ["7.0625","7 1/16 in (Casing 4.5\" - 5.5\")"],
+   ["11.0","11 in (Casing 7\" × Tubing 2 7/8\")"],
+   ["13.625","13 5/8 in (Casing 9 5/8\" - 10 3/4\")"]
+ ],"11.0"],
+ ["top_bore","Paso vertical hacia árbol (Bore)",[
+   ["2.0625","2 1/16 in (52,4 mm)"],
+   ["2.5625","2 9/16 in (65,1 mm)"],
+   ["3.125","3 1/8 in (79,4 mm)"],
+   ["4.0625","4 1/16 in (103,2 mm)"]
+ ],"2.5625"],
+ ["f_csg_req","Carga axial Casing Prod. (7\")","kN",780,50,5000,10],
+ ["f_tbg_req","Carga axial Tubing (2 7/8\" + ancla)","kN",220,20,2500,10],
+ ["p_test_ann","Presión prueba sellos pack-off","bar",83,10,1500,5],
+ ["design_life","Vida de diseño permanente","años",incomingValue("design_life_yr", 20),5,50,1],
+ ["fs_press_req","FS mín. presión de trabajo","",1.20,1.0,2.5,0.05],
+ ["fs_hanger_req","FS mín. colgadores y pernos","",1.50,1.1,3.0,0.05]]]];
+
+function buildForm(){
+  document.getElementById("form").innerHTML=FORM.map(([t,fs])=>`<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f=>{
+    const [id,lb,u]=f,sel=Array.isArray(u);
+    const ctl=sel?`<select id="${id}">${u.map(o=>`<option value="${o[0]}"${o[0]===f[3]?" selected":""}>${o[1]}</option>`).join("")}</select>`
+      :`<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel?" w":""}"><label for="${id}">${lb}</label>${ctl}</div>`}).join("")}</div></details>`).join("");
+}
+buildForm();
+const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:d;};
+
+// 1. Catálogo de Especificaciones de Materiales API Spec 6A / ISO 10423 (Nomenclatura oficial de doble letra A..H)
+const API6A_CLASSES = [
+  { id: "A", name: "API 6A [A] — Servicio General (Dulce)", body: "Acero al carbono o baja aleación (AISI 4130)", trim: "Acero al carbono / baja aleación", nacedesc: "No cumple ISO 15156", sour: false, minCO2_psi: 0, maxCO2_psi: 7, costRank: 1 },
+  { id: "B", name: "API 6A [B] — Servicio General (CO₂ Leve)", body: "Acero al carbono o baja aleación (AISI 4130)", trim: "Inoxidable Martensítico (13Cr / 410 SS)", nacedesc: "No cumple ISO 15156", sour: false, minCO2_psi: 7, maxCO2_psi: 30, costRank: 2 },
+  { id: "C", name: "API 6A [C] — Servicio General (CO₂ Alto)", body: "Inoxidable Martensítico (13Cr / F6NM)", trim: "Inoxidable Martensítico (13Cr / F6NM)", nacedesc: "No cumple ISO 15156", sour: false, minCO2_psi: 30, maxCO2_psi: 9999, costRank: 3 },
+  { id: "D", name: "API 6A [D] — Servicio Amargo (Bajo CO₂)", body: "Acero baja aleación AISI 4130 Q&T", trim: "AISI 4130 / Baja aleación", nacedesc: "Sí (≤ 22 HRC, ISO 15156-2)", sour: true, minCO2_psi: 0, maxCO2_psi: 7, costRank: 4 },
+  { id: "E", name: "API 6A [E] — Servicio Amargo + CO₂ Moderado", body: "Acero baja aleación AISI 4130 Forjado", trim: "Inoxidable 13Cr (F6NM) / Dúplex / CRA", nacedesc: "Sí (≤ 22 HRC, ISO 15156-2/-3)", sour: true, minCO2_psi: 7, maxCO2_psi: 30, costRank: 5 },
+  { id: "F", name: "API 6A [F] — Servicio Amargo + CO₂ Elevado", body: "Inoxidable 13Cr / F6NM (UNS S41500)", trim: "Inoxidable 13Cr / Super 13Cr / Dúplex 22Cr", nacedesc: "Sí (≤ 22/23 HRC, ISO 15156-3)", sour: true, minCO2_psi: 30, maxCO2_psi: 9999, costRank: 6 },
+  { id: "H", name: "API 6A [H] — Servicio Amargo Extremo (CRA)", body: "AISI 4130 Clad integral Alloy 625 o CRA Sólido", trim: "Aleación Níquel 625 / 718 / 825 (CRA)", nacedesc: "Sí (≤ 35 HRC, ISO 15156-3)", sour: true, minCO2_psi: 0, maxCO2_psi: 9999, costRank: 7 }
+];
+
+// 2. Catálogo de Series de Presión Nominal API Spec 6A (2000 a 15000 psi)
+const PRESSURE_RATINGS = [
+  { psi: 2000,  bar: 137.9, csgSlipCap_kN: 1350, tbgMandrelCap_kN: 480, boltArea_mm2: 3850, gasket: "R-53 / RX-53" },
+  { psi: 3000,  bar: 206.8, csgSlipCap_kN: 1750, tbgMandrelCap_kN: 680, boltArea_mm2: 5400, gasket: "R-53 / RX-53" },
+  { psi: 5000,  bar: 344.7, csgSlipCap_kN: 2400, tbgMandrelCap_kN: 950, boltArea_mm2: 7900, gasket: "R-54 / RX-54" },
+  { psi: 10000, bar: 689.5, csgSlipCap_kN: 3400, tbgMandrelCap_kN: 1450, boltArea_mm2: 11800, gasket: "BX-158" },
+  { psi: 15000, bar: 1034.2, csgSlipCap_kN: 4200, tbgMandrelCap_kN: 1900, boltArea_mm2: 15600, gasket: "BX-158" }
+];
+
+const TEMP_RATINGS = {
+  "K": { min: -60, max: 82 },
+  "L": { min: -46, max: 82 },
+  "P": { min: -29, max: 82 },
+  "R": { min: 15,  max: 60 },
+  "S": { min: -18, max: 65 },
+  "T": { min: -18, max: 82 },
+  "U": { min: -18, max: 121 },
+  "V": { min: 2,   max: 121 }
+};
+
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+function evaluateAPI6AClass(cls, st) {
+  const { region, pCO2_psi, pH2S_kPa, temp_c, pH, chlorides, groove_overlay, ca_int_mm } = st;
+  const isSour = region > 0 || pH2S_kPa >= 0.3;
+
+  if (isSour && !cls.sour) {
+    return {
+      eligible: false,
+      status: "Descartado (SSC)",
+      reason: `El modelo descarta esta configuración para servicio amargo (pH₂S = ${pH2S_kPa.toFixed(2)} kPa ≥ 0.3 kPa, Región ${region}).`
+    };
+  }
+
+  if (cls.id === "A") {
+    if (pCO2_psi <= 7) {
+      return { eligible: true, status: "Apto (Dulce Leve)", reason: `Servicio dulce sin corrosión significativa por CO₂ (pCO₂ = ${pCO2_psi.toFixed(1)} psi ≤ 7 psi).` };
+    }
+    return { eligible: false, status: "Descartado (CO₂)", reason: `pCO₂ = ${pCO2_psi.toFixed(1)} psi supera el límite de 7 psi para partes internas en acero al carbono.` };
+  }
+
+  if (cls.id === "B") {
+    if (!isSour && pCO2_psi <= 30) {
+      return { eligible: true, status: "Apto (Dulce CO₂ Mod.)", reason: `Servicio dulce con internos en 13Cr aptos hasta 30 psi de pCO₂ (actual: ${pCO2_psi.toFixed(1)} psi).` };
+    }
+    return { eligible: false, status: "Descartado (CO₂ > 30 psi)", reason: `pCO₂ = ${pCO2_psi.toFixed(1)} psi exige cuerpo resistente a corrosión (código C o superior).` };
+  }
+
+  if (cls.id === "C") {
+    if (!isSour && pH >= 3.5 && chlorides <= 50000) {
+      return { eligible: true, status: "Apto (Dulce CO₂ Alto)", reason: `Cuerpo e internos en 13Cr resisten pCO₂ = ${pCO2_psi.toFixed(1)} psi en servicio dulce.` };
+    }
+    return { eligible: false, status: "Descartado (pH / Cl⁻)", reason: "Condiciones de pH < 3.5 o alta salinidad comprometen el acero 13Cr sin inhibición." };
+  }
+
+  if (cls.id === "D") {
+    if (pCO2_psi < 7 && ca_int_mm <= 3.0) {
+      return { eligible: true, status: "Apto (Amargo Bajo CO₂)", reason: `Cumple ISO 15156-2 (≤ 22 HRC) con pCO₂ < 7 psi (${pCO2_psi.toFixed(1)} psi).` };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (Corrosión CO₂)",
+      reason: `Aunque cumple SSC, sus partes internas de baja aleación sufren corrosión severa con pCO₂ = ${pCO2_psi.toFixed(1)} psi (≥ 7 psi).`
+    };
+  }
+
+  if (cls.id === "E") {
+    const co2Ok = pCO2_psi <= 30 || (ca_int_mm <= 3.5 && groove_overlay === "in625");
+    if (co2Ok && pH >= 3.5 && temp_c <= 121) {
+      const hangerNote = pH2S_kPa > 10
+        ? "Con pH₂S > 10 kPa, especificar mandril del colgador en Alloy 718/625 o revestido (ISO 15156-3 excluye 13Cr en hangers sobre 10 kPa)."
+        : "Cuerpo forjado AISI 4130 (≤ 22 HRC), internos CRA/F6NM e inlay Alloy 625 en ranuras de anillo.";
+      return {
+        eligible: true,
+        status: "Apto API 6A / ISO 10423",
+        reason: `Óptimo para pCO₂ = ${pCO2_psi.toFixed(1)} psi y Región ${region} SSC. ${hangerNote}`
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (Severidad)",
+      reason: `pCO₂ = ${pCO2_psi.toFixed(1)} psi con alta pérdida corrosiva (${ca_int_mm.toFixed(1)} mm) o pH < 3.5 supera el alcance del cuerpo AISI 4130 sin clad total.`
+    };
+  }
+
+  if (cls.id === "F") {
+    if (pH >= 3.5 && pH2S_kPa <= 15 && chlorides <= 60000 && temp_c <= 121) {
+      return {
+        eligible: true,
+        status: "Apto (Cuerpo 13Cr/F6NM)",
+        reason: `Apto para alto CO₂ (${pCO2_psi.toFixed(1)} psi) y H₂S moderado (pH ≥ 3.5). Exige ranuras con Alloy 625 y colgador CRA.`
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (ISO 15156-3)",
+      reason: `Riesgo de picadura/SC en cuerpo 13Cr por pH₂S = ${pH2S_kPa.toFixed(1)} kPa, Cl⁻ = ${chlorides} mg/L o pH < 3.5.`
+    };
+  }
+
+  if (cls.id === "H") {
+    return {
+      eligible: true,
+      status: "Apto CRA Integral",
+      reason: "Cuerpo AISI 4130 con weld overlay integral de Alloy 625 (≥ 3 mm, Fe ≤ 10%) e internos en Alloy 625/718. Inmune a CO₂, H₂S y Cl⁻."
+    };
+  }
+}
+
+function runSimulation() {
+  const p_int = num("p_int", 55);
+  const temp_c = num("temp_c", 85);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+
+  const temp_rating_key = document.getElementById("temp_rating").value;
+  const annulus_fluid = document.getElementById("annulus_fluid").value;
+  const groove_overlay = document.getElementById("groove_overlay").value;
+  const capillary_pen = document.getElementById("capillary_pen").value === "yes";
+  const ext_atm = document.getElementById("ext_atm").value;
+
+  const flange_size_in = parseFloat(document.getElementById("flange_size").value);
+  const top_bore_in = parseFloat(document.getElementById("top_bore").value);
+  const f_csg_req = num("f_csg_req", 780);
+  const f_tbg_req = num("f_tbg_req", 220);
+  const p_test_ann = num("p_test_ann", 83);
+  const design_life = num("design_life", 20);
+  const fs_press_req = num("fs_press_req", 1.20);
+  const fs_hanger_req = num("fs_hanger_req", 1.50);
+
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+  let regimeTxt = "Dominio CO₂ (> 500)";
+  if (pH2S_bar > 0 && ratio_co2_h2s < 20) regimeTxt = `Dominio H₂S (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+  else if (pH2S_bar > 0 && ratio_co2_h2s <= 500) regimeTxt = `Régimen Mixto (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const v_uncontrolled = v_base_co2 * (wet_factor / 100);
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_design_int = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+  const ca_int_mm = v_design_int * design_life;
+
+  let recPSL = "PSL 1";
+  if (region >= 3 || p_int >= 345 || (region >= 2 && pH2S_kPa >= 10)) recPSL = "PSL 3 / PSL 3G";
+  else if (region >= 1 || p_int >= 138) recPSL = "PSL 2";
+
+  const tBounds = TEMP_RATINGS[temp_rating_key];
+  const tempClassOk = temp_c <= tBounds.max;
+  const tempDerate = temp_c <= 121 ? 1.0 : Math.max(0.75, 1 - (temp_c - 121) * 0.0022);
+
+  const flangeScale = flange_size_in / 11.0;
+  const sealDia_mm = (flange_size_in * 25.4) * 0.72;
+  const pressArea_mm2 = (Math.PI / 4) * sealDia_mm * sealDia_mm;
+  const boltYield_MPa = region > 0 ? 552 : 724;
+
+  const ratingsEval = PRESSURE_RATINGS.map(r => {
+    const p_adm_bar = r.bar * tempDerate;
+    const p_req_max = Math.max(p_int, p_test_ann / 1.5);
+    const fs_press = p_req_max > 0 ? p_adm_bar / p_req_max : 99;
+
+    const csg_cap_kN = r.csgSlipCap_kN * Math.pow(flangeScale, 0.85);
+    const fs_csg = f_csg_req > 0 ? csg_cap_kN / f_csg_req : 99;
+
+    const hydEndLoad_kN = (p_int * 0.1 * (Math.PI / 4) * Math.pow(top_bore_in * 25.4 * 1.35, 2)) / 1000;
+    const f_tbg_tot_kN = f_tbg_req + hydEndLoad_kN;
+    const tbg_cap_kN = r.tbgMandrelCap_kN * Math.pow(flangeScale, 0.75);
+    const fs_tbg = f_tbg_tot_kN > 0 ? tbg_cap_kN / f_tbg_tot_kN : 99;
+
+    const flangeForce_N = (Math.max(p_int, p_test_ann) * 0.1) * pressArea_mm2 + (f_tbg_req * 1000 * 0.35);
+    const effBoltArea_mm2 = r.boltArea_mm2 * Math.pow(flangeScale, 1.4);
+    const boltStress_MPa = flangeForce_N / effBoltArea_mm2;
+    const fs_bolt = boltStress_MPa > 0 ? (boltYield_MPa * 0.85) / boltStress_MPa : 99;
+
+    const passes = tempClassOk && fs_press >= fs_press_req && fs_csg >= fs_hanger_req && fs_tbg >= fs_hanger_req && fs_bolt >= fs_hanger_req;
+    return {
+      ...r,
+      p_adm_bar, fs_press,
+      csg_cap_kN, fs_csg,
+      tbg_cap_kN, f_tbg_tot_kN, fs_tbg,
+      boltStress_MPa, fs_bolt,
+      passes
+    };
+  });
+
+  const validRating = ratingsEval.find(r => r.passes) || null;
+
+  const stateObj = { region, pCO2_psi, pH2S_kPa, temp_c, pH, chlorides, groove_overlay, ca_int_mm };
+  const classesEval = API6A_CLASSES.map(c => {
+    const envCheck = evaluateAPI6AClass(c, stateObj);
+    const fullEligible = envCheck.eligible && (validRating !== null);
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !validRating) {
+      finalReason += !tempClassOk
+        ? ` Sin embargo, la temperatura (${temp_c} °C) supera el límite del rango térmico ${temp_rating_key} (${tBounds.max} °C).`
+        : " Sin embargo, ninguna serie de presión soporta las cargas axiales/presión ingresadas.";
+    } else if (fullEligible) {
+      finalReason += ` Cumple mecánica desde serie ${validRating.psi} psi (${validRating.bar.toFixed(0)} bar).`;
+    }
+    return { ...c, envCheck, fullEligible, finalReason };
+  });
+
+  const chosenClass = classesEval.find(c => c.fullEligible) || classesEval.find(c => c.envCheck.eligible) || classesEval.find(c => c.id === "E");
+
+  document.getElementById("kpi_pco2").textContent = `${pCO2_bar.toFixed(3)} bar`;
+  document.getElementById("kpi_pco2_sub").textContent = `${pCO2_psi.toFixed(1)} psi (${pCO2_psi < 7 ? '< 7' : (pCO2_psi <= 30 ? '7 a 30' : '> 30')} psi API 6A)`;
+  document.getElementById("kpi_ph2s").textContent = `${pH2S_kPa.toFixed(2)} kPa`;
+  document.getElementById("kpi_ph2s_sub").textContent = `${pH2S_psi.toFixed(2)} psi (Umbral NACE: 0.3 kPa)`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} (SSC)</span>`;
+  document.getElementById("kpi_regime").textContent = regimeTxt;
+
+  document.getElementById("kpi_apiclass").innerHTML = `<span class="tag ${chosenClass.fullEligible ? 'ok' : 'warn'}">API 6A [${chosenClass.id}]</span>`;
+  document.getElementById("kpi_psl_sub").textContent = `${recPSL} | Rango Térmico ${temp_rating_key} (${tBounds.min} a ${tBounds.max}°C)`;
+
+  document.getElementById("kpi_vint").textContent = `${v_design_int.toFixed(2)} mm/a`;
+  document.getElementById("kpi_caint").textContent = `Sin inhib.: ${v_uncontrolled.toFixed(1)} mm/a | CA (${design_life}a): ${ca_int_mm.toFixed(1)} mm`;
+
+  const vd = document.getElementById("verdict");
+  if (chosenClass.fullEligible && validRating) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Material API 6A / ISO 10423</span><strong>Código ${chosenClass.id} (${recPSL})</strong></div>
+      <div><span>Serie de presión mín.</span><strong>${validRating.psi} psi (${validRating.bar.toFixed(0)} bar)</strong></div>
+      <div><span>Clasificación térmica</span><strong>Rango ${temp_rating_key} (máx ${tBounds.max} °C)</strong></div>
+      <div><span>Pernos y junta anular</span><strong>${region > 0 ? 'A193 B7M (≤22 HRC)' : 'A193 B7'} / ${validRating.gasket}</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `<div class="msg"><strong>Configuración fuera de límites normativos API 6A / ISO 10423</strong><span>${!tempClassOk ? `La temperatura de operación (${temp_c} °C) excede el máximo permitido por el Rango Térmico ${temp_rating_key} (${tBounds.max} °C). Seleccione U o V.` : `Las cargas axiales de sarta (${f_csg_req} kN / ${f_tbg_req} kN) o la presión (${p_int} bar) superan la capacidad admisible con los factores de seguridad exigidos.`}</span></div>`;
+  }
+
+  document.getElementById("grades_tbody").innerHTML = classesEval.map(c => {
+    const badgeClass = c.fullEligible ? "ok" : (c.envCheck.eligible ? "warn" : "danger");
+    const statusLbl = c.fullEligible ? `Óptimo (${validRating.psi} psi)` : (c.envCheck.eligible ? "Falla Mec./Temp." : c.envCheck.status);
+    return `
+      <tr>
+        <td><strong>${c.name}</strong></td>
+        <td>${c.body}</td>
+        <td>${c.trim}</td>
+        <td>${c.nacedesc}</td>
+        <td><span class="tag ${badgeClass}">${statusLbl}</span></td>
+        <td>${c.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("selected_grade_lbl").textContent = chosenClass.name;
+  document.getElementById("selected_flange_lbl").textContent = `${flange_size_in}" × Paso ${top_bore_in}"`;
+
+  document.getElementById("weights_tbody").innerHTML = ratingsEval.map(r => {
+    return `
+      <tr>
+        <td><strong>API 6A ${r.psi} psi</strong> (${r.bar.toFixed(0)} bar)</td>
+        <td>${r.p_adm_bar.toFixed(0)} [${r.fs_press.toFixed(2)}]</td>
+        <td>${r.csg_cap_kN.toFixed(0)} [${r.fs_csg.toFixed(2)}]</td>
+        <td>${r.tbg_cap_kN.toFixed(0)} [${r.fs_tbg.toFixed(2)}]</td>
+        <td>${r.boltStress_MPa.toFixed(0)} MPa [${r.fs_bolt.toFixed(2)}]</td>
+        <td>${r.gasket} (${groove_overlay === 'in625' ? 'Alloy 825' : '316L'})</td>
+        <td><span class="tag ${r.passes ? 'ok' : 'danger'}">${r.passes ? 'CUMPLE' : 'FALLA'}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  const hangerMat = (pH2S_kPa > 10 || chosenClass.id === "H")
+    ? "Aleación base níquel Alloy 718 (UNS N07718) / Alloy 625 o AISI 4130 con revestimiento integral Alloy 625 (según ISO 15156-3, los aceros 13Cr no se admiten en tubing hangers cuando pH₂S > 10 kPa)."
+    : "Acero inoxidable martensítico ASTM A182 F6NM (UNS S41500, ≤ 23 HRC) o AISI 4130 con weld overlay de Alloy 625 en cuellos de sello.";
+
+  const elastomerRec = (temp_c > 100 || y_h2s >= 0.5)
+    ? "FKM grado especial H₂S / FEPM (Aflas) o FKM con anillos anti-extrusión de PEK/PTFE (calificado según ISO 23936-2)."
+    : "HNBR (Nitrilo Hidrogenado, 90 Shore A) resistente a H₂S, aminas de inhibidor y descompresión rápida (RGD), respaldado por sellos metal-metal en el mandril.";
+
+  const grooveTxt = groove_overlay === "in625"
+    ? "Inlay (weld overlay) de Aleación de Níquel 625 (UNS N06625) de espesor acabado ≥ 3.0 mm con dilución de Fe ≤ 10% (ISO 21457) en todas las ranuras de anillo RX/BX y bolsillos de sellado."
+    : (groove_overlay === "ss316"
+        ? "Inlay de acero inoxidable 316L; atención: con 42 000 mg/L de Cl⁻ y T > 60 °C existe riesgo de picadura en intersticios, se recomienda migrar a Alloy 625."
+        : "Sin inlay CRA; alto riesgo de corrosión por hendidura (crevice) en la ranura de anillo. Se recomienda especificar weld overlay de Alloy 625.");
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Carrete de Cabezal (Tubing Head Spool) y Adaptador Superior</h3>
+      <p><strong>Material Especificado:</strong> <span style="color:var(--ok);">${chosenClass.body} (${chosenClass.name}, ${recPSL})</span> — Serie <strong>${validRating ? validRating.psi + ' psi' : 'Requiere mayor serie'}</strong>, Rango Térmico <strong>${temp_rating_key}</strong>.</p>
+      <p><strong>Protección de Ranuras y Tomas Anulares (M3/M4):</strong> ${grooveTxt}</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Colgador de Casing (Cuñas) y Colgador de Tubing (Mandril)</h3>
+      <p><strong>Colgador de Casing (7"):</strong> Cuerpo en AISI 4130 (≤ 22 HRC) para sostener ${f_csg_req} kN (capacidad mín. exigida ${(f_csg_req * fs_hanger_req).toFixed(0)} kN). Cuñas endurecidas superficialmente (exentas por trabajar en compresión según ISO 15156-2) y pack-off secundario en ${elastomerRec}</p>
+      <p><strong>Colgador de Tubing (2 7/8"):</strong> ${hangerMat} Soporta ${f_tbg_req} kN de sarta + ancla. ${capillary_pen ? 'Incluye penetración continua sellada metal-metal para línea capilar de 3/8" en Alloy 625 (inyección de inhibidor al fondo).' : 'Sin penetración de línea capilar.'}</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Anillos Metálicos (Ring Gaskets), Espárragos y Recubrimiento Externo (C5)</h3>
+      <p><strong>Juntas y Empernado:</strong> Anillo octogonal/energizado por presión <strong>${validRating ? validRating.gasket : 'RX-53'}</strong> en <strong>Alloy 825 / 625</strong> (o 316L ≤ 83 HRB) para evitar par galvánico desfavorable con el inlay 625. Espárragos <strong>${region > 0 ? 'ASTM A193 Gr. B7M / A320 Gr. L7M (≤ 22 HRC) con tuercas ASTM A194 Gr. 2HM/7M' : 'ASTM A193 Gr. B7 con tuercas 2H'}</strong>.</p>
+      <p><strong>Protección Atmosférica (${ext_atm} a ${temp_c} °C):</strong> Sistema tricapa resistente hasta 120 °C y UV (Imprimación epóxica rica en zinc + epóxico fenólico/poliamida intermedio + acabado poliuretano alifático, espesor seco total ≥ 240 μm según ISO 12944).</p>
+    </div>
+  `;
+
+  drawWellheadSVG({
+    p_int, temp_c, y_co2, y_h2s, pCO2_bar, pCO2_psi, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int,
+    region, chosenClass, validRating,
+    annulus_fluid, groove_overlay, capillary_pen,
+    flange_size_in, top_bore_in, f_csg_req, f_tbg_req
+  });
+
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    p_int_bar: p_int,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region: region,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: wet_factor,
+    v_inhibited_mm_yr: v_inhib,
+    design_life_yr: design_life
+  };
+  window.wellStreamState.wellhead_C1 = {
+    api6a_material_class: chosenClass.id,
+    api6a_psl: recPSL,
+    api6a_temp_rating: temp_rating_key,
+    pressure_rating_psi: validRating ? validRating.psi : null,
+    flange_size_in: flange_size_in,
+    top_bore_in: top_bore_in,
+    ring_groove_overlay: groove_overlay,
+    bolting_spec: region > 0 ? "ASTM A193 B7M + A194 2HM (<= 22 HRC)" : "ASTM A193 B7 + A194 2H",
+    ring_gasket: validRating ? validRating.gasket : "RX-53",
+    capillary_line_penetration: capillary_pen
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+function drawWellheadSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int,
+    region, chosenClass, validRating,
+    annulus_fluid, groove_overlay, capillary_pen,
+    flange_size_in, top_bore_in, f_csg_req, f_tbg_req
+  } = d;
+  const pCO2_psi = d.pCO2_psi !== undefined ? d.pCO2_psi : (pCO2_bar * 14.5038);
+
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.0) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+  const tempNorm = Math.min(1, Math.max(0, (temp_c - 20) / 150));
+  const flowDrive = Math.min(1, Math.max(0.15, (p_int / 100) * 0.7 + tempNorm * 0.3));
+  const flowDur = (3.1 - flowDrive * 2.1).toFixed(2);
+  const bubbleDur = (2.6 - flowDrive * 1.7).toFixed(2);
+
+  const co2Intensity = Math.min(1, y_co2 / 10);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const rCo2 = (1.3 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.5).toFixed(1);
+  const opCo2 = (0.3 + co2Intensity * 0.6).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.4 + h2sIntensity * 0.55 : 0).toFixed(2);
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido C1: ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | T=${temp_c}°C`;
+  }
+
+  const cx = 170;
+  const flgHw = Math.round(108 + ((flange_size_in - 7.0625) / (13.625 - 7.0625)) * 22);
+  const spoolHw = Math.round(flgHw * 0.62);
+  const csgHw = 46;
+  const tbgHw = Math.round(16 + ((top_bore_in - 2.0625) / (4.0625 - 2.0625)) * 10);
+
+  const bodySteel = chosenClass.id === "H" ? "#7c6f9f" : (chosenClass.id === "F" || chosenClass.id === "C" ? "#5b8296" : "#475569");
+  const grooveCol = groove_overlay === "in625" ? "#a78bfa" : (groove_overlay === "ss316" ? "#38bdf8" : bodySteel);
+  const annColorTop = annulus_fluid === "packer_fluid" ? "#10b981" : "#f59e0b";
+  const annColorBot = annulus_fluid === "packer_fluid" ? "#047857" : "#b45309";
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipTubingBore">
+        <rect x="${cx - tbgHw}" y="52" width="${2 * tbgHw}" height="482"/>
+      </clipPath>
+      <clipPath id="clipAnnulus">
+        <path d="M ${cx - csgHw} 195 L ${cx - tbgHw - 5} 195 L ${cx - tbgHw - 5} 534 L ${cx - csgHw} 534 Z
+                 M ${cx + tbgHw + 5} 195 L ${cx + csgHw} 195 L ${cx + csgHw} 534 L ${cx + tbgHw + 5} 534 Z"/>
+      </clipPath>
+
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.95"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.82"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.5 ? '#0284c7' : fluidTopColor}" stop-opacity="0.75"/>
+      </linearGradient>
+
+      <linearGradient id="annFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${annColorBot}" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="${annColorTop}" stop-opacity="0.35"/>
+      </linearGradient>
+
+      <linearGradient id="bodyMetalGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${bodySteel}"/>
+        <stop offset="50%" stop-color="#64748b"/>
+        <stop offset="100%" stop-color="${bodySteel}"/>
+      </linearGradient>
+
+      <pattern id="upStreamPat" width="32" height="44" patternUnits="userSpaceOnUse">
+        <path d="M 8 40 Q 11 22 8 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 24 42 Q 21 24 24 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 11 25 L 16 18 L 21 25" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.65"/>
+      </pattern>
+
+      <pattern id="waterCutPat" width="24" height="36" patternUnits="userSpaceOnUse">
+        <path d="M 5 34 C 3 22, 8 14, 5 2" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.65"/>
+        <circle cx="15" cy="18" r="1.8" fill="#7dd3fc" opacity="0.7"/>
+      </pattern>
+
+      <pattern id="gasBubblesPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="38" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="23" cy="16" r="${(rCo2 * 0.85).toFixed(1)}" fill="#e0f2fe" opacity="${opCo2}"/>
+        <circle cx="27" cy="40" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.7" opacity="${opH2s}"/>
+        <circle cx="13" cy="22" r="${(rH2s * 0.8).toFixed(1)}" fill="#bef264" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.5px var(--mono); fill: var(--mut); }
+      #equipSvg .lbl-b { fill: var(--tx); font-weight: 700; }
+      @keyframes svgFlowUp { from { transform: translateY(0px); } to { transform: translateY(-44px); } }
+      @keyframes svgWaterUp { from { transform: translateY(0px); } to { transform: translateY(-36px); } }
+      @keyframes svgBubblesUp {
+        0%   { transform: translate(0px, 0px); }
+        50%  { transform: translate(1.2px, -24px); }
+        100% { transform: translate(0px, -48px); }
+      }
+      #equipSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #equipSvg .flow-up-fast { animation: svgWaterUp ${(flowDur * 0.82).toFixed(2)}s linear infinite; }
+      #equipSvg .bubbles-up { animation: svgBubblesUp ${bubbleDur}s linear infinite; }
+    </style>
+
+    <rect x="8" y="6" width="324" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" class="lbl-b">API 6A [${chosenClass.id}] | ${validRating ? validRating.psi + ' psi' : 'Sobrecarga'}</text>
+    <text x="324" y="21" text-anchor="end" style="fill:var(--acc)">P=${p_int}bar · T=${temp_c}°C · Reg.${region}</text>
+
+    <g clip-path="url(#clipAnnulus)">
+      <rect x="${cx - csgHw}" y="195" width="${2 * csgHw}" height="340" fill="url(#annFluidGrad)"/>
+      ${annulus_fluid === "sour_gas" ? `<rect x="${cx - csgHw}" y="195" width="${2 * csgHw}" height="340" fill="url(#gasBubblesPat)" class="bubbles-up"/>` : ""}
+    </g>
+
+    <g clip-path="url(#clipTubingBore)">
+      <rect x="${cx - tbgHw}" y="52" width="${2 * tbgHw}" height="482" fill="url(#prodFluidGrad)"/>
+      <rect x="${cx - tbgHw}" y="52" width="${2 * tbgHw}" height="482" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.88).toFixed(2)}" class="flow-up-fast"/>
+      <rect x="${cx - tbgHw}" y="52" width="${2 * tbgHw}" height="482" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${cx - tbgHw}" y="52" width="${2 * tbgHw}" height="482" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+
+    <line x1="${cx - tbgHw + 1.5}" x2="${cx - tbgHw + 1.5}" y1="52" y2="534" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${cx + tbgHw - 1.5}" x2="${cx + tbgHw - 1.5}" y1="52" y2="534" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+
+    <rect x="${cx - tbgHw - 5}" y="190" width="5" height="344" fill="#94a3b8" stroke="#1e293b" stroke-width="0.8"/>
+    <rect x="${cx + tbgHw}" y="190" width="5" height="344" fill="#94a3b8" stroke="#1e293b" stroke-width="0.8"/>
+
+    <rect x="${cx - csgHw - 7}" y="340" width="7" height="194" fill="#64748b" stroke="#1e293b" stroke-width="1"/>
+    <rect x="${cx + csgHw}" y="340" width="7" height="194" fill="#64748b" stroke="#1e293b" stroke-width="1"/>
+
+    <path d="M ${cx - flgHw + 10} 330 L ${cx - csgHw - 7} 330 L ${cx - csgHw - 7} 490 L ${cx - spoolHw - 6} 490 L ${cx - spoolHw - 6} 365 L ${cx - flgHw + 10} 365 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.2"/>
+    <path d="M ${cx + flgHw - 10} 330 L ${cx + csgHw + 7} 330 L ${cx + csgHw + 7} 490 L ${cx + spoolHw + 6} 490 L ${cx + spoolHw + 6} 365 L ${cx + flgHw - 10} 365 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.2"/>
+
+    <polygon points="${cx - csgHw - 22},375 ${cx - csgHw - 7},375 ${cx - csgHw - 7},435 ${cx - csgHw - 15},435" fill="#f59e0b" stroke="#1e293b" stroke-width="1"/>
+    <polygon points="${cx + csgHw + 22},375 ${cx + csgHw + 7},375 ${cx + csgHw + 7},435 ${cx + csgHw + 15},435" fill="#f59e0b" stroke="#1e293b" stroke-width="1"/>
+    <line x1="${cx - csgHw - 11}" x2="${cx - csgHw - 7}" y1="388" y2="392" stroke="#1e293b" stroke-width="1.5"/>
+    <line x1="${cx - csgHw - 11}" x2="${cx - csgHw - 7}" y1="404" y2="408" stroke="#1e293b" stroke-width="1.5"/>
+    <line x1="${cx - csgHw - 11}" x2="${cx - csgHw - 7}" y1="420" y2="424" stroke="#1e293b" stroke-width="1.5"/>
+    <line x1="${cx + csgHw + 11}" x2="${cx + csgHw + 7}" y1="388" y2="392" stroke="#1e293b" stroke-width="1.5"/>
+    <line x1="${cx + csgHw + 11}" x2="${cx + csgHw + 7}" y1="404" y2="408" stroke="#1e293b" stroke-width="1.5"/>
+    <line x1="${cx + csgHw + 11}" x2="${cx + csgHw + 7}" y1="420" y2="424" stroke="#1e293b" stroke-width="1.5"/>
+
+    <rect x="${cx - csgHw - 20}" y="346" width="13" height="24" fill="#10b981" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${cx + csgHw + 7}" y="346" width="13" height="24" fill="#10b981" stroke="var(--tx)" stroke-width="1"/>
+
+    <path d="M ${cx - flgHw} 135 L ${cx - csgHw} 135 L ${cx - csgHw} 330 L ${cx - flgHw + 10} 330 L ${cx - flgHw + 10} 296 L ${cx - spoolHw} 296 L ${cx - spoolHw} 172 L ${cx - flgHw} 172 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.3"/>
+    <path d="M ${cx + flgHw} 135 L ${cx + csgHw} 135 L ${cx + csgHw} 330 L ${cx + flgHw - 10} 330 L ${cx + flgHw - 10} 296 L ${cx + spoolHw} 296 L ${cx + spoolHw} 172 L ${cx + flgHw} 172 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.3"/>
+
+    <rect x="${cx - spoolHw - 24}" y="226" width="24" height="22" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1"/>
+    <line x1="${cx - spoolHw - 24}" x2="${cx - csgHw}" y1="237" y2="237" stroke="${annColorTop}" stroke-width="4"/>
+    <text x="${cx - spoolHw - 28}" y="240" text-anchor="end" style="fill:var(--ok);font-weight:600">Puerto M3</text>
+
+    <polygon points="${cx - csgHw + 1},148 ${cx - tbgHw - 2},148 ${cx - tbgHw - 2},198 ${cx - csgHw + 14},198 ${cx - csgHw + 1},182" fill="#eab308" stroke="#1e293b" stroke-width="1.2"/>
+    <polygon points="${cx + csgHw - 1},148 ${cx + tbgHw + 2},148 ${cx + tbgHw + 2},198 ${cx + csgHw - 14},198 ${cx + csgHw - 1},182" fill="#eab308" stroke="#1e293b" stroke-width="1.2"/>
+    <rect x="${cx - csgHw + 1}" y="156" width="6" height="18" fill="#10b981" stroke="#0f172a" stroke-width="0.8"/>
+    <rect x="${cx + csgHw - 7}" y="156" width="6" height="18" fill="#10b981" stroke="#0f172a" stroke-width="0.8"/>
+    <line x1="${cx - flgHw - 6}" x2="${cx - csgHw + 6}" y1="154" y2="164" stroke="var(--tx)" stroke-width="3"/>
+    <line x1="${cx + flgHw + 6}" x2="${cx + csgHw - 6}" y1="154" y2="164" stroke="var(--tx)" stroke-width="3"/>
+
+    <path d="M ${cx - flgHw} 98 L ${cx - tbgHw - 2} 98 L ${cx - tbgHw - 2} 135 L ${cx - flgHw} 135 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.3"/>
+    <path d="M ${cx + flgHw} 98 L ${cx + tbgHw + 2} 98 L ${cx + tbgHw + 2} 135 L ${cx + flgHw} 135 Z" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.3"/>
+    <rect x="${cx - spoolHw + 12}" y="62" width="${spoolHw - tbgHw - 14}" height="36" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.2"/>
+    <rect x="${cx + tbgHw + 2}" y="62" width="${spoolHw - tbgHw - 14}" height="36" fill="url(#bodyMetalGrad)" stroke="var(--tx)" stroke-width="1.2"/>
+
+    <rect x="${cx - csgHw - 22}" y="129" width="14" height="12" rx="2" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.8"/>
+    <rect x="${cx + csgHw + 8}" y="129" width="14" height="12" rx="2" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.8"/>
+    <rect x="${cx - csgHw - 22}" y="324" width="14" height="12" rx="2" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.8"/>
+    <rect x="${cx + csgHw + 8}" y="324" width="14" height="12" rx="2" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.8"/>
+    <rect x="${cx - tbgHw - 18}" y="58" width="10" height="8" rx="1.5" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.7"/>
+    <rect x="${cx + tbgHw + 8}" y="58" width="10" height="8" rx="1.5" fill="${grooveCol}" stroke="#ffffff" stroke-width="0.7"/>
+
+    <line x1="${cx - flgHw + 14}" x2="${cx - flgHw + 14}" y1="88" y2="182" stroke="var(--acc)" stroke-width="3.5" stroke-dasharray="5 2"/>
+    <line x1="${cx + flgHw - 14}" x2="${cx + flgHw - 14}" y1="88" y2="182" stroke="var(--acc)" stroke-width="3.5" stroke-dasharray="5 2"/>
+    <line x1="${cx - flgHw + 22}" x2="${cx - flgHw + 22}" y1="286" y2="375" stroke="var(--acc)" stroke-width="3.5" stroke-dasharray="5 2"/>
+    <line x1="${cx + flgHw - 22}" x2="${cx + flgHw - 22}" y1="286" y2="375" stroke="var(--acc)" stroke-width="3.5" stroke-dasharray="5 2"/>
+
+    ${capillary_pen ? `
+      <path d="M ${cx + flgHw + 12} 118 L ${cx + tbgHw + 14} 118 L ${cx + tbgHw + 14} 534" stroke="#a78bfa" stroke-width="2.6" fill="none"/>
+      <circle cx="${cx + flgHw + 12}" cy="118" r="3.5" fill="#a78bfa" stroke="var(--tx)"/>
+      <text x="${cx + flgHw + 18}" y="114" style="fill:#a78bfa;font-weight:700">Capilar 3/8" (625)</text>
+    ` : ""}
+
+    <path d="M ${cx} 60 L ${cx} 38 M ${cx - 5} 44 L ${cx} 37 L ${cx + 5} 44" stroke="${fluidGlow}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <text x="${cx + 10}" y="46" class="lbl-b">A Árbol (Mód. 7)</text>
+
+    <line x1="14" x2="326" y1="490" y2="490" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="18" y="484" style="fill:var(--warn);font-weight:700">Nivel 0 m (Base)</text>
+
+    <text x="${cx + spoolHw + 8}" y="166" class="lbl-b" style="fill:#eab308">Colgador Tubing</text>
+    <text x="${cx + spoolHw + 8}" y="178">F = ${f_tbg_req} kN</text>
+
+    <text x="${cx + spoolHw + 10}" y="405" class="lbl-b" style="fill:#f59e0b">Colgador Casing</text>
+    <text x="${cx + spoolHw + 10}" y="417">F = ${f_csg_req} kN</text>
+
+    <text x="${cx}" y="554" text-anchor="middle" class="lbl-b" style="fill:var(--ok)">${chosenClass.name} — Brida ${flange_size_in}" × Paso ${top_bore_in}"</text>
+    <text x="${cx}" y="569" text-anchor="middle">CO₂: ${pCO2_psi.toFixed(1)} psi · H₂S: ${pH2S_kPa.toFixed(2)} kPa · Ranuras: ${groove_overlay === 'in625' ? 'Alloy 625 (≥3mm)' : groove_overlay.toUpperCase()}</text>
+  `;
+}
+
+function copyGlobalState(btn){
+  const t=JSON.stringify(window.wellStreamState,null,2),done=()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar JSON",1500)};
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(done).catch(()=>{
+    const r=document.createRange();r.selectNodeContents(document.getElementById("json_output"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Texto seleccionado: Ctrl+C";});
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>

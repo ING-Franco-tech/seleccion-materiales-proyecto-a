@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 8: Válvula de Aguja y Manómetro (MSS SP-99 / ASME B40.100 / ISO 15156-3)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(270px,320px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.08rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:580px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Válvula de aguja y manómetro (Tope del Árbol M5)</h1>
+    <p>Módulo 8 de 10, sistema A1. Monitoreo de presión, muestreo químico y sello de diafragma en fluido estancado con Cl⁻ y H₂S.</p>
+  </div>
+  <ul class="norms">
+    <li>MSS SP-99</li>
+    <li>ASME B40.100 / EN 837-1</li>
+    <li>ISO 15156-3 (Tabla A.6)</li>
+    <li>ISO 21457</li>
+  </ul>
+</header>
+
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card">
+        <h2>Esquema de instrumentación (M5)</h2>
+        <svg id="equipSvg" viewBox="0 0 330 580" role="img" aria-label="Corte técnico de válvula de aguja, puerto de muestreo, sello de diafragma y manómetro Bourdon con fluido ascendente reactivo"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido en cavidad muerta y gas ácido (C1)</span></li>
+          <li><i style="background:#38bdf8;opacity:.75"></i>Salmuera estancada con Cl⁻ / Película de inhibidor</li>
+          <li><i style="background:#a78bfa;opacity:.75"></i>Membrana aisladora CRA y fluido capilar del sello</li>
+          <li><i style="background:var(--ok);opacity:.65"></i>Cuerpo forjado MSS SP-99 y empaque de vástago</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Diagnóstico de corrosión, rendija y metrología</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presión parcial CO₂ / H₂S</div><div class="val" id="kpi_pp">-</div><div class="sub" id="kpi_pp_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156 y PREN</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_pren_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Corrosión en tramo estancado</div><div class="val" id="kpi_vcorr">-</div><div class="sub" id="kpi_cacorr">-</div></div>
+          <div class="kpi"><div class="lbl">Deriva térmica / Permeación H₂</div><div class="val" id="kpi_drift">-</div><div class="sub" id="kpi_perm_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Rating MSS SP-99 (CWP)</div><div class="val" id="kpi_cwp">-</div><div class="sub" id="kpi_proof_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Elegibilidad de materiales mojados (MSS SP-99, ISO 15156-3 e ISO 21457)</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Grado / Aleación</th>
+              <th>Fluencia / Dureza</th>
+              <th>PREN</th>
+              <th>Límite Temp. / Cl⁻ / H₂S</th>
+              <th>Estado</th>
+              <th>Justificación metalúrgica (Válvula y Diafragma)</th>
+            </tr>
+          </thead>
+          <tbody id="grades_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Verificación metrológica y mecánica de rangos comerciales (ASME B40.100 / MSS SP-99)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Evaluado con la aleación elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong></p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Rango Escala (bar / psi)</th>
+              <th>Uso Operativo Normal (%)</th>
+              <th>Uso en Pico + Pulsación (%)</th>
+              <th>Error Deriva Térmica (% Span)</th>
+              <th>Esfuerzo Membrana (MPa) [FS]</th>
+              <th>Prueba Asiento / Cuerpo (bar)</th>
+              <th>Veredicto</th>
+            </tr>
+          </thead>
+          <tbody id="ranges_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2>
+      <pre id="json_output"></pre>
+    </section>
+  </main>
+</div>
+
+<script>
+// Inicialización desde window.wellStreamState si existe
+const initFluid = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) ? window.wellStreamState.fluidStream_C1_C2 : {};
+
+const FORM = [
+  ["Química del fluido en cabezal (C1, C5)", [
+    ["p_op", "Presión normal en cabeza", "bar", incomingValue("p_head_op_bar", 45), 1, 1000, 1],
+    ["temp_c", "Temperatura de proceso", "°C", incomingValue("temp_surface_c", 68), 5, 250, 1],
+    ["y_co2", "CO₂ en gas", "% mol", incomingValue("y_co2_pct", 3.1), 0, 100, 0.1],
+    ["y_h2s", "H₂S en gas", "% mol", incomingValue("y_h2s_pct", 0.15), 0, 100, 0.01],
+    ["ph", "pH in situ", "", incomingValue("pH", 4.6), 1, 14, 0.1],
+    ["chlorides", "Cloruros (Cl⁻)", "mg/L", incomingValue("chlorides_mgL", initFluid.chlorides_mgL ?? 42000), 0, 250000, 500],
+    ["wet_factor", "Corte de agua (BSW)", "%", incomingValue("bsw_pct", 78), 0, 100, 1],
+    ["inhib_avail", "Disponibilidad inhibidor", "%", incomingValue("inhibitor_availability_pct", 90), 0, 100, 0.5],
+    ["v_inhib", "Velocidad con inhibidor", "mm/a", incomingValue("v_inhibited_mm_yr", 0.1), 0, 2, 0.01]
+  ]],
+  ["Ambiente operativo e instrumentación (M5)", [
+    ["p_max", "Presión máx. cierre (SITP)", "bar", incomingValue("p_head_design_bar", 50), 1, 1000, 1],
+    ["p_pulse", "Pulsación cíclica bombeo (±)", "bar", 4.5, 0, 50, 0.5],
+    ["temp_amb", "Temperatura ambiente ext.", "°C", 32, -20, 60, 1],
+    ["stagnant_sev", "Estancamiento en toma M5", [["high", "Tramo muerto estancado (sin barrido de inhibidor)"], ["flushed", "Purgado periódico en muestreo"], ["flowing", "Flujo continuo activo"]], "high"],
+    ["atmos_cat", "Atmósfera externa (ISO 9223)", [["C4", "C4 Industrial / Tropical Húmeda (Barrancabermeja)"], ["C3", "C3 Moderada"], ["C5", "C5 Severa / Marina"]], "C4"]
+  ]],
+  ["Geometría, clases y cargas de diseño", [
+    ["conn_type", "Conexión a proceso", [["1/2_NPT", "1/2 in NPT Macho/Hembra (ASME B1.20.1)"], ["9/16_MP", "9/16 in Autoclave Media Presión"], ["flange_6A", "Brida Directa API 6A 2 1/16 in"]], "1/2_NPT"],
+    ["cwp_class", "Clase MSS SP-99 (CWP)", [["3000", "3 000 psi (207 bar) Estándar"], ["6000", "6 000 psi (414 bar) Servicio Severo"], ["10000", "10 000 psi (689 bar) Alta Presión"]], "6000"],
+    ["orifice_mm", "Orificio aguja / garganta", "mm", 4.0, 1.5, 10, 0.5],
+    ["diaph_d_mm", "Diámetro cápsula diafragma", "mm", 60, 35, 100, 5],
+    ["diaph_t_mm", "Espesor membrana aisladora", "mm", 0.10, 0.05, 0.30, 0.01],
+    ["fill_fluid", "Fluido capilar de transmisión", [["silicone", "Aceite de Silicona DC 200 (-40 a 205 °C)"], ["halocarbon", "Halocarbono Inerte (-30 a 175 °C)"], ["glycerin", "Glicerina Grado USP (15 a 65 °C)"]], "silicone"],
+    ["gold_coat", "Recubrimiento de Oro (Au)", [["no", "Sin recubrimiento (Metal desnudo)"], ["yes", "Con película de Oro 25 µm (Anti-permeación H₂)"]], "no"],
+    ["design_life", "Vida de diseño", "años", incomingValue("design_life_yr", 20), 1, 50, 1],
+    ["fs_cwp_req", "FS mín. presión CWP / Sello", "", 1.50, 1.1, 4.0, 0.05]
+  ]]
+];
+
+function buildForm(){
+  document.getElementById("form").innerHTML = FORM.map(([t, fs]) => `<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f => {
+    const [id, lb, u] = f, sel = Array.isArray(u);
+    const ctl = sel ? `<select id="${id}">${u.map(o => `<option value="${o[0]}"${o[0] === f[3] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>`
+      : `<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4] != null ? ` min="${f[4]}"` : ""}${f[5] != null ? ` max="${f[5]}"` : ""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel ? " w" : ""}"><label for="${id}">${lb}</label>${ctl}</div>`;
+  }).join("")}</div></details>`).join("");
+}
+buildForm();
+const num = (id, d) => { const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) ? v : d; };
+
+// 1. Catálogo de Rangos Comerciales de Manómetro según ASME B40.100 / EN 837-1
+const GAUGE_RANGES = [
+  { span_bar: 60,  span_psi: 870,  div_bar: 1.0 },
+  { span_bar: 100, span_psi: 1450, div_bar: 2.0 },
+  { span_bar: 160, span_psi: 2320, div_bar: 2.0 },
+  { span_bar: 250, span_psi: 3625, div_bar: 5.0 },
+  { span_bar: 400, span_psi: 5800, div_bar: 5.0 }
+];
+
+// 2. Catálogo de Aleaciones para Válvula de Aguja y Sello de Diafragma (MSS SP-99 / ISO 15156-2 y -3)
+const GRADES_CATALOG = [
+  {
+    id: "CS_A105",
+    name: "Acero al Carbono ASTM A105 / A350 LF2",
+    yp_MPa: 250,
+    hardness: "≤ 22 HRC (197 HBW)",
+    pren: 0,
+    type: "CS",
+    maxTemp_c: 200,
+    maxCl_mgL: 1000,
+    maxH2S_kPa: 100,
+    costRank: 1
+  },
+  {
+    id: "SS_316L",
+    name: "Inox Austenítico AISI 316 / 316L (UNS S31603)",
+    yp_MPa: 205,
+    hardness: "≤ 22 HRC (Recocido)",
+    pren: 24.2,
+    type: "SS",
+    maxTemp_c: 60,
+    maxCl_mgL: 10000,
+    maxH2S_kPa: 100,
+    costRank: 2
+  },
+  {
+    id: "DUPLEX_2205",
+    name: "Acero Dúplex 22Cr (UNS S31803 / F51)",
+    yp_MPa: 450,
+    hardness: "≤ 28 HRC",
+    pren: 35.0,
+    type: "CRA",
+    maxTemp_c: 232,
+    maxCl_mgL: 35000,
+    maxH2S_kPa: 10,
+    costRank: 3
+  },
+  {
+    id: "SDUPLEX_2507",
+    name: "Super Dúplex 25Cr (UNS S32750 / F53)",
+    yp_MPa: 550,
+    hardness: "≤ 32 HRC",
+    pren: 42.5,
+    type: "CRA",
+    maxTemp_c: 232,
+    maxCl_mgL: 80000,
+    maxH2S_kPa: 20,
+    costRank: 4
+  },
+  {
+    id: "MONEL_400",
+    name: "Aleación Ni-Cu Monel 400 (UNS N04400)",
+    yp_MPa: 240,
+    hardness: "≤ 35 HRC",
+    pren: 38.0,
+    type: "Ni-CRA",
+    maxTemp_c: 205,
+    maxCl_mgL: 100000,
+    maxH2S_kPa: 35,
+    costRank: 5
+  },
+  {
+    id: "INCONEL_625",
+    name: "Aleación Níquel 625 (UNS N06625)",
+    yp_MPa: 415,
+    hardness: "≤ 35 HRC",
+    pren: 51.0,
+    type: "Ni-CRA",
+    maxTemp_c: 232,
+    maxCl_mgL: 180000,
+    maxH2S_kPa: 3500,
+    costRank: 6
+  },
+  {
+    id: "HASTELLOY_C276",
+    name: "Aleación Ni-Cr-Mo C-276 (UNS N10276)",
+    yp_MPa: 355,
+    hardness: "≤ 35 HRC (45 HRC en pin)",
+    pren: 68.5,
+    type: "Ni-CRA",
+    maxTemp_c: 260,
+    maxCl_mgL: 250000,
+    maxH2S_kPa: 7000,
+    costRank: 7
+  }
+];
+
+// 3. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 4. Evaluación Metalúrgica de cada Aleación (ISO 15156-3 Tablas A.2 / A.6 / A.13 + ISO 21457)
+function evaluateAlloyEligibility(grade, state) {
+  const { region, temp_c, pH2S_kPa, pH, chlorides, ca_stagnant_mm, req_pren } = state;
+
+  if (grade.id === "CS_A105") {
+    if (ca_stagnant_mm > 0.5 || region > 0) {
+      return {
+        eligible: false,
+        status: "Descartado (Corrosión/Sello)",
+        reason: `Inviable en roscas de aguja y membrana de 0,1 mm: pierde ${ca_stagnant_mm.toFixed(1)} mm en fluido estancado y se traba el vástago.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto solo Cuerpo Dulce",
+      reason: "Apto únicamente para cuerpo de válvula en fluido dulce no corrosivo; requiere membrana en 316L."
+    };
+  }
+
+  if (grade.id === "SS_316L") {
+    // ISO 15156-3 Tabla A.2 / A.6 e ISO 21457: susceptible a picadura y CSCC en cavidad estancada con altos Cl- y T > 60°C
+    if (chlorides > 10000 && temp_c >= 50) {
+      return {
+        eligible: false,
+        status: "Descartado (Picadura / SCC)",
+        reason: `PREN ${grade.pren} insuficiente: riesgo crítico de picadura en rendija y SCC por Cl⁻ (${chlorides.toLocaleString()} mg/L a ${temp_c} °C) + H₂S (${pH2S_kPa.toFixed(1)} kPa).`
+      };
+    }
+    if (pH2S_kPa > 15 && chlorides > 1000) {
+      return {
+        eligible: false,
+        status: "Descartado (ISO 15156-3)",
+        reason: `Supera límite ambiental del 316L en presencia combinada de H₂S (${pH2S_kPa.toFixed(1)} kPa) y cloruros.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto (Baja Salinidad)",
+      reason: `Cumple en cuerpo de válvula y membrana para Cl⁻ moderados y T ≤ 60 °C (Tabla A.6 ISO 15156-3).`
+    };
+  }
+
+  if (grade.id === "DUPLEX_2205") {
+    if (pH2S_kPa > 10) {
+      return {
+        eligible: false,
+        status: "Descartado (pH₂S > 10 kPa)",
+        reason: `Excede el límite ISO 15156-3 para Dúplex PREN 30-40 (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 10 kPa).`
+      };
+    }
+    if (chlorides > 35000 && temp_c > 65) {
+      return {
+        eligible: false,
+        status: "Descartado (Rendija Cl⁻)",
+        reason: `En cavidad estancada a ${temp_c} °C y ${chlorides.toLocaleString()} mg/L Cl⁻ requiere PREN ≥ ${req_pren.toFixed(0)} (tiene ${grade.pren}).`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto CRA Dúplex",
+      reason: `Resiste CO₂ y cloruros moderados hasta pH₂S ≤ 10 kPa (PREN ${grade.pren}).`
+    };
+  }
+
+  if (grade.id === "SDUPLEX_2507") {
+    if (pH2S_kPa > 20) {
+      return {
+        eligible: false,
+        status: "Descartado (pH₂S > 20 kPa)",
+        reason: `Excede el límite ISO 15156-3 para Super Dúplex PREN > 40 (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 20 kPa).`
+      };
+    }
+    if (grade.pren < req_pren) {
+      return {
+        eligible: false,
+        status: "Descartado (PREN)",
+        reason: `PREN ${grade.pren} inferior al mínimo requerido (${req_pren.toFixed(1)}) para rendija estancada.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto Super Dúplex",
+      reason: `Excelente resistencia a picadura por Cl⁻ (${chlorides.toLocaleString()} mg/L) en cuerpo de válvula de aguja (PREN ${grade.pren}); en membrana se prefiere C-276/625.`
+    };
+  }
+
+  if (grade.id === "MONEL_400") {
+    if (pH2S_kPa > 35 || temp_c > 150) {
+      return {
+        eligible: false,
+        status: "Descartado (H₂S Severo)",
+        reason: `Susceptible a picadura por sulfuros a alta presión parcial de H₂S (${pH2S_kPa.toFixed(1)} kPa).`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto Ni-Cu (Monel 400)",
+      reason: "Aprobado según ISO 15156-3 Tabla A.13 para instrumentación y membranas flexibles en salmueras ácidas."
+    };
+  }
+
+  if (grade.id === "INCONEL_625") {
+    return {
+      eligible: true,
+      status: "Apto CRA Ni-Cr-Mo (625)",
+      reason: `Inmune a picadura en rendija estancada (PREN ${grade.pren}), apto para cuerpo de válvula de aguja, vástago y sello en Región ${region}.`
+    };
+  }
+
+  if (grade.id === "HASTELLOY_C276") {
+    return {
+      eligible: true,
+      status: "Óptimo Membrana / Cuerpo",
+      reason: `Máxima resistencia a SCC, SSC y picadura ácida en estancamiento (PREN ${grade.pren}, ISO 15156-3 Tabla A.13 sin restricción en producción).`
+    };
+  }
+}
+
+// 5. Motor Principal de Simulación
+function runSimulation() {
+  const p_op = num("p_op", 45);
+  const temp_c = num("temp_c", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+
+  const p_max = Math.max(p_op, num("p_max", 55));
+  const p_pulse = num("p_pulse", 4.5);
+  const temp_amb = num("temp_amb", 32);
+  const stagnant_sev = document.getElementById("stagnant_sev").value;
+  const atmos_cat = document.getElementById("atmos_cat").value;
+
+  const conn_type = document.getElementById("conn_type").value;
+  const cwp_psi = parseFloat(document.getElementById("cwp_class").value);
+  const orifice_mm = num("orifice_mm", 4.0);
+  const diaph_d_mm = num("diaph_d_mm", 60);
+  const diaph_t_mm = num("diaph_t_mm", 0.10);
+  const fill_fluid = document.getElementById("fill_fluid").value;
+  const gold_coat = document.getElementById("gold_coat").value === "yes";
+  const design_life = num("design_life", 20);
+  const fs_cwp_req = num("fs_cwp_req", 1.50);
+
+  // Presión de diseño para evaluación de gases ácidos (se evalúa a la presión máxima/cierre en cabeza)
+  const p_eval = p_max;
+  const pCO2_bar = (y_co2 / 100) * (p_eval + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_eval + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  // Región SSC ISO 15156-2
+  const region = getISO15156Region(pH2S_kPa, pH);
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + efecto de tramo muerto (dead-leg M5)
+  // En un tramo muerto estancado, el inhibidor fílmico no se renueva con eficacia
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const v_uncontrolled = v_base_co2 * (wet_factor / 100);
+  let eff_inhib_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  if (stagnant_sev === "high") {
+    // En cavidad muerta sin flujo, la eficiencia del inhibidor cae drásticamente (acumulación de salmuera ácida)
+    eff_inhib_frac = eff_inhib_frac * 0.25;
+  } else if (stagnant_sev === "flushed") {
+    eff_inhib_frac = eff_inhib_frac * 0.65;
+  }
+  const v_stagnant_cs = eff_inhib_frac * v_inhib + (1 - eff_inhib_frac) * v_uncontrolled;
+  const ca_stagnant_mm = v_stagnant_cs * design_life;
+
+  // PREN mínimo requerido para evitar picadura por cloruros y corrosión en rendija (crevice) en fluido estancado
+  const cl_factor = Math.log10(Math.max(100, chlorides)) * 6.2;
+  const temp_factor = Math.max(0, temp_c - 25) * 0.22;
+  const stag_bonus = stagnant_sev === "high" ? 5.5 : (stagnant_sev === "flushed" ? 2.5 : 0);
+  const req_pren = Math.min(50, cl_factor + temp_factor + stag_bonus);
+
+  // Cálculo de CWP y Pruebas Hidrostáticas MSS SP-99 (Sección 5.5 y 6.1.1)
+  const cwp_bar = cwp_psi * 0.0689476;
+  // Factor de reducción térmica sobre 100 °F (37.8 °C) según MSS SP-99
+  const temp_derate = temp_c > 38 ? Math.max(0.75, 1 - (temp_c - 38) * 0.0012) : 1.0;
+  const cwp_derated_bar = cwp_bar * temp_derate;
+  const fs_cwp = p_max > 0 ? cwp_derated_bar / p_max : 99;
+  const shell_test_bar = 1.5 * cwp_bar; // Prueba de cuerpo 1.5x CWP (MSS SP-99 6.1.1b)
+  const seat_test_bar = 1.1 * cwp_bar;  // Prueba de asiento 1.1x CWP (MSS SP-99 6.1.1b)
+
+  // Cálculo de Deriva Térmica del Sello de Diafragma y Permeación de H2/H2S
+  const deltaT = Math.abs(temp_c - 20) + Math.abs(temp_amb - 20) * 0.5;
+  let alpha_fluid = 0.00095; // Silicona DC 200 (1/°C)
+  let fluid_ok = true;
+  let fluid_note = "Estable (-40 a 205 °C)";
+  if (fill_fluid === "halocarbon") {
+    alpha_fluid = 0.00115;
+    fluid_note = "Inerte (-30 a 175 °C)";
+  } else if (fill_fluid === "glycerin") {
+    alpha_fluid = 0.00062;
+    if (temp_c > 65) {
+      fluid_ok = false;
+      fluid_note = `Degradación/alta viscosidad a ${temp_c} °C (> 65 °C)`;
+    }
+  }
+  // Presión parásita inducida por expansión térmica en la cápsula (inversamente proporcional a D^3 de cápsula)
+  const stiffness_factor = Math.pow(60 / diaph_d_mm, 2.6) * (diaph_t_mm / 0.10);
+  const thermal_err_bar = alpha_fluid * deltaT * 18.5 * stiffness_factor;
+
+  // Tasa relativa de permeación de hidrógeno atómico (H⁰ producto de disociación de H2S) a través de la membrana delgada
+  const h2_perm_raw = (pH2S_kPa / 10) * Math.exp((temp_c - 25) / 40) * (0.10 / diaph_t_mm);
+  const h2_perm_eff = gold_coat ? h2_perm_raw * 0.05 : h2_perm_raw; // El recubrimiento de Au reduce la permeación en ~95%
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pp").textContent = `${pCO2_bar.toFixed(2)} bar / ${pH2S_kPa.toFixed(2)} kPa`;
+  document.getElementById("kpi_pp_sub").textContent = `CO₂: ${pCO2_psi.toFixed(1)} psi | H₂S: ${pH2S_psi.toFixed(2)} psi (a ${p_eval} bar)`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} (SSC)</span>`;
+  document.getElementById("kpi_pren_sub").textContent = `PREN mín. rendija: ${req_pren.toFixed(1)} (Cl⁻ ${chlorides.toLocaleString()} mg/L)`;
+
+  document.getElementById("kpi_vcorr").textContent = `${v_stagnant_cs.toFixed(2)} mm/a (en CS)`;
+  document.getElementById("kpi_cacorr").textContent = `Sin control: ${v_uncontrolled.toFixed(1)} mm/a | CA 20a: ${ca_stagnant_mm.toFixed(1)} mm (Exige CRA)`;
+
+  document.getElementById("kpi_drift").textContent = `±${thermal_err_bar.toFixed(2)} bar`;
+  document.getElementById("kpi_perm_sub").textContent = `Permeación H₂: ${h2_perm_eff > 1.2 ? 'Alta (Exige Au)' : (gold_coat ? 'Bloqueada con Au' : 'Baja/Moderada')} | ${fluid_note}`;
+
+  document.getElementById("kpi_cwp").textContent = `${cwp_derated_bar.toFixed(0)} bar [FS ${fs_cwp.toFixed(1)}]`;
+  document.getElementById("kpi_proof_sub").textContent = `Cuerpo 1.5x: ${shell_test_bar.toFixed(0)} bar | Asiento 1.1x: ${seat_test_bar.toFixed(0)} bar`;
+
+  // Evaluar catálogo de grados
+  const stateObj = { region, temp_c, pH2S_kPa, pH, chlorides, ca_stagnant_mm, req_pren };
+  const gradesEval = GRADES_CATALOG.map(g => {
+    const envCheck = evaluateAlloyEligibility(g, stateObj);
+    return { ...g, envCheck };
+  });
+
+  // Renderizar Tabla 1 (Elegibilidad metalúrgica)
+  const gradesTbody = document.getElementById("grades_tbody");
+  gradesTbody.innerHTML = gradesEval.map(g => {
+    const badgeClass = g.envCheck.eligible ? "ok" : "danger";
+    return `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.yp_MPa} MPa | ${g.hardness}</td>
+        <td>${g.pren > 0 ? g.pren.toFixed(1) : "N/A (CS)"}</td>
+        <td>≤ ${g.maxTemp_c} °C | ≤ ${(g.maxCl_mgL / 1000).toFixed(0)}k mg/L Cl⁻ | ≤ ${g.maxH2S_kPa} kPa H₂S</td>
+        <td><span class="tag ${badgeClass}">${g.envCheck.status}</span></td>
+        <td>${g.envCheck.reason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Seleccionar la aleación elegible de menor costo para la verificación mecánica/metrológica
+  const chosenGrade = gradesEval.find(g => g.envCheck.eligible) || gradesEval[gradesEval.length - 1];
+  // Para la membrana ultradelgada (0.10 mm), si el grado elegido es Dúplex/Super Dúplex (difícil de estampar sin trabajo en frío severo en H2S), recomendar Hastelloy C-276 / Inconel 625 / Monel 400
+  const chosenDiaphGrade = (chosenGrade.id === "DUPLEX_2205" || chosenGrade.id === "SDUPLEX_2507")
+    ? (gradesEval.find(g => g.id === "MONEL_400" && g.envCheck.eligible) || gradesEval.find(g => g.id === "INCONEL_625"))
+    : chosenGrade;
+
+  document.getElementById("selected_grade_lbl").textContent = `${chosenGrade.name} (Válvula) / ${chosenDiaphGrade.name} (Membrana)`;
+
+  // Evaluar Tabla 2 (Rangos Comerciales de Escala ASME B40.100 / EN 837-1)
+  // Regla ASME B40.100:
+  // - Presión operativa normal entre 25% y 75% del span (bajo pulsación de bombeo mecánico: entre 25% y 60% del span).
+  // - Presión máxima + pulsación ≤ 75% (o 80% máx en cierre estático) del span.
+  // - Deriva térmica ≤ 1.5% del span.
+  let optimalRange = null;
+  const rangesEval = GAUGE_RANGES.map(r => {
+    const pct_norm = (p_op / r.span_bar) * 100;
+    const pct_peak = ((p_max + p_pulse) / r.span_bar) * 100;
+    const pct_drift = (thermal_err_bar / r.span_bar) * 100;
+
+    // Esfuerzo flector inducido en la membrana corrugada apoyada sobre el plato perfilado
+    const sigma_diaph_MPa = 18 + (p_max / 100) * (diaph_d_mm / 60) * (0.10 / diaph_t_mm) * 65;
+    const fs_diaph = chosenDiaphGrade.yp_MPa / Math.max(1, sigma_diaph_MPa);
+
+    const norm_ok = pct_norm >= 25 && pct_norm <= (p_pulse > 1 ? 65 : 75);
+    const peak_ok = pct_peak <= 82;
+    const drift_ok = pct_drift <= 1.5 && fluid_ok;
+    const cwp_ok = fs_cwp >= fs_cwp_req;
+    const passes = norm_ok && peak_ok && drift_ok && cwp_ok && fs_diaph >= 1.5 && chosenGrade.envCheck.eligible;
+
+    if (passes && !optimalRange) optimalRange = { ...r, pct_norm, pct_peak, pct_drift, fs_diaph };
+    return { ...r, pct_norm, pct_peak, pct_drift, sigma_diaph_MPa, fs_diaph, passes, norm_ok, peak_ok, drift_ok };
+  });
+
+  const rangesTbody = document.getElementById("ranges_tbody");
+  rangesTbody.innerHTML = rangesEval.map(r => {
+    let statusTxt = "CUMPLE ASME B40.100";
+    if (!r.passes) {
+      if (!r.peak_ok) statusTxt = "SOBREPRESIÓN (>80%)";
+      else if (r.pct_norm < 25) statusTxt = "BAJA RESOLUCIÓN (<25%)";
+      else if (!r.norm_ok) statusTxt = "EXCESO PULSACIÓN (>65%)";
+      else if (!r.drift_ok) statusTxt = "DERIVA / FLUIDO";
+      else statusTxt = "FALLA CWP / MAT";
+    }
+    return `
+      <tr>
+        <td><strong>0 – ${r.span_bar} bar</strong> (0 – ${r.span_psi} psi)</td>
+        <td>${r.pct_norm.toFixed(1)}% <span style="color:var(--mut)">(Ideal 25–65%)</span></td>
+        <td>${r.pct_peak.toFixed(1)}% <span style="color:var(--mut)">(Máx ≤ 80%)</span></td>
+        <td>±${r.pct_drift.toFixed(2)}% ${!fluid_ok ? '<span style="color:var(--bad)">(Fluido Inv.)</span>' : ''}</td>
+        <td>${r.sigma_diaph_MPa.toFixed(0)} MPa [${r.fs_diaph.toFixed(2)}]</td>
+        <td>${seat_test_bar.toFixed(0)} / ${shell_test_bar.toFixed(0)} bar</td>
+        <td><span class="tag ${r.passes ? 'ok' : 'danger'}">${statusTxt}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Banner de Veredicto Global
+  const vd = document.getElementById("verdict");
+  if (chosenGrade.envCheck.eligible && optimalRange) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Válvula de aguja (MSS SP-99)</span><strong>${chosenGrade.name.split("(")[0]}</strong></div>
+      <div><span>Membrana sello químico</span><strong>${chosenDiaphGrade.name.split("(")[0]}${gold_coat ? " + Au" : ""}</strong></div>
+      <div><span>Escala recomendada (ASME B40.100)</span><strong>0 – ${optimalRange.span_bar} bar (${optimalRange.pct_norm.toFixed(0)}% uso)</strong></div>
+      <div><span>Región ISO 15156 / Rating CWP</span><strong>Región ${region} / ${cwp_psi} psi</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `
+      <div class="msg">
+        <strong>Configuración fuera de especificación metrológica o metalúrgica</strong>
+        <span>${!fluid_ok ? `El fluido de llenado (${fill_fluid}) se degrada a ${temp_c} °C; cambie a Aceite de Silicona DC 200.` : (!optimalRange ? `La presión operativa (${p_op} bar) o máxima (${p_max}±${p_pulse} bar) excede los rangos o el CWP seleccionado.` : `Ninguna aleación cumple las condiciones extremas.`)} Verifique el diámetro de cápsula (≥ 60 mm reduce deriva térmica) y clase CWP.</span>
+      </div>
+    `;
+  }
+
+  // Recomendación detallada por Subcomponentes A, B y C
+  const goldRecTxt = (h2_perm_raw > 1.0 && !gold_coat)
+    ? "Se recomienda activar recubrimiento de Oro (Au 25 µm) sobre la membrana para bloquear la permeación de hidrógeno atómico (H⁰) hacia el fluido siliconado."
+    : (gold_coat ? "Recubrimiento de Oro (Au 25 µm) activo: barrera impermeable frente a difusión de H₂/H₂S." : "Baja tasa de permeación de H₂ a la temperatura actual; membrana desnuda aceptable.");
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Válvula de Aguja / Manifold Bloqueo y Purga (MSS SP-99 — Toma M5)</h3>
+      <p><strong>Material Recomendado:</strong> Cuerpo forjado y bonete integral en <span style="color:var(--ok);">${chosenGrade.name}</span> (${chosenGrade.hardness}), clase <strong>${cwp_psi} psi CWP</strong> (${cwp_derated_bar.toFixed(0)} bar a ${temp_c} °C), conexión ${conn_type.replace("_", " ")}.</p>
+      <p><strong>Vástago y Empaquetadura:</strong> Punta no rotativa (*non-rotating stem tip*) endurecida o en ${chosenDiaphGrade.name} para evitar gripado (*galling*) en el asiento de Ø ${orifice_mm.toFixed(1)} mm, con empaque de <strong>PTFE virgen / Grafito trenzado</strong> bajo la rosca del vástago para aislar las roscas del fluido estancado con ${chlorides.toLocaleString()} mg/L de Cl⁻.</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Sello de Diafragma (Chemical Seal — ASME B40.100 / ISO 15156-3 Tabla A.6)</h3>
+      <p><strong>Membrana Aisladora y Cuerpo Inferior:</strong> Membrana corrugada soldada por láser de Ø ${diaph_d_mm} mm × ${diaph_t_mm.toFixed(2)} mm en <span style="color:var(--ok);">${chosenDiaphGrade.name}</span> (PREN ${chosenDiaphGrade.pren}). ${goldRecTxt}</p>
+      <p><strong>Fluido de Transmisión y Puerto de Lavado:</strong> Llenado capilar con <strong>${fill_fluid === 'silicone' ? 'Aceite de Silicona DC 200' : (fill_fluid === 'halocarbon' ? 'Halocarbono' : 'Glicerina')}</strong> (deriva ±${thermal_err_bar.toFixed(2)} bar). Incluir anillo/puerto de purga (*flushing port*) para evacuar sólidos y renovar inhibidor tras cada muestreo en M5.</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Manómetro Bourdon de Seguridad y Amortiguador (EN 837-1 / ASME B40.100)</h3>
+      <p><strong>Especificación Metrológica:</strong> Rango comercial <span style="color:var(--ok);">${optimalRange ? `0 – ${optimalRange.span_bar} bar (0 – ${optimalRange.span_psi} psi)` : 'Ajustar presión a rango 0–100 o 0–160 bar'}</span>, dial de 100 mm (4½"), Clase de Exactitud 1.0, tubo Bourdon en AISI 316Ti / Monel aislado del fluido del pozo por el sello químico.</p>
+      <p><strong>Caja y Protección Externa (C5 - ${atmos_cat}):</strong> Caja de seguridad <strong>Solid Front (Frente Sólido)</strong> con pared deflectora y respaldo expulsable (*blow-out back*) en Inox 316L, llena de glicerina/silicona más amortiguador de pulsaciones (*snubber* poroso) para mitigar la oscilación cíclica de ±${p_pulse} bar del bombeo mecánico.</p>
+    </div>
+  `;
+
+  // Dibujar Esquema SVG Dinámico
+  drawInstrumentSVG({
+    p_op, p_max, p_pulse, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, eff_inhib_frac, v_stagnant_cs, region,
+    chosenGrade, chosenDiaphGrade, optimalRange, orifice_mm, diaph_d_mm, gold_coat
+  });
+
+  // Actualizar Estado Global JSON (window.wellStreamState)
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    ...(window.wellStreamState.fluidStream_C1_C2 || {}),
+    p_head_op_bar: p_op,
+    p_int_bar: p_max,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region: region,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: wet_factor,
+    v_inhibited_mm_yr: v_inhib,
+    design_life_yr: design_life
+  };
+  window.wellStreamState.needleValveGauge_M5 = {
+    connection: conn_type,
+    cwp_rating_psi: cwp_psi,
+    cwp_derated_bar: Number(cwp_derated_bar.toFixed(1)),
+    recommendedValveBodyAlloy: chosenGrade.name,
+    recommendedDiaphragmAlloy: chosenDiaphGrade.name,
+    goldCoatedDiaphragm: gold_coat,
+    recommendedGaugeRange_bar: optimalRange ? `0-${optimalRange.span_bar}` : null,
+    normalOperatingSpan_pct: optimalRange ? Number(optimalRange.pct_norm.toFixed(1)) : null,
+    thermalDrift_bar: Number(thermal_err_bar.toFixed(3)),
+    minRequiredPREN: Number(req_pren.toFixed(1))
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 6. Esquema SVG Técnico de Válvula de Aguja, Sello de Diafragma y Manómetro con Fluido Ascendente Reactivo
+function drawInstrumentSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    p_op, p_max, p_pulse, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, eff_inhib_frac, v_stagnant_cs, region,
+    chosenGrade, chosenDiaphGrade, optimalRange, orifice_mm, diaph_d_mm, gold_coat
+  } = d;
+
+  // 1. Colorimetría dinámica del fluido según Región ISO 15156-2 y CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.5) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+    } else {
+      fluidTopColor = "#d4a338"; fluidBotColor = "#785316"; fluidGlow = "#eab308"; fluidLabel = "Dulce (Región 0)";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido M5: ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | T=${temp_c}°C`;
+  }
+
+  // 2. Velocidades de animación del fluido, burbujas y aguja del manómetro
+  const tempNorm = Math.min(1, Math.max(0, (temp_c - 20) / 180));
+  const flowDrive = Math.min(1, Math.max(0.12, (p_op / 100) * 0.7 + tempNorm * 0.3));
+  const flowDur = (3.3 - flowDrive * 2.1).toFixed(2);
+  const bubbleDur = (2.7 - flowDrive * 1.7).toFixed(2);
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+
+  const co2Intensity = Math.min(1, y_co2 / 10);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const rCo2 = (1.4 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.5).toFixed(1);
+  const opCo2 = (0.3 + co2Intensity * 0.6).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.4 + h2sIntensity * 0.55 : 0).toFixed(2);
+
+  // Película de inhibidor efectiva en la cavidad muerta
+  const inhibOp = (eff_inhib_frac * 0.9).toFixed(2);
+  const inhibDash = eff_inhib_frac >= 0.85 ? "none" : "4 5";
+
+  // Escalas geométricas del SVG
+  const cx = 152;
+  const boreW = Math.round(14 + ((orifice_mm - 1.5) / 8.5) * 12); // Ancho del canal interno (14 a 26 px)
+  const bL = cx - boreW / 2, bR = cx + boreW / 2;
+  const sealW = Math.round(88 + ((diaph_d_mm - 35) / 65) * 44);  // Ancho de la cápsula del sello (88 a 132 px)
+  const sL = cx - sealW / 2, sR = cx + sealW / 2;
+
+  // Color metalúrgico del cuerpo y de la membrana
+  const bodyColor = chosenGrade.type.includes("CRA") ? "#8cc4d6" : (chosenGrade.type === "SS" ? "#94a3b8" : "#64748b");
+  const diaphColor = gold_coat ? "#fbbf24" : "#c084fc";
+
+  // Ángulo de la aguja del manómetro (-135° es 0 bar, +135° es 100% del span)
+  const spanBar = optimalRange ? optimalRange.span_bar : 100;
+  const fracP = Math.min(1.05, Math.max(0, p_op / spanBar));
+  const fracPulse = Math.min(0.18, (p_pulse / spanBar));
+  const angleDeg = -135 + fracP * 270;
+  const angleMin = (angleDeg - fracPulse * 270).toFixed(1);
+  const angleMax = (angleDeg + fracPulse * 270).toFixed(1);
+
+  svg.innerHTML = `
+    <defs>
+      <!-- Recorte del canal de flujo ascendente desde la brida M5, pasando por el asiento de aguja hasta la cámara inferior del diafragma -->
+      <clipPath id="clipInstrumentFlow">
+        <path d="M ${cx - 22} 535 L ${cx - 22} 475 L ${bL} 465 L ${bL} 355 L ${cx - 5} 342 L ${bL} 328 L ${bL} 252 L ${sL + 10} 252 L ${sL + 10} 236 L ${sR - 10} 236 L ${sR - 10} 252 L ${bR} 252 L ${bR} 322 L ${bR + 46} 322 L ${bR + 46} 334 L ${bR} 334 L ${cx + 5} 342 L ${bR} 355 L ${bR} 465 L ${cx + 22} 475 L ${cx + 22} 535 Z"/>
+      </clipPath>
+
+      <!-- Gradiente reactivo del fluido producido -->
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.95"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.5 ? '#0284c7' : fluidTopColor}" stop-opacity="0.78"/>
+      </linearGradient>
+
+      <!-- Gradiente del líquido capilar de transmisión (sobre la membrana) -->
+      <linearGradient id="capillaryGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.75"/>
+        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.55"/>
+      </linearGradient>
+
+      <!-- Patrón de líneas de corriente y chevrons ascendentes -->
+      <pattern id="upStreamPat" width="32" height="44" patternUnits="userSpaceOnUse">
+        <path d="M 8 40 Q 12 22 8 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 24 42 Q 20 22 24 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 11 24 L 16 17 L 21 24" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <path d="M 13 10 L 16 5 L 19 10" stroke="${fluidGlow}" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.7"/>
+      </pattern>
+
+      <!-- Patrón de fase acuosa / salmuera con Cl- -->
+      <pattern id="waterCutPat" width="24" height="36" patternUnits="userSpaceOnUse">
+        <path d="M 5 34 C 3 24, 8 14, 5 2" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <path d="M 18 34 C 21 24, 15 12, 18 2" stroke="#0ea5e9" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.55"/>
+        <circle cx="12" cy="18" r="1.8" fill="#7dd3fc" opacity="0.75"/>
+      </pattern>
+
+      <!-- Patrón de burbujas ascendentes de CO2 y H2S -->
+      <pattern id="gasBubblesPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="38" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="24" cy="18" r="${(rCo2 * 0.85).toFixed(1)}" fill="#e0f2fe" opacity="${opCo2}"/>
+        <circle cx="27" cy="40" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.8" opacity="${opH2s}"/>
+        <circle cx="14" cy="24" r="${(rH2s * 0.8).toFixed(1)}" fill="#bef264" stroke="#84cc16" stroke-width="0.7" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.5px var(--mono); fill: var(--mut); }
+      #equipSvg .b { fill: var(--tx); font-weight: 700; }
+      @keyframes svgFlowUp { from { transform: translateY(0px); } to { transform: translateY(-44px); } }
+      @keyframes svgWaterUp { from { transform: translateY(0px); } to { transform: translateY(-36px); } }
+      @keyframes svgBubblesUp {
+        0% { transform: translate(0px, 0px); }
+        50% { transform: translate(1.2px, -24px); }
+        100% { transform: translate(0px, -48px); }
+      }
+      @keyframes needleJitter {
+        0%, 100% { transform: rotate(${angleMin}deg); }
+        50% { transform: rotate(${angleMax}deg); }
+      }
+      #equipSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #equipSvg .flow-up-fast { animation: svgWaterUp ${(flowDur * 0.82).toFixed(2)}s linear infinite; }
+      #equipSvg .bubbles-up { animation: svgBubblesUp ${bubbleDur}s linear infinite; }
+      #equipSvg .gauge-needle { transform-origin: ${cx}px 116px; animation: needleJitter 1.2s ease-in-out infinite; }
+    </style>
+
+    <!-- Barra superior de estado en tiempo real -->
+    <rect x="8" y="6" width="314" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" style="fill:var(--tx);font-weight:600;font-size:9.2px">${fluidLabel}</text>
+    <text x="314" y="21" text-anchor="end" style="fill:var(--acc);font-size:9px">P=${p_op}±${p_pulse}bar | T=${temp_c}°C | pH=${pH.toFixed(1)}</text>
+
+    <!-- ==================== 1. MANÓMETRO BOURDON (SUPERIOR) ==================== -->
+    <!-- Caja Solid Front del manómetro -->
+    <circle cx="${cx}" cy="116" r="68" fill="var(--panel)" stroke="${bodyColor}" stroke-width="4"/>
+    <circle cx="${cx}" cy="116" r="60" fill="#0d1013" stroke="var(--line)" stroke-width="1.5"/>
+    <!-- Tubo Bourdon interno (semicírculo punteado) -->
+    <path d="M ${cx - 42} 135 A 46 46 0 1 1 ${cx + 42} 135" stroke="#a78bfa" stroke-width="4" fill="none" opacity="0.28" stroke-dasharray="6 3"/>
+
+    <!-- Arco de zona operativa óptima (25% a 65% verde) y zona crítica (>75% roja) -->
+    <path d="M ${cx - 48} 116 A 48 48 0 0 1 ${cx + 22} 73" stroke="var(--ok)" stroke-width="4" fill="none" opacity="0.65"/>
+    <path d="M ${cx + 34} 82 A 48 48 0 0 1 ${cx + 34} 150" stroke="var(--bad)" stroke-width="4" fill="none" opacity="0.75"/>
+
+    <!-- Textos del dial del manómetro -->
+    <text x="${cx}" y="94" text-anchor="middle" style="fill:var(--mut);font-size:8px">ASME B40.100 · SOLID FRONT</text>
+    <text x="${cx}" y="146" text-anchor="middle" style="fill:var(--acc);font-weight:700;font-size:11px">${p_op.toFixed(0)} bar</text>
+    <text x="${cx}" y="159" text-anchor="middle" style="fill:var(--mut);font-size:8px">Escala 0–${spanBar} bar</text>
+    <text x="${cx - 34}" y="154" text-anchor="middle" style="fill:var(--mut);font-size:8px">0</text>
+    <text x="${cx + 34}" y="154" text-anchor="middle" style="fill:var(--bad);font-size:8px">${spanBar}</text>
+
+    <!-- Aguja animada con la pulsación del bombeo mecánico -->
+    <g class="gauge-needle">
+      <line x1="${cx}" y1="128" x2="${cx}" y2="66" stroke="var(--warn)" stroke-width="2.4" stroke-linecap="round"/>
+      <polygon points="${cx - 3},74 ${cx},62 ${cx + 3},74" fill="var(--warn)"/>
+    </g>
+    <circle cx="${cx}" cy="116" r="5" fill="var(--tx)" stroke="var(--bg)" stroke-width="1.5"/>
+
+    <!-- Cuello y amortiguador de pulsaciones (Snubber) con líquido capilar -->
+    <rect x="${cx - 10}" y="184" width="20" height="40" fill="var(--panel)" stroke="${bodyColor}" stroke-width="2"/>
+    <rect x="${cx - 4}" y="180" width="8" height="54" fill="url(#capillaryGrad)"/>
+    <!-- Disco poroso del Snubber -->
+    <rect x="${cx - 8}" y="202" width="16" height="6" fill="var(--warn)" opacity="0.85"/>
+    <text x="${cx + 16}" y="208" style="fill:var(--warn);font-size:8.5px">← Snubber (Pulsación ±${p_pulse} bar)</text>
+
+    <!-- ==================== 2. SELLO DE DIAFRAGMA (CENTRO) ==================== -->
+    <!-- Brida superior e inferior del sello químico -->
+    <rect x="${sL}" y="220" width="${sealW}" height="16" rx="3" fill="${bodyColor}" stroke="var(--tx)" stroke-width="1.2"/>
+    <rect x="${sL}" y="248" width="${sealW}" height="18" rx="3" fill="${bodyColor}" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Cámara superior llena de fluido capilar -->
+    <path d="M ${sL + 10} 236 L ${sR - 10} 236 L ${cx + 6} 224 L ${cx - 6} 224 Z" fill="url(#capillaryGrad)"/>
+
+    <!-- ==================== 3. CUERPO VÁLVULA DE AGUJA MSS SP-99 ==================== -->
+    <!-- Bloque forjado del cuerpo de la válvula de aguja -->
+    <rect x="${cx - 44}" y="266" width="88" height="196" rx="5" fill="var(--panel)" stroke="${bodyColor}" stroke-width="2.5"/>
+
+    <!-- Fluido Producido Ascendente Animado (desde brida M5, garganta de aguja, puerto de muestreo y cámara bajo el diafragma) -->
+    <g clip-path="url(#clipInstrumentFlow)">
+      <rect x="${sL}" y="232" width="${sealW + 60}" height="310" fill="url(#prodFluidGrad)"/>
+      <rect x="${sL}" y="232" width="${sealW + 60}" height="310" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.85).toFixed(2)}" class="flow-up-fast"/>
+      <rect x="${sL}" y="232" width="${sealW + 60}" height="310" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${sL}" y="232" width="${sealW + 60}" height="310" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+
+    <!-- Película de inhibidor en las paredes del canal muerto -->
+    <line x1="${bL + 1}" x2="${bL + 1}" y1="252" y2="465" stroke="#22d3ee" stroke-width="1.8" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+    <line x1="${bR - 1}" x2="${bR - 1}" y1="252" y2="465" stroke="#22d3ee" stroke-width="1.8" stroke-dasharray="${inhibDash}" opacity="${inhibOp}"/>
+
+    <!-- Membrana corrugada aisladora (CRA / Oro) entre fluido del pozo y líquido capilar -->
+    <path d="M ${sL + 6} 242 Q ${cx - 26} 234 ${cx - 14} 242 T ${cx} 242 T ${cx + 14} 242 T ${sR - 6} 242" stroke="${diaphColor}" stroke-width="3" fill="none"/>
+    <text x="${sR + 6}" y="240" style="fill:${diaphColor};font-weight:700;font-size:8.8px">Membrana Ø${diaph_d_mm}mm</text>
+    <text x="${sR + 6}" y="251" style="fill:var(--mut);font-size:8.2px">${chosenDiaphGrade.id.replace("_", " ")}${gold_coat ? " + Au 25µm" : ""}</text>
+
+    <!-- Vástago cónico de la válvula de aguja (entrando horizontalmente desde la izquierda) -->
+    <!-- Casquillo, empaquetadura PTFE/Grafito y maneral en T -->
+    <rect x="26" y="334" width="82" height="16" fill="${bodyColor}" stroke="var(--tx)" stroke-width="1"/>
+    <!-- Punta cónica de aguja no rotativa -->
+    <polygon points="108,334 ${cx - 3},342 108,350" fill="#e2e8f0" stroke="var(--tx)" stroke-width="1"/>
+    <!-- Empaquetadura del vástago (PTFE / Grafito) -->
+    <rect x="78" y="330" width="16" height="24" fill="#38bdf8" stroke="var(--tx)" stroke-width="1" opacity="0.85"/>
+    <!-- Maneral de la válvula de aguja -->
+    <line x1="26" y1="312" x2="26" y2="372" stroke="var(--warn)" stroke-width="6" stroke-linecap="round"/>
+    <text x="14" y="304" style="fill:var(--tx);font-weight:600;font-size:8.5px">Válvula Aguja MSS SP-99</text>
+    <text x="14" y="388" style="fill:#38bdf8;font-size:8px">Empaque PTFE/Grafito</text>
+
+    <!-- Puerto lateral derecho de Purga / Muestreo Químico (M5) -->
+    <rect x="${cx + 44}" y="318" width="28" height="20" fill="${bodyColor}" stroke="var(--tx)" stroke-width="1"/>
+    <circle cx="${cx + 76}" cy="328" r="4" fill="var(--ok)"/>
+    <text x="${cx + 84}" y="326" style="fill:var(--ok);font-weight:600;font-size:8.5px">Toma Muestreo M5</text>
+    <text x="${cx + 84}" y="337" style="fill:var(--mut);font-size:8px">Orificio Ø ${orifice_mm.toFixed(1)} mm</text>
+
+    <!-- ==================== 4. BRIDA TOPE DEL ÁRBOL (M5 - INFERIOR) ==================== -->
+    <rect x="${cx - 72}" y="462" width="144" height="26" rx="3" fill="${bodyColor}" stroke="var(--tx)" stroke-width="1.5"/>
+    <rect x="${cx - 38}" y="488" width="76" height="46" fill="var(--panel)" stroke="${bodyColor}" stroke-width="2"/>
+    <text x="${cx + 76}" y="478" class="b" style="font-size:9px">Tope Árbol (M5)</text>
+
+    <!-- Flechas de entrada de presión desde el cabezal/árbol -->
+    <g stroke="${fluidGlow}" stroke-width="1.8" fill="none" stroke-linecap="round">
+      <path d="M ${cx - 10} 532 L ${cx - 10} 512 M ${cx - 14} 517 L ${cx - 10} 511 L ${cx - 6} 517"/>
+      <path d="M ${cx + 10} 532 L ${cx + 10} 512 M ${cx + 6} 517 L ${cx + 10} 511 L ${cx + 14} 517"/>
+    </g>
+
+    <!-- Pie de resumen metalúrgico -->
+    <text x="${cx}" y="554" text-anchor="middle" style="fill:${bodyColor};font-weight:700;font-size:10px">${chosenGrade.name}</text>
+    <text x="${cx}" y="568" text-anchor="middle" style="font-size:8.8px;fill:var(--mut)">CO₂: ${y_co2}% (${pCO2_bar.toFixed(2)} bar) · H₂S: ${y_h2s}% (${pH2S_kPa.toFixed(1)} kPa) · Cl⁻: ${d.chlorides ? d.chlorides : ''}${ document.getElementById('chlorides').value } mg/L</text>
+  `;
+}
+
+function copyGlobalState(btn) {
+  const t = JSON.stringify(window.wellStreamState, null, 2);
+  const done = () => { btn.textContent = "Copiado"; setTimeout(() => btn.textContent = "Copiar JSON", 1500); };
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("json_output"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    btn.textContent = "Texto seleccionado: Ctrl+C";
+  });
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>

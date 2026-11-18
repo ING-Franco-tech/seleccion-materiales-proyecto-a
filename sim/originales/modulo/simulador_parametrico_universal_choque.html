@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 10: Choque / Estrangulador (API 6A / ISO 10423 / ISO 15156)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:justify-between}
+summary::after{content:"+";color:var(--mut);margin-left:auto}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center;white-space:nowrap}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.08rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:620px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div><h1>Choque / Estrangulador de Superficie</h1>
+  <p>Módulo 10 de 10, sistema A1 (Salida lateral aguas abajo hacia A2). Regulación de caída de presión (ΔP), velocidad sónica/vena contracta, erosión por arena y selección de Clase API 6A y Trim.</p></div>
+  <ul class="norms"><li>API Spec 6A / ISO 10423</li><li>ISA 75.01 / IEC 60534</li><li>API RP 14E</li><li>ISO 15156-2 / -3</li><li>ISO 21457</li></ul>
+</header>
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card"><h2>Corte técnico del Choque (API 6A)</h2>
+        <svg id="equipSvg" viewBox="0 0 340 560" role="img" aria-label="Corte técnico de válvula de choque angular API 6A con fluido ascendente, vena contracta en el bean, partículas de arena y descarga hacia línea A2"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido multifásico ascendente (C1)</span></li>
+          <li><i style="background:#38bdf8;opacity:.75"></i>Corte de agua (BSW) y película de inhibidor</li>
+          <li><i style="background:#fbbf24;opacity:.85"></i>Vena contracta (Chorro de alta velocidad y arena)</li>
+          <li><i style="background:var(--acc);opacity:.65"></i>Trim restrictor (Bean / Jaula) y revestimiento</li>
+        </ul>
+      </section>
+      <section class="card"><h2>Diagnóstico hidrodinámico, erosión y corrosión</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presiones parciales CO₂ / H₂S</div><div class="val" id="kpi_pp">-</div><div class="sub" id="kpi_pp_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2 / API 6A</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_apiclass">-</div></div>
+          <div class="kpi"><div class="lbl">Caída ΔP y Régimen de Flujo</div><div class="val" id="kpi_dp">-</div><div class="sub" id="kpi_jt">-</div></div>
+          <div class="kpi"><div class="lbl">Velocidad Chorro vs Erosional</div><div class="val" id="kpi_vel">-</div><div class="sub" id="kpi_vel_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Desgaste Trim / Corrosión Cuerpo</div><div class="val" id="kpi_wear">-</div><div class="sub" id="kpi_wear_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+    <section class="card"><h2>Elegibilidad de Clase de Cuerpo y Trim (API 6A, ISO 15156-2 / -3 e ISO 21457)</h2>
+      <div class="scroll"><table><thead><tr><th>Combinación Cuerpo + Trim</th><th>Clase API 6A</th><th>Dureza Cuerpo / Trim</th><th>Estado</th><th>Justificación Metalúrgica y Frente a Erosión</th></tr></thead><tbody id="grades_tbody"></tbody></table></div></section>
+    <section class="card"><h2>Verificación de Orificios Comerciales (Bean Sizes en 1/64 in)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Evaluado con el conjunto elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong> | Orificio seleccionado en panel: <strong id="selected_bean_lbl" style="color:var(--warn)">-</strong></p>
+      <div class="scroll"><table><thead><tr><th>Bean (1/64")</th><th>Ø Orificio (mm)</th><th>Cv Req / Cap</th><th>V Chorro (m/s)</th><th>V Salida [Ratio Ve]</th><th>Desgaste Trim (mm/a)</th><th>Vida Trim (años) [FS]</th><th>Veredicto</th></tr></thead><tbody id="beans_tbody"></tbody></table></div></section>
+    <section class="card"><h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2><pre id="json_output"></pre></section>
+  </main>
+</div>
+
+<script>
+// Inicializar desde window.wellStreamState si existe
+const initSt = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) ? window.wellStreamState.fluidStream_C1_C2 : {};
+
+const FORM=[
+["Química del fluido producido (C1)",[
+ ["p_up","Presión entrada (aguas arriba)","bar",incomingValue("p_head_op_bar", 45),2,1000,1],
+ ["temp_c","Temperatura entrada","°C",incomingValue("temp_surface_c", 68),5,250,1],
+ ["y_co2","CO₂ en gas","% mol",incomingValue("y_co2_pct", 3.1),0,100,0.1],
+ ["y_h2s","H₂S en gas (0.15 hoy / 0.30 año 10)","% mol",incomingValue("y_h2s_pct", 0.15),0,100,0.01],
+ ["ph","pH in situ","",incomingValue("pH", 4.6),1,14,0.1],
+ ["chlorides","Cloruros (Cl⁻)","mg/L",incomingValue("chlorides_mgL", initSt.chlorides_mgL ?? 42000),0,250000,500],
+ ["bsw","Corte de agua (BSW)","%",incomingValue("bsw_pct", 78),0,100,1],
+ ["inhib_avail","Disponibilidad inhibidor (A)","%",incomingValue("inhibitor_availability_pct", 90),0,100,0.5],
+ ["v_inhib","Velocidad base con inhibidor","mm/a",incomingValue("v_inhibited_mm_yr", 0.1),0,2,0.01]]],
+["Hidrodinámica y sólidos (C1, C5)",[
+ ["choke_type","Configuración de Choque API 6A",[["bean","Positivo (Fijo / Bean intercambiable)"],["cage","Ajustable (Aguja y Jaula / Cage)"],],"bean"],
+ ["p_down","Presión salida (hacia línea A2)","bar",incomingValue("p_out_a2_bar", 35),1,1000,1],
+ ["p_shut","Presión máx. cierre (SITP)","bar",incomingValue("p_head_design_bar", 50),5,1000,1],
+ ["q_liq","Caudal líquido (crudo + agua)","m³/d",34,1,5000,1],
+ ["gor","Relación Gas-Petróleo (GOR)","scf/bbl",150,0,10000,10],
+ ["api_grav","Gravedad del crudo","°API",18,8,60,0.5],
+ ["sand_llb","Arena / Sólidos suspendidos","lb/1000 bbl",incomingValue("solids_lb_1000bbl", 12),0,500,1],
+ ["c_erod","Constante C (API RP 14E sólidos)","",100,50,250,5],
+ ["ext_iso","Categoría corrosividad ext. (C5)",[["C4","ISO 9223 C4 (Tropical Industrial - Barranca)"],["C3","ISO 9223 C3 (Urbana / Moderada)"],["C5","ISO 9223 C5 (Severa / Marina)"]],"C4"]]],
+["Geometría API 6A y vidas de diseño",[
+ ["bore_in","Paso nominal del cuerpo (Bore)",[["2.0625","2 1/16 in (52,4 mm)"],["2.5625","2 9/16 in (65,1 mm)"],["3.125","3 1/8 in (79,4 mm)"],["4.0625","4 1/16 in (103,2 mm)"]],"2.5625"],
+ ["rating_psi","Rating de presión API 6A",[["2000","2 000 psi (138 bar)"],["3000","3 000 psi (207 bar)"],["5000","5 000 psi (345 bar)"]],"2000"],
+ ["bean_select","Diámetro Orificio / Bean (1/64 in)",[["16","16/64 in (6,35 mm)"],["20","20/64 in (7,94 mm)"],["24","24/64 in (9,53 mm)"],["28","28/64 in (11,11 mm)"],["32","32/64 in (12,70 mm)"],["40","40/64 in (15,88 mm)"],["48","48/64 in (19,05 mm)"],["64","64/64 in (25,40 mm)"]],"28"],
+ ["wall_mm","Espesor pared portachoque","mm",19.0,6,60,0.5],
+ ["allow_trim_mm","Desgaste radial admisible Trim","mm",1.5,0.3,5.0,0.1],
+ ["life_body","Vida diseño Cuerpo (permanente)","años",incomingValue("design_life_yr", 20),5,40,1],
+ ["life_trim","Vida mínima exigida al Trim","años",2.0,0.5,15,0.5],
+ ["fs_req","Factor seguridad mín. (Presión/Vida)","",1.25,1.0,2.5,0.05]]]];
+
+function buildForm(){
+  document.getElementById("form").innerHTML=FORM.map(([t,fs])=>`<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f=>{
+    const [id,lb,u]=f,sel=Array.isArray(u);
+    const ctl=sel?`<select id="${id}">${u.map(o=>`<option value="${o[0]}"${o[0]===f[3]?" selected":""}>${o[1]}</option>`).join("")}</select>`
+      :`<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel?" w":""}"><label for="${id}">${lb}</label>${ctl}</div>`}).join("")}</div></details>`).join("");
+}
+buildForm();
+const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:d;};
+
+// 1. Catálogo de Orificios Comerciales (Bean sizes en 1/64 de pulgada)
+const BEAN_CATALOG = [16, 20, 24, 28, 32, 40, 48, 64].map(b => ({
+  bean_64: b,
+  d_in: b / 64,
+  d_mm: (b / 64) * 25.4
+}));
+
+// 2. Catálogo Metalúrgico Dual (Cuerpo Portachoque API 6A + Trim Restrictor)
+const CHOKE_MATERIALS_CATALOG = [
+  {
+    id: "AA-CS-410",
+    name: "Cuerpo AISI 4130 + Trim Inox 410",
+    apiClass: "AA / BB",
+    bodyMat: "AISI 4130 (Baja aleación)",
+    trimMat: "UNS S41000 (13Cr)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / 38 HRC",
+    trimHardnessHV: 380,
+    trimWearFactor: 4.5, // relativo al WC-Ni = 1.0
+    isBodyCRA: false,
+    hasCobaltBinder: false,
+    sourCapable: false,
+    maxReg: 0,
+    costRank: 1
+  },
+  {
+    id: "DD-4130-174",
+    name: "Cuerpo AISI 4130 + Trim 17-4PH (S17400)",
+    apiClass: "DD (Amargo no corrosivo)",
+    bodyMat: "AISI 4130 Q&T (≤ 22 HRC)",
+    trimMat: "UNS S17400 (Doble envejecido)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / ≤ 33 HRC",
+    trimHardnessHV: 330,
+    trimWearFactor: 5.2,
+    isBodyCRA: false,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 2
+  },
+  {
+    id: "EE-4130-Stellite",
+    name: "Cuerpo AISI 4130 + Trim Inox 410 / Stellite 6",
+    apiClass: "EE (Amargo + CO₂ mod.)",
+    bodyMat: "AISI 4130 Q&T (≤ 22 HRC)",
+    trimMat: "S41000 + Recargue Stellite 6 (R30006)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / 42 HRC",
+    trimHardnessHV: 430,
+    trimWearFactor: 2.6,
+    isBodyCRA: false,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 3
+  },
+  {
+    id: "EE-4130-WCCo",
+    name: "Cuerpo AISI 4130 + Trim Carburo Tungsteno (WC-Co)",
+    apiClass: "EE (Estándar)",
+    bodyMat: "AISI 4130 Q&T (≤ 22 HRC)",
+    trimMat: "Carburo de Tungsteno aglutinado con Cobalto (WC-6%Co)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / 1500 HV",
+    trimHardnessHV: 1500,
+    trimWearFactor: 1.45, // mayor desgaste en ácido por lixiviación de Co
+    isBodyCRA: false,
+    hasCobaltBinder: true,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 4
+  },
+  {
+    id: "EE-4130-WCNi",
+    name: "Cuerpo AISI 4130 (Inlay 625) + Trim WC-Ni (Matriz Níquel)",
+    apiClass: "EE (con Inlay 625 en ranuras)",
+    bodyMat: "AISI 4130 (≤ 22 HRC) + Inlay UNS N06625 en anillos/bonete",
+    trimMat: "Carburo de Tungsteno matriz Níquel-Cromo (WC-NiCr)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / 1550 HV",
+    trimHardnessHV: 1550,
+    trimWearFactor: 0.72, // excelente sinergia corrosión-erosión
+    isBodyCRA: false,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 5
+  },
+  {
+    id: "FF-F6NM-WCNi",
+    name: "Cuerpo Inox F6NM (13Cr-4Ni) + Trim Carburo WC-Ni",
+    apiClass: "FF (Inoxidable Amargo)",
+    bodyMat: "ASTM A182 F6NM / UNS S41500 (≤ 23 HRC)",
+    trimMat: "Carburo de Tungsteno matriz Níquel (WC-Ni)",
+    yp_ksi: 75,
+    hardness: "≤ 23 HRC / 1550 HV",
+    trimHardnessHV: 1550,
+    trimWearFactor: 0.70,
+    isBodyCRA: true,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 6
+  },
+  {
+    id: "HH-Clad625-WCNi",
+    name: "Cuerpo 4130 Clad Total Alloy 625 + Trim WC-Ni",
+    apiClass: "HH (CRA Clad Integral)",
+    bodyMat: "AISI 4130 + Weld Overlay integral UNS N06625 (≥ 3 mm)",
+    trimMat: "Carburo de Tungsteno matriz Níquel (WC-Ni)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC (Base) / 1550 HV",
+    trimHardnessHV: 1550,
+    trimWearFactor: 0.68,
+    isBodyCRA: true,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 7
+  },
+  {
+    id: "HH-Clad625-Si3N4",
+    name: "Cuerpo 4130 Clad Total Alloy 625 + Trim Cerámico Si₃N₄",
+    apiClass: "HH (Servicio Extremo Erosivo)",
+    bodyMat: "AISI 4130 + Weld Overlay integral UNS N06625",
+    trimMat: "Nitruro de Silicio Sinterizado (Si₃N₄ HIP)",
+    yp_ksi: 60,
+    hardness: "≤ 22 HRC / 1800 HV",
+    trimHardnessHV: 1800,
+    trimWearFactor: 0.38,
+    isBodyCRA: true,
+    hasCobaltBinder: false,
+    sourCapable: true,
+    maxReg: 3,
+    costRank: 8
+  }
+];
+
+// 3. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 4. Determinación de Clase de Material Mínima según API Spec 6A / ISO 10423
+function getRequiredAPI6AClass(pCO2_psi, pH2S_psi, chlorides, pH) {
+  const isSour = pH2S_psi >= 0.3 * 14.5038 / 100;
+  if (!isSour) {
+    if (pCO2_psi < 7) return "AA";
+    if (pCO2_psi <= 30) return "BB";
+    return "CC";
+  } else {
+    if (pCO2_psi < 7) return "DD";
+    if (pCO2_psi <= 30) {
+      // Entre 7 y 30 psi de pCO2 en servicio amargo: EE es estándar; si Cl- > 100,000 y pH < 4.0 exige HH
+      return (chlorides > 100000 && pH < 4.0) ? "HH" : "EE";
+    }
+    return "HH"; // pCO2 > 30 psi en servicio amargo o corrosión extrema
+  }
+}
+
+// 5. Hidrodinámica, Enfriamiento Joule-Thomson y Erosión en el Choque (ISA 75.01 / API RP 14E)
+function calcChokeHydraulics(bean_mm, params) {
+  const {
+    p_up, p_down, temp_c, q_liq, gor, api_grav, bsw,
+    sand_llb, c_erod, v_design_body, trimWearFactor
+  } = params;
+
+  const dp_bar = Math.max(0.1, p_up - p_down);
+  const dp_psi = dp_bar * 14.5038;
+  const p_ratio = p_up > 0 ? (p_down / p_up) : 1;
+  const isCritical = p_ratio < 0.55; // flujo crítico / sónico cuando P_down / P_up < 0.55
+
+  // Densidad del líquido y mezcla multifásica a presión promedio
+  const sg_oil = 141.5 / (131.5 + api_grav);
+  const sg_water = 1.03;
+  const fw = bsw / 100;
+  const rho_liq = (fw * sg_water + (1 - fw) * sg_oil) * 1000; // kg/m3
+
+  // Caudal de gas libre estimado en condiciones de choque
+  const q_bbl_d = q_liq * 6.2898;
+  const q_oil_bbl_d = q_bbl_d * (1 - fw);
+  const q_gas_scfd = q_oil_bbl_d * gor;
+  const p_avg_bar = Math.max(1, (p_up + p_down) / 2);
+  const temp_K = temp_c + 273.15;
+  // Volumen de gas in situ (m3/d) usando ley de gases reales aproximada (Z ~ 0.9)
+  const q_gas_insitu_m3d = (q_gas_scfd * 0.028317) * (1.013 / p_avg_bar) * (temp_K / 288.15) * 0.9;
+  const q_tot_m3d = q_liq + q_gas_insitu_m3d;
+  const q_tot_m3s = q_tot_m3d / 86400;
+
+  // Masa total y densidad de mezcla homogénea
+  const mass_liq_kgd = q_liq * rho_liq;
+  const mass_gas_kgd = (q_gas_scfd * 0.028317) * 0.95; // densidad gas std ~ 0.95 kg/m3
+  const rho_mix = Math.max(50, (mass_liq_kgd + mass_gas_kgd) / Math.max(0.1, q_tot_m3d));
+  const sg_mix = rho_mix / 1000;
+
+  // Áreas de paso: Orificio del Bean (con coeficiente de descarga Cd = 0.82) y Cuerpo de salida
+  const area_bean_m2 = (Math.PI / 4) * Math.pow(bean_mm / 1000, 2);
+  const area_bore_m2 = (Math.PI / 4) * Math.pow(params.bore_mm / 1000, 2);
+
+  // Velocidad real del chorro en la vena contracta del Bean (m/s)
+  // Se acota por la velocidad teórica de descarga de Bernoulli/gases reales
+  const v_bernoulli_max = Math.sqrt((2 * dp_bar * 1e5) / Math.max(150, rho_mix));
+  const v_continuity = q_tot_m3s / (0.82 * Math.max(1e-7, area_bean_m2));
+  // Combinación realista entre continuidad del caudal del pozo y aceleración por caída ΔP en la garganta
+  const v_jet = Math.min(280, Math.max(v_continuity, 0.42 * v_bernoulli_max));
+
+  // Velocidad en el carrete de salida (aguas abajo del choque) vs Velocidad Erosional API RP 14E
+  const v_outlet = q_tot_m3s / Math.max(1e-6, area_bore_m2);
+  // API RP 14E: Ve (ft/s) = C / sqrt(rho_lb_ft3) -> en m/s:
+  const rho_lbft3 = rho_mix * 0.062428;
+  const v_erod_mps = (c_erod / Math.sqrt(Math.max(1, rho_lbft3))) * 0.3048;
+  const erod_ratio = v_outlet / Math.max(0.1, v_erod_mps);
+
+  // Coeficiente de flujo Cv requerido vs Cv máximo del orificio (ISA 75.01)
+  const q_gpm = q_tot_m3d * 0.18345;
+  const dp_eff_psi = isCritical ? (0.55 * p_up * 14.5038) : dp_psi;
+  const cv_req = q_gpm * Math.sqrt(sg_mix / Math.max(0.5, dp_eff_psi));
+  const cv_cap = 23.5 * Math.pow(bean_mm / 25.4, 2); // capacidad Cv de un bean circular de diámetro d (in)
+
+  // Enfriamiento Joule-Thomson a través del choque (ΔT_JT)
+  // Depende de la fracción de gas y la caída de presión ΔP (~ 0.45 °C/bar para gas puro, amortiguado por la capacidad calórica del líquido)
+  const gas_vol_frac = q_gas_insitu_m3d / Math.max(0.1, q_tot_m3d);
+  const dt_jt = dp_bar * (0.04 + 0.38 * gas_vol_frac);
+  const temp_out_c = temp_c - dt_jt;
+
+  // Tasa de erosión-corrosión radial en el Trim (mm/año)
+  // Modelo mecanístico DNV RP O501 / Tulsa E/CRC simplificado: proporcional a concentración de arena, (V_jet)^2.4 y factor metalúrgico
+  const sand_kg_m3 = (sand_llb * 0.45359) / (1000 * 0.158987); // 12 lb/1000 bbl = 0.0342 kg/m3
+  const sand_factor = Math.max(0.08, sand_llb / 10); // incluso sin arena hay desgaste por cavitación/flujo a alta velocidad
+  const base_erosion_mm_yr = 0.018 * sand_factor * Math.pow(v_jet / 12, 2.15) * (1 + 0.15 * (dp_bar / 10));
+  // Sinergia con corrosión si el trim no es carburo/cerámico
+  const trim_corr_synergy = trimWearFactor > 2.0 ? (0.25 * v_design_body) : (0.03 * v_design_body);
+  const trim_wear_mm_yr = base_erosion_mm_yr * trimWearFactor + trim_corr_synergy;
+
+  return {
+    dp_bar,
+    dp_psi,
+    p_ratio,
+    isCritical,
+    rho_mix,
+    v_jet,
+    v_outlet,
+    v_erod_mps,
+    erod_ratio,
+    cv_req,
+    cv_cap,
+    dt_jt,
+    temp_out_c,
+    trim_wear_mm_yr
+  };
+}
+
+// 6. Evaluación de Elegibilidad Metalúrgica de cada combinación Cuerpo + Trim
+function evaluateChokeMaterial(mat, state) {
+  const {
+    region, temp_c, pH2S_kPa, pH, chlorides, pCO2_bar, pCO2_psi,
+    reqApiClass, sand_llb, ca_body_mm, wall_mm, p_shut, rating_bar, fs_req
+  } = state;
+
+  // Verificar presión de diseño API 6A y espesor remanente del cuerpo (Barlow con factor de seguridad)
+  const eff_ca_body = mat.isBodyCRA ? 0.2 : ca_body_mm;
+  const t_rem_body = Math.max(0, wall_mm - eff_ca_body);
+  const yp_MPa = mat.yp_ksi * 6.89476;
+  const od_body_mm = state.bore_mm + 2 * wall_mm;
+  const p_burst_body_bar = (t_rem_body > 1)
+    ? (0.875 * 2 * yp_MPa * t_rem_body / od_body_mm) * 10
+    : 0;
+  const max_working_bar = Math.min(rating_bar, p_burst_body_bar / fs_req);
+  const mechBodyOk = max_working_bar >= p_shut && t_rem_body >= 6.0;
+
+  // 1. Verificar servicio amargo (SSC según ISO 15156-2)
+  if (region > 0 && !mat.sourCapable) {
+    return {
+      eligible: false,
+      status: "Descartado (SSC)",
+      reason: `No apto para servicio amargo (Región ${region}, pH₂S = ${pH2S_kPa.toFixed(2)} kPa). Carece de control estricto de dureza ≤ 22 HRC bajo ISO 15156-2.`
+    };
+  }
+
+  // 2. Verificar límites de 17-4PH (UNS S17400) según ISO 15156-3 Tabla A.27
+  if (mat.id === "DD-4130-174") {
+    if (pH2S_kPa > 3.4 || pH < 4.5) {
+      return {
+        eligible: false,
+        status: "Descartado (ISO 15156-3)",
+        reason: `ISO 15156-3 Tabla A.27 restringe el 17-4PH (UNS S17400) en componentes de choque a pH₂S ≤ 3.4 kPa (actual: ${pH2S_kPa.toFixed(2)} kPa) y pH ≥ 4.5 (actual: ${pH}).`
+      };
+    }
+    if (pCO2_psi >= 7) {
+      return {
+        eligible: false,
+        status: "Descartado (Clase DD)",
+        reason: `Con pCO₂ = ${pCO2_psi.toFixed(1)} psi (≥ 7 psi), la Clase DD sufre corrosión por ácido carbónico en áreas de sello.`
+      };
+    }
+  }
+
+  // 3. Verificar lixiviación selectiva de Cobalto en WC-Co bajo ácido carbónico + H2S (pH < 5.0)
+  if (mat.hasCobaltBinder && (pH < 5.0 && pCO2_bar >= 0.8)) {
+    return {
+      eligible: false,
+      status: "Descartado (Lixiviación Co)",
+      reason: `En salmuera ácida (pH ${pH}, pCO₂ ${pCO2_bar.toFixed(2)} bar), el aglutinante de Cobalto del WC-Co sufre disolución selectiva, desprendiendo los granos de carburo ante el impacto de arena.`
+    };
+  }
+
+  // 4. Verificar resistencia a la erosión por arena en Trims metálicos blandos (410 / Stellite 6)
+  if (sand_llb > 5 && mat.trimHardnessHV < 1000) {
+    return {
+      eligible: false,
+      status: "Descartado (Erosión Arena)",
+      reason: `Con ${sand_llb} lb/1000 bbl de arena, el trim metálico (${mat.trimHardnessHV} HV) sufre lavado acelerado por impacto en la vena contracta; se exige Carburo de Tungsteno (≥ 1500 HV) o Cerámica.`
+    };
+  }
+
+  // 5. Verificar límite de corrosión en cuerpo de baja aleación sin Clad completo (EE vs FF/HH)
+  if (!mat.isBodyCRA && ca_body_mm > 4.5) {
+    return {
+      eligible: false,
+      status: "Descartado (Pérdida Pared)",
+      reason: `La pérdida interna por turbulencia (${ca_body_mm.toFixed(1)} mm en ${state.life_body} años) supera la tolerancia segura de un cuerpo de baja aleación sin revestimiento integral CRA (exige Clase FF o HH).`
+    };
+  }
+
+  // 6. Verificar límite de H2S/Cloruros en F6NM (UNS S41500) según ISO 15156-3 Tabla A.23
+  if (mat.id === "FF-F6NM-WCNi" && pH < 3.5) {
+    return {
+      eligible: false,
+      status: "Descartado (pH < 3.5)",
+      reason: `ISO 15156-3 Tabla A.23 exige pH ≥ 3.5 para aceros inoxidables martensíticos F6NM (S41500) en cuerpos de válvulas y choques.`
+    };
+  }
+
+  if (!mechBodyOk) {
+    return {
+      eligible: false,
+      status: "Falla Mecánica Cuerpo",
+      reason: `La presión de cierre (${p_shut} bar) o la pared remanente (${t_rem_body.toFixed(1)} mm) no cumplen el factor de seguridad exigido.`
+    };
+  }
+
+  return {
+    eligible: true,
+    status: `Apto (${mat.apiClass.split(" ")[0]})`,
+    reason: `Cumple ISO 15156-2/-3 (Región ${region}) y API 6A. ${mat.isBodyCRA ? 'Cuerpo inmune a corrosión ácida' : `Pared remanente del cuerpo: ${t_rem_body.toFixed(1)} mm`} y trim de alta dureza (${mat.trimHardnessHV} HV) apto frente a ${sand_llb} lb/1000 bbl de arena.`
+  };
+}
+
+// 7. Motor Principal de Simulación en Tiempo Real
+function runSimulation() {
+  const p_up = num("p_up", 45);
+  const p_down = Math.min(p_up - 0.5, num("p_down", 35));
+  const p_shut = Math.max(p_up, num("p_shut", 55));
+  const temp_c = num("temp_c", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const bsw = num("bsw", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+
+  const choke_type = document.getElementById("choke_type").value;
+  const q_liq = num("q_liq", 34);
+  const gor = num("gor", 150);
+  const api_grav = num("api_grav", 18);
+  const sand_llb = num("sand_llb", 12);
+  const c_erod = num("c_erod", 100);
+  const ext_iso = document.getElementById("ext_iso").value;
+
+  const bore_in = parseFloat(document.getElementById("bore_in").value);
+  const bore_mm = bore_in * 25.4;
+  const rating_psi = parseFloat(document.getElementById("rating_psi").value);
+  const rating_bar = rating_psi * 0.0689476;
+  const bean_sel_64 = parseInt(document.getElementById("bean_select").value, 10);
+  const bean_sel_mm = (bean_sel_64 / 64) * 25.4;
+
+  const wall_mm = num("wall_mm", 19.0);
+  const allow_trim_mm = num("allow_trim_mm", 1.5);
+  const life_body = num("life_body", 20);
+  const life_trim = num("life_trim", 2.0);
+  const fs_req = num("fs_req", 1.25);
+
+  // Presiones parciales evaluadas a la presión de entrada (y verificación en cierre)
+  const pCO2_bar = (y_co2 / 100) * (p_up + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_up + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  const pCO2_shut_psi = (y_co2 / 100) * (p_shut + 1.01325) * 14.5038;
+  const pH2S_shut_kPa = (y_h2s / 100) * (p_shut + 1.01325) * 100;
+
+  // Región SSC ISO 15156-2 y Clase API 6A
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const region_shut = getISO15156Region(pH2S_shut_kPa, pH);
+  const reqApiClass = getRequiredAPI6AClass(pCO2_psi, pH2S_psi, chlorides, pH);
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + Factor de turbulencia en el portachoque (ISO 21457)
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const wet_frac = Math.min(1, Math.max(0.1, bsw / 100));
+  const v_uncontrolled = v_base_co2 * wet_frac;
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  // En la cámara de descarga del choque, la alta turbulencia reduce localmente la eficiencia de película del inhibidor (factor de intensificación 1.25)
+  const dp_bar_now = Math.max(0.1, p_up - p_down);
+  const turb_factor = 1.0 + Math.min(0.65, (dp_bar_now / 40) * 0.35);
+  const v_design_body = (A_frac * v_inhib + (1 - A_frac) * v_uncontrolled) * turb_factor;
+  const ca_body_mm = v_design_body * life_body;
+
+  // Evaluar todos los materiales del catálogo
+  const stateForMat = {
+    region: Math.max(region, region_shut),
+    temp_c, pH2S_kPa, pH, chlorides, pCO2_bar, pCO2_psi,
+    reqApiClass, sand_llb, ca_body_mm, wall_mm, bore_mm,
+    p_shut, rating_bar, life_body, fs_req
+  };
+
+  const hydBaseParams = {
+    p_up, p_down, temp_c, q_liq, gor, api_grav, bsw,
+    sand_llb, c_erod, v_design_body, bore_mm
+  };
+
+  const matsEval = CHOKE_MATERIALS_CATALOG.map(m => {
+    const envCheck = evaluateChokeMaterial(m, stateForMat);
+    // Verificar cómo se comporta este material con el Bean seleccionado actualmente
+    const hydSel = calcChokeHydraulics(bean_sel_mm, { ...hydBaseParams, trimWearFactor: m.trimWearFactor });
+    const trim_life_sel = allow_trim_mm / Math.max(0.001, hydSel.trim_wear_mm_yr);
+    const fs_trim_sel = trim_life_sel / life_trim;
+    const passesSelectedBean = envCheck.eligible && (fs_trim_sel >= fs_req) && (hydSel.erod_ratio <= 1.0);
+
+    // Buscar si existe al menos un Bean comercial donde este material cumpla vida útil
+    let bestBean = null;
+    for (const b of BEAN_CATALOG) {
+      const h = calcChokeHydraulics(b.d_mm, { ...hydBaseParams, trimWearFactor: m.trimWearFactor });
+      const t_life = allow_trim_mm / Math.max(0.001, h.trim_wear_mm_yr);
+      if ((t_life / life_trim) >= fs_req && h.erod_ratio <= 1.0) {
+        bestBean = { ...b, t_life, h };
+        break;
+      }
+    }
+
+    const fullEligible = envCheck.eligible && (bestBean !== null);
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !bestBean) {
+      finalReason = `Apto en corrosión/SSC, pero el desgaste abrasivo en el trim impide alcanzar ${life_trim} años con FS ≥ ${fs_req}.`;
+    } else if (fullEligible) {
+      finalReason += ` Vida estimada del trim con bean ${bean_sel_64}/64": ${trim_life_sel.toFixed(1)} años.`;
+    }
+    return { ...m, envCheck, bestBean, fullEligible, passesSelectedBean, trim_life_sel, finalReason };
+  });
+
+  // Elegir el material óptimo (el de menor costo que cumpla todo)
+  const chosenMat = matsEval.find(m => m.fullEligible) || matsEval.find(m => m.id === "EE-4130-WCNi");
+  document.getElementById("selected_grade_lbl").textContent = chosenMat.name;
+  document.getElementById("selected_bean_lbl").textContent = `${bean_sel_64}/64 in (${bean_sel_mm.toFixed(2)} mm)`;
+
+  // Calcular hidrodinámica detallada para el Bean seleccionado con el material elegido
+  const hydChosen = calcChokeHydraulics(bean_sel_mm, { ...hydBaseParams, trimWearFactor: chosenMat.trimWearFactor });
+  const chosenTrimLife = allow_trim_mm / Math.max(0.001, hydChosen.trim_wear_mm_yr);
+  const chosenTrimFS = chosenTrimLife / life_trim;
+  const eff_ca_chosen = chosenMat.isBodyCRA ? 0.20 : ca_body_mm;
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pp").textContent = `${pCO2_bar.toFixed(2)} bar / ${pH2S_kPa.toFixed(2)} kPa`;
+  document.getElementById("kpi_pp_sub").textContent = `pCO₂: ${pCO2_psi.toFixed(1)} psi | Cierre: ${pH2S_shut_kPa.toFixed(1)} kPa H₂S`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} (Cierre: R${region_shut})</span>`;
+  document.getElementById("kpi_apiclass").textContent = `Clase API 6A mín: ${reqApiClass} | CO₂/H₂S = ${ratio_co2_h2s.toFixed(0)}`;
+
+  document.getElementById("kpi_dp").textContent = `ΔP = ${hydChosen.dp_bar.toFixed(1)} bar (${hydChosen.dp_psi.toFixed(0)} psi)`;
+  document.getElementById("kpi_jt").textContent = `${hydChosen.isCritical ? "Flujo Crítico (Sónico)" : "Flujo Subcrítico"} (P₂/P₁=${hydChosen.p_ratio.toFixed(2)}) | ΔT JT: -${hydChosen.dt_jt.toFixed(1)} °C`;
+
+  document.getElementById("kpi_vel").textContent = `${hydChosen.v_jet.toFixed(1)} m/s (Bean)`;
+  document.getElementById("kpi_vel_sub").textContent = `Salida: ${hydChosen.v_outlet.toFixed(2)} m/s vs Ve=${hydChosen.v_erod_mps.toFixed(1)} m/s (${(hydChosen.erod_ratio * 100).toFixed(0)}%)`;
+
+  document.getElementById("kpi_wear").textContent = `${hydChosen.trim_wear_mm_yr.toFixed(2)} mm/a (Trim)`;
+  document.getElementById("kpi_wear_sub").textContent = `Vida Trim: ${chosenTrimLife.toFixed(1)} a | CA Cuerpo: ${eff_ca_chosen.toFixed(2)} mm`;
+
+  // Renderizar Banner de Veredicto
+  const vd = document.getElementById("verdict");
+  const selBeanPasses = chosenMat.fullEligible && (chosenTrimFS >= fs_req) && (hydChosen.erod_ratio <= 1.0);
+  if (selBeanPasses) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Especificación recomendada</span><strong>${chosenMat.apiClass.split(" ")[0]} + ${chosenMat.trimMat.split(" ")[0]} ${chosenMat.trimMat.includes("WC-Ni") ? "WC-Ni" : (chosenMat.trimMat.includes("Si₃N₄") ? "Si₃N₄" : "")}</strong></div>
+      <div><span>Orificio (Bean) activo</span><strong>${bean_sel_64}/64 in (${bean_sel_mm.toFixed(2)} mm)</strong></div>
+      <div><span>Velocidad chorro / Salida</span><strong>${hydChosen.v_jet.toFixed(1)} / ${hydChosen.v_outlet.toFixed(2)} m/s</strong></div>
+      <div><span>Vida útil Trim / CA Cuerpo</span><strong>${chosenTrimLife.toFixed(1)} años / ${eff_ca_chosen.toFixed(2)} mm</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    const failMsg = !chosenMat.fullEligible
+      ? "Ninguna combinación cumple simultáneamente los requisitos de corrosión ácida, presión de cierre y desgaste por arena."
+      : `El conjunto ${chosenMat.name} es metalúrgicamente apto, pero con el orificio ${bean_sel_64}/64" la vida del trim (${chosenTrimLife.toFixed(1)} años, FS=${chosenTrimFS.toFixed(2)}) es menor al mínimo exigido (${life_trim} años con FS ≥ ${fs_req}). Seleccione un Bean de mayor diámetro o reduzca la caída ΔP.`;
+    vd.innerHTML = `<div class="msg"><strong>Configuración fuera de criterio de diseño</strong><span>${failMsg}</span></div>`;
+  }
+
+  // Renderizar Tabla 1: Elegibilidad de Grados y Materiales (Cuerpo + Trim)
+  document.getElementById("grades_tbody").innerHTML = matsEval.map(m => {
+    const badgeClass = m.fullEligible ? "ok" : (m.envCheck.eligible ? "warn" : "danger");
+    const statusLabel = m.fullEligible ? `Óptimo (${m.apiClass.split(" ")[0]})` : m.envCheck.status;
+    return `
+      <tr>
+        <td><strong>${m.name}</strong><br><span style="font-size:.73rem;color:var(--mut)">Cuerpo: ${m.bodyMat}</span></td>
+        <td>${m.apiClass}</td>
+        <td>${m.hardness}</td>
+        <td><span class="tag ${badgeClass}">${statusLabel}</span></td>
+        <td>${m.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Renderizar Tabla 2: Verificación de Orificios Comerciales (Bean Sizes)
+  document.getElementById("beans_tbody").innerHTML = BEAN_CATALOG.map(b => {
+    const h = calcChokeHydraulics(b.d_mm, { ...hydBaseParams, trimWearFactor: chosenMat.trimWearFactor });
+    const t_life = allow_trim_mm / Math.max(0.001, h.trim_wear_mm_yr);
+    const fs_life = t_life / life_trim;
+    const cv_ratio = (h.cv_req / Math.max(0.01, h.cv_cap)) * 100;
+    const passes = chosenMat.envCheck.eligible && (fs_life >= fs_req) && (h.erod_ratio <= 1.0);
+    const isSel = b.bean_64 === bean_sel_64;
+    return `
+      <tr style="${isSel ? 'background:color-mix(in srgb,var(--acc) 12%,transparent)' : ''}">
+        <td><strong>${b.bean_64}/64"</strong> ${isSel ? '<span class="tag warn">Activo</span>' : ''}</td>
+        <td>${b.d_mm.toFixed(2)}</td>
+        <td>${h.cv_req.toFixed(2)} / ${h.cv_cap.toFixed(1)} (${cv_ratio.toFixed(0)}%)</td>
+        <td>${h.v_jet.toFixed(1)} ${h.isCritical ? '<span style="color:var(--warn);font-size:.7rem">[Crít]</span>' : ''}</td>
+        <td>${h.v_outlet.toFixed(2)} m/s [${(h.erod_ratio * 100).toFixed(0)}%]</td>
+        <td>${h.trim_wear_mm_yr.toFixed(2)}</td>
+        <td>${t_life.toFixed(1)} [${fs_life.toFixed(2)}]</td>
+        <td><span class="tag ${passes ? 'ok' : 'danger'}">${passes ? 'CUMPLE' : 'FALLA'}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Recomendación detallada por Subcomponentes A, B y C
+  const trimConfigTxt = choke_type === "bean"
+    ? `Reductor positivo fijo intercambiable (Bean de ${bean_sel_64}/64" × longitud extendida 6 in) para estabilizar la vena contracta lejos del cuerpo.`
+    : `Válvula ajustable de aguja y jaula perforada (Cage Choke según ISO 10423 Fig. 1) con manguito externo y escala lineal calibrada en Cv.`;
+
+  const sealElastomer = (pH2S_kPa >= 5 || temp_c >= 70)
+    ? "FFKM (Perfluoroelastómero) o FEPM (Aflas) / HNBR con anillos anti-extrusión de PEEK/PTFE (resistente a H₂S, aminas de inhibidor y descompresión rápida)."
+    : "HNBR o FKM grado amargo con respaldos de PTFE.";
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Cuerpo del Portachoque, Bonete y Carrete de Descarga (API 6A ${rating_psi} psi, Paso ${bore_in}")</h3>
+      <p><strong>Material Recomendado:</strong> <span style="color:var(--ok);">${chosenMat.bodyMat}</span> — Clase <strong>${chosenMat.apiClass}</strong>, PSL 2 / PR2, Temp. Clase U/V.</p>
+      <p><strong>Control de Corrosión y Turbulencia:</strong> ${chosenMat.isBodyCRA
+        ? 'Superficie interna íntegramente protegida por aleación resistente a la corrosión (CA = 0 mm).'
+        : `Requiere depósito soldado (*weld inlay*) de **Aleación de Níquel 625 (UNS N06625)** en las ranuras de anillo (R/RX) y zonas de sello del bonete para evitar picaduras por cloruros (${chlorides} mg/L) y crevice. Espesor remanente tras ${life_body} años: ${(wall_mm - eff_ca_chosen).toFixed(1)} mm.`}</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Trim Restrictor (Bean / Asiento / Jaula) y Camisa Antierosión</h3>
+      <p><strong>Material Recomendado:</strong> <span style="color:var(--ok);">${chosenMat.trimMat} (${chosenMat.trimHardnessHV} HV)</span> — ${trimConfigTxt}</p>
+      <p><strong>Justificación frente a Erosión-Corrosión:</strong> A una velocidad de chorro de <strong>${hydChosen.v_jet.toFixed(1)} m/s</strong> con <strong>${sand_llb} lb/1000 bbl</strong> de arena y pH ${pH}, ${chosenMat.trimMat.includes("WC-Ni")
+        ? 'el carburo de tungsteno con matriz de Níquel (WC-Ni) evita la lixiviación ácida que destruye al aglutinante de cobalto convencional (WC-Co), logrando una vida útil de ' + chosenTrimLife.toFixed(1) + ' años.'
+        : 'resiste la acción combinada de impacto de partículas y corrosión ácida.'} Se recomienda instalar manguito protector de carburo aguas abajo del orificio.</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Vástago/Obturador, Sellos, Espárragos, Pintura (C5) e Interfaz Dieléctrica A1 ↔ A2</h3>
+      <p><strong>Vástago y Empaques:</strong> Vástago en **Aleación 718 (UNS N07718, ≤ 40 HRC)** o **Inconel 625**; sellos dinámicos en ${sealElastomer}</p>
+      <p><strong>Tornillería, Exterior (${ext_iso}) y Frontera A2:</strong> Espárragos **ASTM A193 Gr. B7M** (≤ 22 HRC) + tuercas **A194 Gr. 2HM**. Recubrimiento externo tricapa epóxico rico en zinc + epóxico + poliuretano alifático (240 μm, apto hasta 85 °C). En la brida de salida hacia la línea de flujo (Sistema A2), instalar **Kit de Aislamiento Dieléctrico (NACE SP0286)** para aislar la protección catódica de A2.</p>
+    </div>
+  `;
+
+  // Dibujar el esquema SVG técnico del Choque con fluido reactivo
+  drawChokeSVG({
+    choke_type,
+    p_up,
+    p_down,
+    dp_bar: hydChosen.dp_bar,
+    isCritical: hydChosen.isCritical,
+    temp_c,
+    temp_out_c: hydChosen.temp_out_c,
+    y_co2,
+    y_h2s,
+    pCO2_bar,
+    pH2S_kPa,
+    pH,
+    bsw,
+    inhib_avail,
+    sand_llb,
+    bean_sel_64,
+    bean_sel_mm,
+    bore_mm,
+    v_jet: hydChosen.v_jet,
+    v_outlet: hydChosen.v_outlet,
+    region,
+    chosenMat
+  });
+
+  // Actualizar Estado Global JSON (window.wellStreamState)
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    p_int_bar: p_up,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region: region,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: bsw,
+    v_inhibited_mm_yr: v_inhib,
+    design_life_yr: life_body
+  };
+  window.wellStreamState.choke_M10 = {
+    chokeType: choke_type,
+    bore_in: bore_in,
+    rating_psi: rating_psi,
+    p_upstream_bar: p_up,
+    p_downstream_bar: p_down,
+    dp_bar: Number(hydChosen.dp_bar.toFixed(2)),
+    criticalFlow: hydChosen.isCritical,
+    jouleThomson_dT_c: Number(hydChosen.dt_jt.toFixed(2)),
+    selectedBean_64th: bean_sel_64,
+    v_jet_mps: Number(hydChosen.v_jet.toFixed(2)),
+    v_outlet_mps: Number(hydChosen.v_outlet.toFixed(2)),
+    recommendedSystem: chosenMat.name,
+    api6AClass: chosenMat.apiClass,
+    trimWear_mm_yr: Number(hydChosen.trim_wear_mm_yr.toFixed(3)),
+    estimatedTrimLife_yr: Number(chosenTrimLife.toFixed(2)),
+    bodyCorrosionAllowance_mm: Number(eff_ca_chosen.toFixed(2)),
+    dielectricKitA1_A2: true
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 8. Esquema SVG Técnico del Choque Angular (API 6A / ISO 10423 Fig. 1) con Fluido Ascendente y Vena Contracta
+function drawChokeSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    choke_type, p_up, p_down, dp_bar, isCritical, temp_c, temp_out_c,
+    y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH, bsw, inhib_avail, sand_llb,
+    bean_sel_64, bean_sel_mm, bore_mm, v_jet, v_outlet, region, chosenMat
+  } = d;
+
+  // 1. Cromática dinámica del fluido según Región ISO 15156 y CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.5) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316";
+      fluidLabel = "Dulce CO₂ Activo";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308";
+    fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316";
+    fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444";
+    fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  // Actualizar pastilla de leyenda
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido C1: ${fluidLabel} | BSW ${bsw}% | Arena ${sand_llb} lb/Mbbl`;
+  }
+
+  // 2. Velocidades de animación para entrada ascendente y chorro acelerado en el Bean
+  const upSpeedDur = Math.max(0.75, Math.min(2.8, 2.4 - (p_up / 100) * 1.2)).toFixed(2);
+  const jetSpeedDur = Math.max(0.22, Math.min(1.2, 1.1 - (v_jet / 65) * 0.8)).toFixed(2);
+
+  // 3. Geometría escalada del cuerpo angular del choque (Entrada inferior vertical -> Salida lateral izquierda hacia A2)
+  // Centro de la cámara del choque: (cx = 195, cy = 245)
+  const cx = 195, cy = 245;
+  const boreHw = Math.round(22 + ((bore_mm - 52.4) / (103.2 - 52.4)) * 10); // semiancho del conducto principal (22 a 32 px)
+  // Apertura visual del orificio del Bean (proporcional a bean_sel_64 entre 16 y 64)
+  const beanRatio = Math.min(0.88, Math.max(0.22, bean_sel_64 / 68));
+  const beanHw = Math.max(5, Math.round(boreHw * beanRatio));
+
+  const inTopY = cy + boreHw;
+  const inBotY = 485;
+  const outLeftX = 36;
+  const outRightX = cx - boreHw;
+
+  // Posición del Bean / Jaula en el ramal de salida (entre x = 105 y x = 165)
+  const beanX1 = 98, beanX2 = 165;
+
+  // Color metalúrgico del cuerpo y del Trim
+  const bodySteel = chosenMat.isBodyCRA ? "#a78bfa" : (region >= 2 ? "#529471" : "#608699");
+  const trimColor = chosenMat.trimMat.includes("Si₃N₄") ? "#38bdf8" : (chosenMat.trimMat.includes("WC") ? "#eab308" : "#cbd5e1");
+  const waterFrac = Math.min(1, Math.max(0, bsw / 100));
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+  const sandOp = Math.min(0.95, 0.25 + (sand_llb / 40) * 0.7).toFixed(2);
+
+  // Burbujas de CO2 y H2S
+  const rCo2 = (1.4 + Math.min(1, y_co2 / 10) * 2.0).toFixed(1);
+  const rH2s = (1.3 + Math.min(1, y_h2s / 1.0) * 2.2).toFixed(1);
+  const opH2s = (y_h2s > 0.001 ? 0.75 : 0).toFixed(2);
+
+  // Dibujar obturador / vástago según sea Choque Ajustable (Aguja/Jaula) o Fijo (Positive Bean)
+  const stemAndObturator = choke_type === "cage"
+    ? `
+      <!-- Jaula perforada (Cage) y Obturador/Aguja móvil (ISO 10423 Fig. 1) -->
+      <rect x="${beanX2 - 4}" y="${cy - boreHw + 2}" width="38" height="7" fill="${trimColor}" stroke="#101316" stroke-width="1"/>
+      <rect x="${beanX2 - 4}" y="${cy + boreHw - 9}" width="38" height="7" fill="${trimColor}" stroke="#101316" stroke-width="1"/>
+      <!-- Puertos de la jaula -->
+      <circle cx="${beanX2 + 8}" cy="${cy - boreHw + 5.5}" r="2.2" fill="#101316"/>
+      <circle cx="${beanX2 + 20}" cy="${cy - boreHw + 5.5}" r="2.2" fill="#101316"/>
+      <circle cx="${beanX2 + 8}" cy="${cy + boreHw - 5.5}" r="2.2" fill="#101316"/>
+      <circle cx="${beanX2 + 20}" cy="${cy + boreHw - 5.5}" r="2.2" fill="#101316"/>
+      <!-- Vástago y cono obturador entrando desde la derecha -->
+      <rect x="${cx + 8}" y="${cy - 6}" width="92" height="12" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+      <polygon points="${cx + 8},${cy - 11} ${cx + 8},${cy + 11} ${beanX2 + 6},${cy + Math.max(2, boreHw - beanHw - 4)} ${beanX2 + 6},${cy - Math.max(2, boreHw - beanHw - 4)}" fill="${trimColor}" stroke="#1e293b" stroke-width="1.2"/>
+      <!-- Volante manual de regulación (Handwheel) -->
+      <rect x="298" y="${cy - 38}" width="10" height="76" rx="3" fill="var(--warn)" stroke="#101316" stroke-width="1.2"/>
+      <line x1="290" x2="298" y1="${cy}" y2="${cy}" stroke="var(--tx)" stroke-width="4"/>
+    `
+    : `
+      <!-- Tapón ciego de bonete (Blanking Plug) para Choque Positivo (Bean Fijo) -->
+      <rect x="${cx + boreHw}" y="${cy - boreHw + 4}" width="48" height="${2 * boreHw - 8}" fill="#64748b" stroke="#1e293b" stroke-width="1.2"/>
+      <rect x="${cx + boreHw + 48}" y="${cy - 16}" width="16" height="32" rx="2" fill="var(--acc)" stroke="#1e293b" stroke-width="1.2"/>
+    `;
+
+  svg.innerHTML = `
+    <defs>
+      <!-- Recorte del conducto de entrada vertical (Aguas arriba) -->
+      <clipPath id="clipInlet">
+        <rect x="${cx - boreHw}" y="${cy - boreHw}" width="${2 * boreHw}" height="${inBotY - (cy - boreHw)}"/>
+      </clipPath>
+      <!-- Recorte del conducto de salida horizontal pasando por la garganta del Bean -->
+      <clipPath id="clipOutlet">
+        <polygon points="
+          ${cx - boreHw},${cy - boreHw}
+          ${beanX2},${cy - boreHw}
+          ${beanX2},${cy - beanHw}
+          ${beanX1},${cy - beanHw}
+          ${beanX1 - 14},${cy - boreHw}
+          ${outLeftX},${cy - boreHw}
+          ${outLeftX},${cy + boreHw}
+          ${beanX1 - 14},${cy + boreHw}
+          ${beanX1},${cy + beanHw}
+          ${beanX2},${cy + beanHw}
+          ${beanX2},${cy + boreHw}
+          ${cx - boreHw},${cy + boreHw}
+        "/>
+      </clipPath>
+
+      <!-- Gradiente del fluido ascendente -->
+      <linearGradient id="fluidUpGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.95"/>
+        <stop offset="65%" stop-color="${fluidTopColor}" stop-opacity="0.82"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.55 ? '#0284c7' : fluidTopColor}" stop-opacity="0.78"/>
+      </linearGradient>
+
+      <!-- Gradiente del chorro de alta velocidad (Vena Contracta) -->
+      <linearGradient id="jetHorizGrad" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidGlow}" stop-opacity="0.95"/>
+        <stop offset="45%" stop-color="#fbbf24" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="${fluidTopColor}" stop-opacity="0.75"/>
+      </linearGradient>
+
+      <!-- Patrón ascendente de líneas de flujo, agua y burbujas en la rama vertical -->
+      <pattern id="patUpFlow" width="36" height="48" patternUnits="userSpaceOnUse">
+        <path d="M 8 44 C 5 28, 12 16, 8 4" stroke="#38bdf8" stroke-width="2" fill="none" opacity="${(waterFrac * 0.75).toFixed(2)}"/>
+        <path d="M 26 46 Q 22 24 26 4" stroke="${fluidGlow}" stroke-width="1.4" fill="none" stroke-dasharray="6 4" opacity="0.55"/>
+        <path d="M 13 26 L 18 19 L 23 26" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <!-- Burbujas CO2 y H2S -->
+        <circle cx="11" cy="36" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="0.75"/>
+        <circle cx="25" cy="14" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.7" opacity="${opH2s}"/>
+        <!-- Partículas de arena ascendentes -->
+        <circle cx="18" cy="40" r="1.4" fill="#fbbf24" opacity="${sandOp}"/>
+        <circle cx="29" cy="28" r="1.2" fill="#f59e0b" opacity="${sandOp}"/>
+      </pattern>
+
+      <!-- Patrón horizontal acelerado (Chorro + Arena + Gas expandiéndose hacia la izquierda) -->
+      <pattern id="patJetLeft" width="52" height="32" patternUnits="userSpaceOnUse">
+        <path d="M 48 9 Q 26 6 4 9" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-dasharray="8 4" opacity="0.7"/>
+        <path d="M 46 23 Q 24 26 6 23" stroke="#38bdf8" stroke-width="1.8" fill="none" stroke-dasharray="10 4" opacity="${(waterFrac * 0.8).toFixed(2)}"/>
+        <!-- Chevrons apuntando a la izquierda (hacia A2) -->
+        <path d="M 28 11 L 20 16 L 28 21" stroke="#fef08a" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="0.85"/>
+        <!-- Granos de arena impactando a alta velocidad -->
+        <circle cx="40" cy="14" r="1.6" fill="#fde047" opacity="${sandOp}"/>
+        <circle cx="16" cy="19" r="1.5" fill="#fb923c" opacity="${sandOp}"/>
+        <circle cx="32" cy="7" r="${rCo2}" fill="#e0f2fe" opacity="0.75"/>
+      </pattern>
+
+      <!-- Patrón de acero forjado del cuerpo API 6A -->
+      <pattern id="steelHatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="10" height="10" fill="${bodySteel}" opacity="0.32"/>
+        <line x1="0" y1="0" x2="0" y2="10" stroke="var(--tx)" stroke-width="1" opacity="0.18"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.8px var(--mono); fill: var(--mut); }
+      #equipSvg .title-txt { fill: var(--tx); font-weight: 700; font-size: 10.2px; }
+      @keyframes flowUpAnim {
+        from { transform: translateY(0px); }
+        to   { transform: translateY(-48px); }
+      }
+      @keyframes jetLeftAnim {
+        from { transform: translateX(0px); }
+        to   { transform: translateX(-52px); }
+      }
+      @keyframes pulseVena {
+        0%, 100% { opacity: 0.55; }
+        50%      { opacity: 0.98; }
+      }
+      #equipSvg .anim-up { animation: flowUpAnim ${upSpeedDur}s linear infinite; }
+      #equipSvg .anim-jet { animation: jetLeftAnim ${jetSpeedDur}s linear infinite; }
+      #equipSvg .vena-glow { animation: pulseVena ${jetSpeedDur}s ease-in-out infinite; }
+    </style>
+
+    <!-- Cabecera de telemetría instantánea en el SVG -->
+    <rect x="8" y="8" width="324" height="26" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="21" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="24" class="title-txt">${fluidLabel}</text>
+    <text x="324" y="24" text-anchor="end" style="fill:var(--acc);font-size:9.3px">P₁=${p_up}→P₂=${p_down} bar | Vjet=${v_jet.toFixed(0)} m/s</text>
+
+    <!-- CUERPO FORJADO DEL PORTACHOQUE ANGULAR (API 6A) -->
+    <!-- Bloque vertical de entrada + Bloque horizontal de salida + Bonete derecho -->
+    <path d="
+      M ${outLeftX} ${cy - boreHw - 26}
+      L ${outLeftX} ${cy - boreHw - 42}
+      L ${outLeftX + 22} ${cy - boreHw - 42}
+      L ${outLeftX + 22} ${cy - boreHw - 22}
+      L ${cx - boreHw - 24} ${cy - boreHw - 22}
+      L ${cx - boreHw - 24} ${cy - boreHw - 32}
+      L ${cx + boreHw + 34} ${cy - boreHw - 32}
+      L ${cx + boreHw + 34} ${cy + boreHw + 32}
+      L ${cx + boreHw + 24} ${cy + boreHw + 32}
+      L ${cx + boreHw + 24} ${inBotY - 22}
+      L ${cx + boreHw + 42} ${inBotY - 22}
+      L ${cx + boreHw + 42} ${inBotY}
+      L ${cx - boreHw - 42} ${inBotY}
+      L ${cx - boreHw - 42} ${inBotY - 22}
+      L ${cx - boreHw - 24} ${inBotY - 22}
+      L ${cx - boreHw - 24} ${cy + boreHw + 22}
+      L ${outLeftX + 22} ${cy + boreHw + 22}
+      L ${outLeftX + 22} ${cy + boreHw + 42}
+      L ${outLeftX} ${cy + boreHw + 42}
+      L ${outLeftX} ${cy - boreHw - 26}
+      Z
+    " fill="url(#steelHatch)" stroke="${bodySteel}" stroke-width="2"/>
+
+    <!-- Recubrimiento externo anticorrosivo Categoría C4 (línea perimetral exterior) -->
+    <line x1="${cx - boreHw - 25}" x2="${cx - boreHw - 25}" y1="${cy + boreHw + 22}" y2="${inBotY - 22}" stroke="var(--ok)" stroke-width="2.5" opacity="0.65"/>
+    <line x1="${cx + boreHw + 25}" x2="${cx + boreHw + 25}" y1="${cy + boreHw + 32}" y2="${inBotY - 22}" stroke="var(--ok)" stroke-width="2.5" opacity="0.65"/>
+
+    <!-- 1. FLUIDO ASCENDENTE EN RAMA DE ENTRADA INFERIOR (Aguas arriba: P_up, T_up) -->
+    <g clip-path="url(#clipInlet)">
+      <rect x="${cx - boreHw}" y="${cy - boreHw}" width="${2 * boreHw}" height="${inBotY - (cy - boreHw)}" fill="url(#fluidUpGrad)"/>
+      <rect x="${cx - boreHw}" y="${cy - boreHw}" width="${2 * boreHw}" height="${inBotY - (cy - boreHw) + 48}" fill="url(#patUpFlow)" class="anim-up"/>
+    </g>
+
+    <!-- 2. FLUIDO ACELERADO EN GARGANTA DEL BEAN Y SALIDA LATERAL (Hacia Sistema A2) -->
+    <g clip-path="url(#clipOutlet)">
+      <rect x="${outLeftX}" y="${cy - boreHw}" width="${cx - outLeftX}" height="${2 * boreHw}" fill="url(#jetHorizGrad)"/>
+      <rect x="${outLeftX}" y="${cy - boreHw}" width="${cx - outLeftX + 52}" height="${2 * boreHw}" fill="url(#patJetLeft)" class="anim-jet"/>
+      <!-- Destello térmico/sónico en la Vena Contracta dentro del Bean -->
+      <ellipse cx="${(beanX1 + beanX2) / 2}" cy="${cy}" rx="28" ry="${Math.max(3, beanHw - 1)}" fill="#fef08a" class="vena-glow"/>
+    </g>
+
+    <!-- Película de inhibidor o Clad de Alloy 625 en las paredes internas del cuerpo -->
+    <line x1="${cx - boreHw + 1.5}" x2="${cx - boreHw + 1.5}" y1="${cy + boreHw}" y2="${inBotY}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${cx + boreHw - 1.5}" x2="${cx + boreHw - 1.5}" y1="${cy - boreHw}" y2="${inBotY}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${outLeftX}" x2="${beanX1}" y1="${cy - boreHw + 1.5}" y2="${cy - boreHw + 1.5}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${outLeftX}" x2="${beanX1}" y1="${cy + boreHw - 1.5}" y2="${cy + boreHw - 1.5}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+
+    <!-- 3. TRIM RESTRICTOR (BEAN / ASIENTO DE CARBURO DE TUNGSTENO O CERÁMICA) -->
+    <!-- Bloque superior del Bean -->
+    <polygon points="
+      ${beanX1},${cy - boreHw}
+      ${beanX2},${cy - boreHw}
+      ${beanX2},${cy - beanHw}
+      ${beanX1},${cy - beanHw}
+    " fill="${trimColor}" stroke="#101316" stroke-width="1.3"/>
+    <!-- Bloque inferior del Bean -->
+    <polygon points="
+      ${beanX1},${cy + beanHw}
+      ${beanX2},${cy + beanHw}
+      ${beanX2},${cy + boreHw}
+      ${beanX1},${cy + boreHw}
+    " fill="${trimColor}" stroke="#101316" stroke-width="1.3"/>
+
+    <!-- Camisa antierosión aguas abajo del Bean (cono difusor) -->
+    <polygon points="${beanX1 - 16},${cy - boreHw} ${beanX1},${cy - boreHw} ${beanX1},${cy - beanHw}" fill="${trimColor}" opacity="0.75"/>
+    <polygon points="${beanX1 - 16},${cy + boreHw} ${beanX1},${cy + boreHw} ${beanX1},${cy + beanHw}" fill="${trimColor}" opacity="0.75"/>
+
+    <!-- 4. BONETE, OBTURADOR / AGUJA Y VOLANTE -->
+    <rect x="${cx + boreHw + 34}" y="${cy - boreHw - 26}" width="22" height="${2 * boreHw + 52}" fill="#475569" stroke="var(--tx)" stroke-width="1.2"/>
+    <!-- Espárragos del bonete (ASTM A193 B7M ≤ 22 HRC) -->
+    <rect x="${cx + boreHw + 28}" y="${cy - boreHw - 18}" width="34" height="6" fill="var(--warn)"/>
+    <rect x="${cx + boreHw + 28}" y="${cy + boreHw + 12}" width="34" height="6" fill="var(--warn)"/>
+    ${stemAndObturator}
+
+    <!-- 5. INTERFAZ FRONTERA A1 ↔ A2 (Kit de Aislamiento Dieléctrico en Brida de Salida Izquierda) -->
+    <rect x="${outLeftX - 6}" y="${cy - boreHw - 42}" width="6" height="${2 * boreHw + 84}" fill="#ef4444" stroke="#fef08a" stroke-width="1"/>
+    <text x="${outLeftX - 4}" y="${cy - boreHw - 48}" style="fill:var(--bad);font-weight:700">⚡ Kit Dieléctrico A1↔A2 (NACE SP0286)</text>
+
+    <!-- Ranuras de anillo Inlay Alloy 625 en brida de entrada (8) y salida (5) -->
+    <rect x="${cx - boreHw - 14}" y="${inBotY - 5}" width="8" height="5" fill="#a78bfa"/>
+    <rect x="${cx + boreHw + 6}" y="${inBotY - 5}" width="8" height="5" fill="#a78bfa"/>
+    <rect x="${outLeftX}" y="${cy - boreHw - 14}" width="5" height="8" fill="#a78bfa"/>
+    <rect x="${outLeftX}" y="${cy + boreHw + 6}" width="5" height="8" fill="#a78bfa"/>
+
+    <!-- Flechas indicadoras de dirección de flujo (Entrada desde SSV / Árbol y Salida hacia A2) -->
+    <path d="M ${cx} ${inBotY + 22} L ${cx} ${inBotY + 4} M ${cx - 5} ${inBotY + 10} L ${cx} ${inBotY + 3} L ${cx + 5} ${inBotY + 10}" stroke="${fluidGlow}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M ${outLeftX - 8} ${cy} L ${outLeftX - 28} ${cy} M ${outLeftX - 21} ${cy - 5} L ${outLeftX - 29} ${cy} L ${outLeftX - 21} ${cy + 5}" stroke="#fef08a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+    <!-- Etiquetas y cotas técnicas sobre el dibujo -->
+    <text x="${(beanX1 + beanX2) / 2}" y="${cy - boreHw - 28}" text-anchor="middle" style="fill:${trimColor};font-weight:700">Trim Bean ${bean_sel_64}/64" (${bean_sel_mm.toFixed(1)} mm)</text>
+    <line x1="${(beanX1 + beanX2) / 2}" x2="${(beanX1 + beanX2) / 2}" y1="${cy - boreHw - 24}" y2="${cy - boreHw - 2}" stroke="${trimColor}" stroke-dasharray="3 2"/>
+
+    <text x="${outLeftX + 6}" y="${cy + boreHw + 58}" style="fill:var(--tx);font-weight:600">← Salida a Línea A2: P₂=${p_down} bar | T₂=${temp_out_c.toFixed(1)}°C (V=${v_outlet.toFixed(2)} m/s)</text>
+    <text x="${cx}" y="${inBotY + 36}" text-anchor="middle" style="fill:var(--tx);font-weight:700">↑ Entrada desde Árbol / SSV (C1): P₁=${p_up} bar | T₁=${temp_c}°C</text>
+
+    <!-- Resumen metalúrgico al pie del lienzo -->
+    <text x="170" y="544" text-anchor="middle" style="fill:${bodySteel};font-weight:700">${chosenMat.name}</text>
+  `;
+}
+
+function copyGlobalState(btn){
+  const t=JSON.stringify(window.wellStreamState,null,2),done=()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar JSON",1500)};
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(done).catch(()=>{
+    const r=document.createRange();r.selectNodeContents(document.getElementById("json_output"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Texto seleccionado: Ctrl+C";});
+}
+
+// Escuchar cambios en todos los inputs y selects
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+// Inicializar simulación al cargar
+runSimulation();
+</script>
+</body>
+</html>

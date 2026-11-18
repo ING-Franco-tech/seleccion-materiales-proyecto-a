@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Bomba de Subsuelo (API 11AX / NACE MR0176 / ISO 15156)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(260px,300px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.1rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:560px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div><h1>Bomba de subsuelo de cabillas</h1>
+  <p>Módulo 2 de 10, sistema A1 (B1). Desplazamiento volumétrico, escurrimiento (slippage), desgaste abrasivo-corrosivo, estallido de barril y pandeo del émbolo.</p></div>
+  <ul class="norms"><li>API Spec 11AX / ISO 12412</li><li>NACE MR0176</li><li>ISO 15156 / NACE MR0175</li><li>NACE RP0195 / ISO 21457</li></ul>
+</header>
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+    <div class="res">
+      <section class="card"><h2>Esquema técnico API 11AX</h2>
+        <svg id="equipSvg" viewBox="0 0 330 580" role="img" aria-label="Corte técnico de la bomba de subsuelo API 11AX con barril, pistón alternativo, válvula viajera, válvula fija, pescante y fluido ascendente reactivo"></svg>
+        <ul class="legend" id="well_legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.75"></i><span id="leg_fluid_txt">Fluido bombeado y gas ácido en succión (C1)</span></li>
+          <li><i style="background:#38bdf8;opacity:.75"></i>Fase acuosa / escurrimiento anular (slippage) y película inhibidora</li>
+          <li><i style="background:var(--warn);opacity:.8"></i>Partículas de arena en suspensión y válvulas de carburo</li>
+          <li><i style="background:var(--acc);opacity:.75"></i>Conjunto Barril / Émbolo metálico y anclaje inferior/superior</li>
+        </ul>
+      </section>
+      <section class="card"><h2>Diagnóstico hidráulico, tribocorrosivo y severidad</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Presión parcial CO₂ / H₂S</div><div class="val" id="kpi_pgas">-</div><div class="sub" id="kpi_pgas_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Caudal neto / Desplazamiento</div><div class="val" id="kpi_qnet">-</div><div class="sub" id="kpi_qnet_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Escurrimiento (Slippage)</div><div class="val" id="kpi_slip">-</div><div class="sub" id="kpi_slip_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Desgaste radial y CA barril</div><div class="val" id="kpi_wear">-</div><div class="sub" id="kpi_wear_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+    <section class="card"><h2>Elegibilidad de pares metalúrgicos Barril / Pistón (API 11AX, NACE MR0176 e ISO 15156)</h2>
+      <div class="scroll"><table><thead><tr><th>Código / Par Barril – Pistón</th><th>Fluencia barril</th><th>Dureza núcleo / sup.</th><th>Estado</th><th>Justificación metalúrgica y tribológica</th></tr></thead><tbody id="grades_tbody"></tbody></table></div></section>
+    <section class="card"><h2>Verificación dimensional, hidráulica y mecánica comercial (API Spec 11AX)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">Evaluado con el par elegible de menor costo: <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong></p>
+      <div class="scroll"><table><thead><tr><th>Diámetro pistón</th><th>t barril nom / rem (mm)</th><th>Q teo / Q neto fin (bpd)</th><th>Slippage ini / fin (bpd)</th><th>Eficiencia fin (%)</th><th>Estallido barril (bar) [FS]</th><th>Pandeo pistón (kN) [FS]</th><th>Veredicto</th></tr></thead><tbody id="bores_tbody"></tbody></table></div></section>
+    <section class="card"><h2><span>Estado global exportable (window.wellStreamState)</span><button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button></h2><pre id="json_output"></pre></section>
+  </main>
+</div>
+
+<script>
+// Inicialización acoplada con window.wellStreamState si existe en sesión, o valores de la Ficha de Datos del Pozo (1850 m)
+const INIT_C1 = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) || {};
+
+const FORM = [
+  ["Química del fluido en bomba (C1 - 1850 m)", [
+    ["p_int", "Presión de succión", "bar", incomingValue("p_bottom_op_bar", 45), 5, 500, 1],
+    ["temp_c", "Temperatura en bomba", "°C", incomingValue("temp_bottom_c", 68), 10, 220, 1],
+    ["y_co2", "CO₂ en gas", "% mol", incomingValue("y_co2_pct", 3.1), 0, 100, 0.1],
+    ["y_h2s", "H₂S en gas", "% mol", incomingValue("y_h2s_pct", 0.15), 0, 100, 0.01],
+    ["ph", "pH in situ", "", incomingValue("pH", 4.6), 1, 14, 0.1],
+    ["chlorides", "Cloruros", "mg/L", incomingValue("chlorides_mgL", INIT_C1.chlorides_mgL ?? 42000), 0, 250000, 500]
+  ]],
+  ["Control de corrosión, arena y reología", [
+    ["wet_factor", "Corte de agua (BSW)", "%", incomingValue("bsw_pct", 78), 0, 100, 1],
+    ["inhib_avail", "Disponibilidad inhibidor (A)", "%", incomingValue("inhibitor_availability_pct", 90), 0, 100, 0.5],
+    ["v_inhib", "Velocidad con inhibidor", "mm/a", incomingValue("v_inhibited_mm_yr", 0.1), 0, 2, 0.01],
+    ["sand_lb", "Sólidos / Arena", "lb/1000 bbl", incomingValue("solids_lb_1000bbl", 12), 0, 500, 1],
+    ["viscosity_cp", "Viscosidad dinámica mezcla", "cP", 45, 0.5, 2000, 1]
+  ]],
+  ["Operación y configuración API 11AX", [
+    ["pump_type", "Tipo de bomba API 11AX", [
+      ["RHB", "RHB — Cabillas, barril pared gruesa, anclaje inf."],
+      ["RHA", "RHA — Cabillas, barril pared gruesa, anclaje sup."],
+      ["RWA", "RWA — Cabillas, barril pared delgada, anclaje sup."],
+      ["RWB", "RWB — Cabillas, barril pared delgada, anclaje inf."],
+      ["RHT", "RHT — Cabillas, barril viajero pared gruesa"],
+      ["THC", "THC — Bomba de tubing, barril pared gruesa"]
+    ], "RHB"],
+    ["seating_type", "Tipo de anclaje en niple", [
+      ["M", "M — Anclaje mecánico (Cono / Mandril)"],
+      ["C", "C — Anclaje de copas (Tipo HR / O)"]
+    ], "M"],
+    ["spm", "Velocidad de bombeo", "SPM", 6.0, 0.5, 25, 0.5],
+    ["stroke_in", "Carrera efectiva émbolo", "in", 100, 12, 240, 2],
+    ["p_disch", "Presión de descarga", "bar", incomingValue("p_bottom_design_bar", 112), 10, 600, 5]
+  ]],
+  ["Geometría, holgura y criterios de diseño", [
+    ["tubing_code", "Tamaño nominal Tubing", [
+      ["20", "2 3/8 in (60,3 mm) — Código 20"],
+      ["25", "2 7/8 in (73,0 mm) — Código 25"],
+      ["30", "3 1/2 in (88,9 mm) — Código 30"],
+      ["40", "4 1/2 in (114,3 mm) — Código 40"]
+    ], "25"],
+    ["bore_select", "Diámetro nominal pistón", [
+      ["1.25", "1 1/4 in (31,8 mm) — Código 125"],
+      ["1.50", "1 1/2 in (38,1 mm) — Código 150"],
+      ["1.75", "1 3/4 in (44,5 mm) — Código 175"],
+      ["2.00", "2.00 in (50,8 mm) — Código 200"],
+      ["2.25", "2 1/4 in (57,2 mm) — Código 225"],
+      ["2.75", "2 3/4 in (69,9 mm) — Código 275"]
+    ], "1.75"],
+    ["fit_select", "Holgura diametral (Fit API)", [
+      ["1", "Fit -1 (0,001 in / 0,025 mm) — Fluido liviano"],
+      ["2", "Fit -2 (0,002 in / 0,051 mm) — Uso general"],
+      ["3", "Fit -3 (0,003 in / 0,076 mm) — Crudo 18°API / Arena"],
+      ["4", "Fit -4 (0,004 in / 0,102 mm) — Alta viscosidad"],
+      ["5", "Fit -5 (0,005 in / 0,127 mm) — Crudo extrapesado"]
+    ], "3"],
+    ["plunger_len_ft", "Longitud del pistón", "ft", 4, 2, 12, 1],
+    ["barrel_len_ft", "Longitud del barril", "ft", 16, 6, 30, 2],
+    ["design_life", "Vida útil entre intervenciones", "años", 6, 1, 20, 0.5],
+    ["fs_mech_req", "FS mín. estallido / pandeo", "", 1.50, 1.0, 3.0, 0.05],
+    ["min_eff_req", "Eficiencia vol. mín. aceptable", "%", 70, 30, 95, 2]
+  ]]
+];
+
+function buildForm(){
+  document.getElementById("form").innerHTML=FORM.map(([t,fs])=>`<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f=>{
+    const [id,lb,u]=f,sel=Array.isArray(u);
+    const ctl=sel?`<select id="${id}">${u.map(o=>`<option value="${o[0]}"${o[0]===f[3]?" selected":""}>${o[1]}</option>`).join("")}</select>`
+      :`<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4]!=null?` min="${f[4]}"`:""}${f[5]!=null?` max="${f[5]}"`:""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel?" w":""}"><label for="${id}">${lb}</label>${ctl}</div>`}).join("")}</div></details>`).join("");
+}
+buildForm();
+const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return Number.isFinite(v)?v:d;};
+
+// 1. Catálogo Dimensional de Bombas API Spec 11AX (Diámetros de Pistón, Espesores de Barril Heavy/Thin Wall y Pistón)
+const BORE_CATALOG = {
+  "1.25": { code: "125", id_in: 1.25, id_mm: 31.75, t_hw_mm: 6.35, t_tw_mm: 3.18, t_plunger_mm: 4.76, max_tbg_min_code: 15 },
+  "1.50": { code: "150", id_in: 1.50, id_mm: 38.10, t_hw_mm: 6.35, t_tw_mm: 3.18, t_plunger_mm: 5.16, max_tbg_min_code: 20 },
+  "1.75": { code: "175", id_in: 1.75, id_mm: 44.45, t_hw_mm: 6.35, t_tw_mm: 3.40, t_plunger_mm: 5.56, max_tbg_min_code: 25 },
+  "2.00": { code: "200", id_in: 2.00, id_mm: 50.80, t_hw_mm: 6.35, t_tw_mm: 3.40, t_plunger_mm: 5.95, max_tbg_min_code: 25 },
+  "2.25": { code: "225", id_in: 2.25, id_mm: 57.15, t_hw_mm: 7.14, t_tw_mm: 3.80, t_plunger_mm: 6.35, max_tbg_min_code: 25 },
+  "2.75": { code: "275", id_in: 2.75, id_mm: 69.85, t_hw_mm: 7.94, t_tw_mm: 4.20, t_plunger_mm: 7.14, max_tbg_min_code: 30 }
+};
+
+// 2. Catálogo de Pares Metalúrgicos Barril / Pistón según API Spec 11AX (Tablas B y C), NACE MR0176 e ISO 15156
+const GRADES_CATALOG = [
+  {
+    id: "API-D1",
+    name: "API 11AX D1 (Acero 10XX s/endurecer) + Pistón Acero Cromado",
+    yp_ksi: 60,
+    hardness: "Núcleo ≤ 22 HRC / Sup. ~20 HRC",
+    type: "CS",
+    surfHardnessHRC: 22,
+    wearFactor: 2.40,
+    costRank: 1
+  },
+  {
+    id: "API-B2",
+    name: "API 11AX B2 (Acero 10XX Carburizado) + Pistón Spray Metal",
+    yp_ksi: 60,
+    hardness: "Núcleo ≤ 23 HRC / Capa ≥ 58 HRC",
+    type: "CS-HARD",
+    surfHardnessHRC: 58,
+    wearFactor: 0.85,
+    costRank: 2
+  },
+  {
+    id: "API-D2",
+    name: "API 11AX D2 (Latón Admiralty UNS C44300) + Pistón Monel/SM",
+    yp_ksi: 50,
+    hardness: "80–100 HRB (Inmune a SSC)",
+    type: "CRA-SOFT",
+    surfHardnessHRC: 18,
+    wearFactor: 2.80,
+    costRank: 3
+  },
+  {
+    id: "API-B5-CR",
+    name: "API 11AX B5 / AISI 4130 (≤ 22 HRC) Cromo Duro + Pistón Spray Metal",
+    yp_ksi: 65,
+    hardness: "Núcleo ≤ 22 HRC / Cr 68 HRC",
+    type: "LAS-CR",
+    surfHardnessHRC: 68,
+    wearFactor: 0.35,
+    costRank: 4
+  },
+  {
+    id: "API-B3-501",
+    name: "API 11AX B3 (Acero 501 5%Cr Carbonitrurado) + Pistón Spray Metal",
+    yp_ksi: 70,
+    hardness: "Núcleo ≤ 23 HRC / Capa ≥ 58 HRC",
+    type: "LAS-HARD",
+    surfHardnessHRC: 60,
+    wearFactor: 0.70,
+    costRank: 5
+  },
+  {
+    id: "NACE-4130-NICR",
+    name: "AISI 4130/4140 (≤ 22 HRC) Níquel Químico + Cromo Duro + Pistón Spray Metal (N06625)",
+    yp_ksi: 65,
+    hardness: "Núcleo ≤ 22 HRC / NiP+Cr 68 HRC",
+    type: "LAS-NICR",
+    surfHardnessHRC: 68,
+    wearFactor: 0.28,
+    costRank: 6
+  },
+  {
+    id: "SS316-CR",
+    name: "Inox Austenítico 316L Cromado Duro + Pistón Spray Metal WC",
+    yp_ksi: 60,
+    hardness: "Núcleo ≤ 22 HRC / Cr 68 HRC",
+    type: "CRA",
+    surfHardnessHRC: 68,
+    wearFactor: 0.30,
+    costRank: 7
+  },
+  {
+    id: "API-D3-MONEL",
+    name: "API 11AX D3 (Monel 400 UNS N04400) Cromado Duro + Pistón Spray Metal WC",
+    yp_ksi: 55,
+    hardness: "Núcleo ≤ 23 HRC / Cr 68 HRC",
+    type: "CRA",
+    surfHardnessHRC: 68,
+    wearFactor: 0.26,
+    costRank: 8
+  },
+  {
+    id: "CRA-WC-HVOF",
+    name: "Aleación 825 / 4130 con HVOF Carburo de Tungsteno (WC-Co-Cr) + Pistón Cerámico/WC",
+    yp_ksi: 80,
+    hardness: "Núcleo ≤ 22 HRC / WC 74 HRC",
+    type: "CRA",
+    surfHardnessHRC: 74,
+    wearFactor: 0.14,
+    costRank: 9
+  }
+];
+
+// 3. Clasificación Matemática ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 4. Ecuaciones Hidráulicas y Mecánicas de la Bomba de Subsuelo (API 11AX / Petrosky-Farshad)
+function calcTheoreticalDisp_bpd(id_in, stroke_in, spm) {
+  return 0.1484 * id_in * id_in * stroke_in * spm;
+}
+
+// Correlación de Petrosky-Farshad para escurrimiento (slippage) en bombas de cabillas (bbl/d)
+function calcSlippagePetrosky_bpd(id_in, dp_psi, clearance_in, plunger_len_in, visc_cp) {
+  if (dp_psi <= 0 || clearance_in <= 0 || plunger_len_in <= 0) return 0;
+  const c_mils = clearance_in * 1000; // holgura diametral en milésimas de pulgada
+  const mu_eff = Math.max(0.3, visc_cp);
+  const slip = (455 * id_in * dp_psi * Math.pow(c_mils, 1.52)) / (plunger_len_in * Math.pow(mu_eff, 0.33));
+  return Math.max(0, slip);
+}
+
+// Presión de estallido del barril sobre espesor remanente (Barlow, bar)
+function calcBarrelBurst_bar(od_mm, t_rem_mm, yp_ksi) {
+  if (t_rem_mm <= 0.4) return 0;
+  const yp_MPa = yp_ksi * 6.89476;
+  const p_MPa = 0.875 * (2 * yp_MPa * t_rem_mm) / od_mm;
+  return p_MPa * 10;
+}
+
+// Carga crítica de pandeo del émbolo tubular (Euler-Johnson, kN) y carga compresiva máxima de bombeo
+function calcPlungerBuckling_kN(id_mm, t_plunger_mm, plunger_len_ft, yp_ksi) {
+  const od_p = id_mm;
+  const id_p = Math.max(0, od_p - 2 * t_plunger_mm);
+  const I_mm4 = (Math.PI / 64) * (Math.pow(od_p, 4) - Math.pow(id_p, 4));
+  const A_mm2 = (Math.PI / 4) * (od_p * od_p - id_p * id_p);
+  const E_MPa = 205000;
+  // El émbolo está guiado dentro del barril con una longitud libre equivalente de pandeo K*L
+  const L_eff_mm = Math.max(300, plunger_len_ft * 304.8 * 0.45);
+  const f_euler_N = (Math.PI * Math.PI * E_MPa * I_mm4) / (L_eff_mm * L_eff_mm);
+  const f_yield_N = A_mm2 * (yp_ksi * 6.89476);
+  return Math.min(f_euler_N, f_yield_N) / 1000;
+}
+
+// 5. Evaluación Metalúrgica y Tribológica de cada Par Barril / Pistón
+function evaluatePumpMaterial(grade, state) {
+  const { region, temp_c, pH2S_kPa, pH, chlorides, pCO2_bar, sand_lb, inhib_avail } = state;
+
+  if (grade.id === "API-D1") {
+    if (region === 0 && pCO2_bar < 0.5 && sand_lb <= 2) {
+      return {
+        eligible: true,
+        status: "Apto (Dulce Limpio)",
+        reason: "Económico para crudo dulce sin arena y baja presión parcial de CO₂."
+      };
+    }
+    return {
+      eligible: false,
+      status: "Descartado (Desgaste/Corr.)",
+      reason: `Baja dureza superficial (~20 HRC) y sin protección ante arena (${sand_lb} lb/1000 bbl) ni CO₂ (${pCO2_bar.toFixed(2)} bar).`
+    };
+  }
+
+  if (grade.id === "API-B2") {
+    if (region >= 2 || pH2S_kPa >= 3.0) {
+      return {
+        eligible: false,
+        status: "Descartado (SSC Capa)",
+        reason: `La capa carburizada (≥ 58 HRC) sufre fisuración y exfoliación por H₂S en Región ${region} (${pH2S_kPa.toFixed(1)} kPa) según NACE MR0176.`
+      };
+    }
+    if (pCO2_bar >= 1.5 && inhib_avail < 95) {
+      return {
+        eligible: false,
+        status: "Descartado (Picadura CO₂)",
+        reason: "El acero al carbono carburizado se pica rápidamente bajo CO₂ ácido perdiendo el sello del pistón."
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto (Servicio Dulce/R1)",
+      reason: "Apto en ambiente dulce o Región 1 con buena dureza superficial frente a arena moderada."
+    };
+  }
+
+  if (grade.id === "API-D2") {
+    if (sand_lb > 5) {
+      return {
+        eligible: false,
+        status: "Descartado (Abrasión Arena)",
+        reason: `El Latón Admiralty (80–100 HRB) es inmune a SSC pero sufre rayado severo con ${sand_lb} lb/1000 bbl de arena (máx. recomendado 5 lb/1000 bbl).`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto (Sin Arena)",
+      reason: "Excelente resistencia a H₂S y salmuera en ausencia de sólidos abrasivos (API 11AX D2)."
+    };
+  }
+
+  if (grade.id === "API-B5-CR") {
+    if (region === 3 && (pH < 4.5 || inhib_avail < 97)) {
+      return {
+        eligible: false,
+        status: "Descartado (Porosidad Cr)",
+        reason: "En Región 3 sin alta disponibilidad de inhibidor (≥ 97%) o pH < 4.5, el H₂S/CO₂ penetra microfisuras del cromo simple atacando el sustrato."
+      };
+    }
+    if (pH2S_kPa > 25) {
+      return {
+        eligible: false,
+        status: "Descartado (H₂S Severo)",
+        reason: `Para pH₂S = ${pH2S_kPa.toFixed(1)} kPa (> 25 kPa) se requiere capa base de Níquel Químico (Ni-P) bajo el cromo o aleación CRA.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto (Acero Cr-Mo + Cr Duro)",
+      reason: "Núcleo AISI 4130 templado y revenido (≤ 22 HRC, ISO 15156-2) con cromo duro (68 HRC) resistente a arena y pistón Spray Metal."
+    };
+  }
+
+  if (grade.id === "API-B3-501") {
+    if (region >= 2 || chlorides > 25000) {
+      return {
+        eligible: false,
+        status: "Descartado (SSC / Cl⁻)",
+        reason: `El acero 5%Cr carbonitrurado (≥ 58 HRC) es susceptible a fisuración por H₂S en Región ${region} y picadura a ${chlorides} mg/L Cl⁻.`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto (CO₂ Moderado)",
+      reason: "Apto para servicio dulce con CO₂ y baja salinidad (API 11AX B3)."
+    };
+  }
+
+  if (grade.id === "NACE-4130-NICR") {
+    if (inhib_avail < 90 && pCO2_bar > 2.5) {
+      return {
+        eligible: false,
+        status: "Exige Inhibición ≥ 90%",
+        reason: "A baja disponibilidad de inhibidor (< 90%) y alto CO₂, se prefiere metal base Monel 400 o recubrimiento HVOF WC."
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto Todo Servicio (NACE MR0176)",
+      reason: "Barril AISI 4130/4140 (≤ 22 HRC) con doble barrera sellante Níquel Químico + Cromo Duro (68 HRC) y pistón Spray Metal (UNS N06625); resiste Región 3, 42 000 mg/L Cl⁻ y arena."
+    };
+  }
+
+  if (grade.id === "SS316-CR") {
+    if (chlorides > 30000 && temp_c > 60) {
+      return {
+        eligible: false,
+        status: "Descartado (SCC Cloruros)",
+        reason: `Riesgo de picadura y SCC por cloruros en 316L a ${chlorides} mg/L Cl⁻ y ${temp_c} °C (límite ISO 15156-3: 60 °C).`
+      };
+    }
+    return {
+      eligible: true,
+      status: "Apto CRA (Cl⁻ Moderado)",
+      reason: "Inoxidable 316L cromado apto hasta 60 °C o salinidad moderada."
+    };
+  }
+
+  if (grade.id === "API-D3-MONEL") {
+    return {
+      eligible: true,
+      status: "Apto CRA NACE MR0176",
+      reason: "Barril Monel 400 (API 11AX D3) con cromo duro (68 HRC) y pistón Spray Metal/WC; inmune a SSC en Región 3, tolera 42 000 mg/L Cl⁻ y pH 4.6 sin depender de inhibición."
+    };
+  }
+
+  if (grade.id === "CRA-WC-HVOF") {
+    return {
+      eligible: true,
+      status: "Apto Servicio Extremo (WC)",
+      reason: "Barril y pistón revestidos con Carburo de Tungsteno (HVOF WC-Co-Cr, 74 HRC) sobre sustrato ≤ 22 HRC; máxima vida útil ante arena severa y H₂S Región 3."
+    };
+  }
+}
+
+// 6. Motor Principal de Simulación en Tiempo Real
+function runSimulation() {
+  const p_int = num("p_int", 112);
+  const temp_c = num("temp_c", 68);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+  const sand_lb = num("sand_lb", 12);
+  const viscosity_cp = num("viscosity_cp", 45);
+
+  const pump_type = document.getElementById("pump_type").value;
+  const seating_type = document.getElementById("seating_type").value;
+  const spm = num("spm", 6);
+  const stroke_in = num("stroke_in", 100);
+  const p_disch = Math.max(p_int + 5, num("p_disch", 195));
+
+  const tubing_code = document.getElementById("tubing_code").value;
+  const bore_key = document.getElementById("bore_select").value;
+  const fit_num = num("fit_select", 3);
+  const plunger_len_ft = num("plunger_len_ft", 4);
+  const barrel_len_ft = num("barrel_len_ft", 16);
+  const design_life = num("design_life", 6);
+  const fs_mech_req = num("fs_mech_req", 1.5);
+  const min_eff_req = num("min_eff_req", 70);
+
+  // Presiones parciales en la succión de la bomba (1850 m)
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  // Severidad SSC ISO 15156-2
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+  let regimeTxt = "Dominio CO₂ (> 500)";
+  if (pH2S_bar > 0 && ratio_co2_h2s < 20) regimeTxt = `Dominio H₂S (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+  else if (pH2S_bar > 0 && ratio_co2_h2s <= 500) regimeTxt = `Régimen Mixto (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + ISO 21457 en la bomba
+  const temp_K = temp_c + 273.15;
+  let v_base_co2 = 0;
+  if (pCO2_bar > 0.0001) {
+    v_base_co2 = Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar));
+  }
+  const v_uncontrolled = v_base_co2 * (wet_factor / 100);
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_corr_int = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+  const ca_corr_mm = v_corr_int * design_life;
+
+  // Cinemática y diferencial de presión de la bomba
+  const v_piston_ms = (2 * (stroke_in * 0.0254) * spm) / 60;
+  const dp_bar = Math.max(1, p_disch - p_int);
+  const dp_psi = dp_bar * 14.5038;
+  const sand_mgL = sand_lb * 2.85; // 1 lb/1000 bbl ≈ 2.85 mg/L
+  const isHeavyWall = ["RHA", "RHB", "RHT", "THC"].includes(pump_type);
+
+  // Evaluar una combinación de grado y diámetro de pistón
+  function evalBoreWithGrade(bData, grade) {
+    const isCRA = grade.type === "CRA" || grade.type === "CRA-SOFT";
+    const isProtected = grade.type === "LAS-NICR" || grade.type === "LAS-CR";
+    const t_nom = isHeavyWall ? bData.t_hw_mm : bData.t_tw_mm;
+    const od_barrel_mm = bData.id_mm + 2 * t_nom;
+
+    // Pérdida estructural de pared del barril (corrosión general + desgaste)
+    const ca_struct_mm = isCRA ? 0.15 : (isProtected ? ca_corr_mm * 0.35 : ca_corr_mm);
+    // Incremento de holgura diametral (mm) en el sello pistón-barril por abrasión de arena + tribocorrosión en la vida útil
+    const v_abr_mm_yr = 0.0012 * Math.pow(Math.max(0, sand_lb), 0.75) * (v_piston_ms / 0.5) * grade.wearFactor;
+    const v_seal_corr_mm_yr = isCRA ? 0.001 : (v_corr_int * 0.025 * grade.wearFactor);
+    const delta_clearance_mm = (v_abr_mm_yr + v_seal_corr_mm_yr) * design_life;
+    const delta_clearance_in = delta_clearance_mm / 25.4;
+
+    const c_init_in = fit_num * 0.001;
+    const c_final_in = c_init_in + delta_clearance_in;
+    const plunger_len_in = plunger_len_ft * 12;
+
+    const q_teo_bpd = calcTheoreticalDisp_bpd(bData.id_in, stroke_in, spm);
+    const slip_init_bpd = Math.min(q_teo_bpd, calcSlippagePetrosky_bpd(bData.id_in, dp_psi, c_init_in, plunger_len_in, viscosity_cp));
+    const slip_final_bpd = Math.min(q_teo_bpd, calcSlippagePetrosky_bpd(bData.id_in, dp_psi, c_final_in, plunger_len_in, viscosity_cp));
+
+    // Eficiencia volumétrica considerando encogimiento/compresibilidad del gas en cámara (factor 0.85 típico bajo gas libre) y escurrimiento
+    const gasVolFactor = Math.max(0.75, 0.90 - (y_co2 + y_h2s) * 0.012);
+    const q_net_init_bpd = Math.max(0, q_teo_bpd * gasVolFactor - slip_init_bpd);
+    const q_net_final_bpd = Math.max(0, q_teo_bpd * gasVolFactor - slip_final_bpd);
+    const eff_init_pct = q_teo_bpd > 0 ? (q_net_init_bpd / q_teo_bpd) * 100 : 0;
+    const eff_final_pct = q_teo_bpd > 0 ? (q_net_final_bpd / q_teo_bpd) * 100 : 0;
+
+    // Verificación mecánica: Estallido del barril y Pandeo del émbolo
+    const t_rem_mm = Math.max(0, t_nom - ca_struct_mm - delta_clearance_mm * 0.5);
+    const p_burst_bar = calcBarrelBurst_bar(od_barrel_mm, t_rem_mm, grade.yp_ksi);
+    const fs_burst = dp_bar > 0 ? p_burst_bar / dp_bar : 99;
+
+    // Carga compresiva sobre el émbolo (fricción viscosa + arena + diferencial hidráulico de impacto en válvula viajera)
+    const area_p_mm2 = (Math.PI / 4) * bData.id_mm * bData.id_mm;
+    const f_hyd_kN = (area_p_mm2 * (dp_bar * 0.1)) / 1000;
+    const f_comp_load_kN = Math.max(3.5, 0.22 * f_hyd_kN + 0.04 * viscosity_cp + 0.08 * sand_lb);
+    const f_buckling_kN = calcPlungerBuckling_kN(bData.id_mm, bData.t_plunger_mm, plunger_len_ft, grade.yp_ksi);
+    const fs_buckling = f_comp_load_kN > 0 ? f_buckling_kN / f_comp_load_kN : 99;
+
+    // Compatibilidad geométrica con el Tubing seleccionado
+    const fitsTubing = parseInt(tubing_code, 10) >= bData.max_tbg_min_code;
+
+    const passes = fitsTubing && (fs_burst >= fs_mech_req) && (fs_buckling >= fs_mech_req) && (eff_final_pct >= min_eff_req);
+    return {
+      ...bData,
+      t_nom,
+      t_rem_mm,
+      ca_struct_mm,
+      delta_clearance_mm,
+      c_init_in,
+      c_final_in,
+      q_teo_bpd,
+      q_net_init_bpd,
+      q_net_final_bpd,
+      slip_init_bpd,
+      slip_final_bpd,
+      eff_init_pct,
+      eff_final_pct,
+      p_burst_bar,
+      fs_burst,
+      f_comp_load_kN,
+      f_buckling_kN,
+      fs_buckling,
+      fitsTubing,
+      passes
+    };
+  }
+
+  const stateObj = { region, temp_c, pH2S_kPa, pH, chlorides, pCO2_bar, sand_lb, inhib_avail };
+  const selectedBoreData = BORE_CATALOG[bore_key];
+
+  // Evaluar todos los grados metalúrgicos para el diámetro seleccionado por el usuario
+  const gradesEval = GRADES_CATALOG.map(g => {
+    const envCheck = evaluatePumpMaterial(g, stateObj);
+    const mechEval = evalBoreWithGrade(selectedBoreData, g);
+    const fullEligible = envCheck.eligible && mechEval.passes;
+    let finalReason = envCheck.reason;
+    if (envCheck.eligible && !mechEval.fitsTubing) {
+      finalReason = `El pistón de ${selectedBoreData.id_in}" requiere un tubing código ≥ ${selectedBoreData.max_tbg_min_code} (actual: ${tubing_code}).`;
+    } else if (envCheck.eligible && !mechEval.passes) {
+      finalReason = `Apto en corrosión/SSC, pero falla por eficiencia final (${mechEval.eff_final_pct.toFixed(1)}% vs mín ${min_eff_req}%) o FS mecánico (Estallido FS=${mechEval.fs_burst.toFixed(2)}, Pandeo FS=${mechEval.fs_buckling.toFixed(2)}).`;
+    } else if (fullEligible) {
+      finalReason += ` Eficiencia al año ${design_life}: ${mechEval.eff_final_pct.toFixed(1)}% (Q neto = ${mechEval.q_net_final_bpd.toFixed(0)} bpd).`;
+    }
+    return { ...g, envCheck, mechEval, fullEligible, finalReason };
+  });
+
+  // Renderizar Tabla 1: Elegibilidad de grados
+  document.getElementById("grades_tbody").innerHTML = gradesEval.map(g => {
+    const badgeClass = g.fullEligible ? "ok" : (g.envCheck.eligible ? "warn" : "danger");
+    const statusLabel = g.fullEligible ? `Óptimo (η=${g.mechEval.eff_final_pct.toFixed(0)}%)` : (g.envCheck.eligible ? "Falla Hidr./Mec." : g.envCheck.status);
+    return `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.yp_ksi} ksi (${(g.yp_ksi * 6.895).toFixed(0)} MPa)</td>
+        <td>${g.hardness}</td>
+        <td><span class="tag ${badgeClass}">${statusLabel}</span></td>
+        <td>${g.finalReason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Elegir el par Barril/Pistón óptimo de menor costo (o NACE-4130-NICR como referencia de diagnóstico)
+  const chosenGrade = gradesEval.find(g => g.fullEligible) || gradesEval.find(g => g.id === "NACE-4130-NICR");
+  document.getElementById("selected_grade_lbl").textContent = chosenGrade.name;
+
+  const activeEval = evalBoreWithGrade(selectedBoreData, chosenGrade);
+  const apiDesignation = `${tubing_code}-${selectedBoreData.code}-${pump_type}${seating_type}-${barrel_len_ft}-${plunger_len_ft}-2`;
+
+  // Actualizar KPIs
+  document.getElementById("kpi_pgas").textContent = `${pCO2_bar.toFixed(2)} bar / ${pH2S_kPa.toFixed(1)} kPa`;
+  document.getElementById("kpi_pgas_sub").textContent = `CO₂: ${pCO2_psi.toFixed(1)} psi | H₂S: ${pH2S_psi.toFixed(2)} psi (Umbral 0.3 kPa)`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} (SSC)</span>`;
+  document.getElementById("kpi_regime").textContent = regimeTxt;
+
+  const qNetM3d = activeEval.q_net_init_bpd * 0.158987;
+  document.getElementById("kpi_qnet").textContent = `${activeEval.q_net_init_bpd.toFixed(0)} bbl/d (${qNetM3d.toFixed(1)} m³/d)`;
+  document.getElementById("kpi_qnet_sub").textContent = `Teórico: ${activeEval.q_teo_bpd.toFixed(0)} bpd | η ini/fin: ${activeEval.eff_init_pct.toFixed(1)}% / ${activeEval.eff_final_pct.toFixed(1)}%`;
+
+  document.getElementById("kpi_slip").textContent = `${activeEval.slip_init_bpd.toFixed(1)} → ${activeEval.slip_final_bpd.toFixed(1)} bpd`;
+  document.getElementById("kpi_slip_sub").textContent = `Fit -${fit_num} (${(activeEval.c_init_in * 25.4).toFixed(3)} mm → ${(activeEval.c_final_in * 25.4).toFixed(3)} mm a ${design_life} a)`;
+
+  document.getElementById("kpi_wear").textContent = `+${(activeEval.delta_clearance_mm * 1000).toFixed(0)} µm holgura`;
+  document.getElementById("kpi_wear_sub").textContent = `Sin inhibidor: ${v_uncontrolled.toFixed(1)} mm/a | Arena: ${sand_mgL.toFixed(0)} mg/L`;
+
+  // Actualizar Banner de Veredicto
+  const vd = document.getElementById("verdict");
+  const nEnv = gradesEval.filter(g => g.envCheck.eligible).length;
+  if (chosenGrade.fullEligible) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Designación API 11AX</span><strong>${apiDesignation}</strong></div>
+      <div><span>Par Barril / Pistón</span><strong>${chosenGrade.id}</strong></div>
+      <div><span>Caudal neto inicial / final</span><strong>${activeEval.q_net_init_bpd.toFixed(0)} / ${activeEval.q_net_final_bpd.toFixed(0)} bpd</strong></div>
+      <div><span>Eficiencia fin / FS Estallido</span><strong>${activeEval.eff_final_pct.toFixed(1)}% / FS ${activeEval.fs_burst.toFixed(2)}</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `<div class="msg"><strong>Configuración fuera de especificación para ${apiDesignation}</strong><span>${nEnv === 0 ? "Ningún par cumple los límites metalúrgicos de H₂S/Arena." : "El diámetro o ajuste seleccionado no alcanza la eficiencia volumétrica mínima (" + min_eff_req + "%) o no cabe en el tubing seleccionado."} Pruebe ajustar el Fit, aumentar la longitud del pistón, subir SPM o cambiar el diámetro de Tubing/Pistón.</span></div>`;
+  }
+
+  // Renderizar Tabla 2: Verificación de todos los diámetros comerciales API 11AX con el grado elegido
+  document.getElementById("bores_tbody").innerHTML = Object.values(BORE_CATALOG).map(b => {
+    const ev = evalBoreWithGrade(b, chosenGrade);
+    const isSel = b.id_in.toFixed(2) === selectedBoreData.id_in.toFixed(2);
+    return `
+      <tr style="${isSel ? 'outline:1px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)' : ''}">
+        <td><strong>${b.id_in.toFixed(2)} in (${b.code})</strong>${isSel ? ' <span class="tag ok">Activo</span>' : ''}</td>
+        <td>${ev.t_nom.toFixed(2)} / ${ev.t_rem_mm.toFixed(2)}</td>
+        <td>${ev.q_teo_bpd.toFixed(0)} / ${ev.q_net_final_bpd.toFixed(0)}</td>
+        <td>${ev.slip_init_bpd.toFixed(1)} / ${ev.slip_final_bpd.toFixed(1)}</td>
+        <td>${ev.eff_final_pct.toFixed(1)}%</td>
+        <td>${ev.p_burst_bar.toFixed(0)} [${ev.fs_burst.toFixed(2)}]</td>
+        <td>${ev.f_buckling_kN.toFixed(0)} [${ev.fs_buckling.toFixed(2)}]</td>
+        <td><span class="tag ${ev.passes ? 'ok' : 'danger'}">${ev.passes ? 'CUMPLE' : (!ev.fitsTubing ? 'NO CABE EN TBG' : 'FALLA')}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Recomendación detallada para los Subcomponentes A, B y C de la Bomba
+  const valveClass = (sand_lb >= 8 || region >= 2 || dp_bar >= 70)
+    ? "API 11AX Clase C1 — Carburo de Tungsteno sinterizado con ligante de Níquel (WC-Ni, 88–89.5 HRA) o bolas de Nitruro de Silicio (Si₃N₄) / Carburo de Titanio (TiC) sobre asiento de Carburo de Tungsteno para evitar impacto, erosión por arena y corrosión galvánica en salmuera ácida."
+    : "API 11AX Clase B1 — Aleación Cobalto-Cromo-Tungsteno (Stellite 6, 58–61 HRC) resistente a corrosión y desgaste moderado.";
+
+  const cageMat = (region >= 2 || chlorides >= 25000)
+    ? "Aleación Níquel-Cobre Monel 400 / K-500 o Acero AISI 4130/4140 (≤ 22 HRC) con recubrimiento interno duro (Stellite / Carburo de Tungsteno) en las guías de bola para mitigar golpeteo cíclico y abrasión."
+    : "Acero de baja aleación AISI 4130/4140 templado y revenido (≤ 22 HRC).";
+
+  const pullRodMat = (region >= 2 || pCO2_bar >= 1.5)
+    ? `Acero inoxidable endurecible o Aleación Monel K-500 / Inconel 718 (según NACE MR0176), o AISI 4130/4620 (≤ 22 HRC) con inhibición química continua (${inhib_avail}%).`
+    : "Acero aleado AISI 4130 / 4620 templado y revenido (≤ 22 HRC).";
+
+  const holdDownTxt = seating_type === "M"
+    ? "Anclaje Mecánico (Top/Bottom Lock): Mandril y cono de asentamiento en Acero AISI 4130/4140 (≤ 22 HRC) niquelado o Inox 13Cr/Monel 400 para evitar par galvánico severo con el niple de asiento."
+    : "Anclaje de Copas (Tipo HR/O API 11AX): Mandril metálico ≤ 22 HRC con anillos/copas termoendurecibles de alta temperatura o elastómero FKM/HNBR reforzado resistente a H₂S y aminas de inhibidor.";
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Barril (Camisa) y Pistón (Émbolo) — Designación ${apiDesignation}</h3>
+      <p><strong>Material Recomendado:</strong> <span style="color:var(--ok);">${chosenGrade.name}</span> (${chosenGrade.hardness}).</p>
+      <p><strong>Ajuste y Desempeño:</strong> Holgura seleccionada <strong>Fit -${fit_num}</strong> (${(activeEval.c_init_in * 1000).toFixed(1)} milésimas de pulgada). Desplazamiento neto inicial de <strong>${activeEval.q_net_init_bpd.toFixed(0)} bbl/d</strong> (${qNetM3d.toFixed(1)} m³/d) y final de <strong>${activeEval.q_net_final_bpd.toFixed(0)} bbl/d</strong> tras ${design_life} años con ${sand_lb} lb/1000 bbl de arena.</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Jaulas, Bolas y Asientos (Válvula Viajera y Válvula Fija)</h3>
+      <p><strong>Bolas y Asientos (V11):</strong> <span style="color:var(--ok);">${valveClass}</span> Se recomienda doble válvula viajera y doble válvula fija para asegurar el cierre positivo con crudo pesado (${viscosity_cp} cP) y sólidos.</p>
+      <p><strong>Jaulas Cerradas y Guía (C12, C13, C14):</strong> ${cageMat}</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Pescante / Barra de Válvula (Pull Rod) y Cono de Anclaje (Hold-down)</h3>
+      <p><strong>Barra de Válvula (R11) y Conectores (C21):</strong> ${pullRodMat}</p>
+      <p><strong>Conjunto de Anclaje (S11 / S17):</strong> ${holdDownTxt}</p>
+    </div>
+  `;
+
+  // Dibujar Esquema Técnico SVG de la Bomba con Fluido Ascendente y Pistón Reciprocante
+  drawPumpSVG({
+    pump_type,
+    seating_type,
+    apiDesignation,
+    region,
+    chosenGrade,
+    p_int,
+    p_disch,
+    dp_bar,
+    temp_c,
+    y_co2,
+    y_h2s,
+    pCO2_bar,
+    pH2S_kPa,
+    pH,
+    wet_factor,
+    inhib_avail,
+    sand_lb,
+    spm,
+    stroke_in,
+    fit_num,
+    bore_in: selectedBoreData.id_in,
+    eff_final_pct: activeEval.eff_final_pct,
+    slip_init_bpd: activeEval.slip_init_bpd
+  });
+
+  // Actualizar y Exportar Estado Global window.wellStreamState
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    p_int_bar: p_int,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region: region,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: wet_factor,
+    v_inhibited_mm_yr: v_inhib,
+    sand_lb_1000bbl: sand_lb,
+    viscosity_cp: viscosity_cp
+  };
+  window.wellStreamState.subsurfacePump_B1 = {
+    apiDesignation: apiDesignation,
+    pumpType: pump_type,
+    seatingType: seating_type,
+    bore_in: selectedBoreData.id_in,
+    fit_mils: fit_num,
+    recommendedMaterialPair: chosenGrade.name,
+    valveMaterialClass: (sand_lb >= 8 || region >= 2) ? "API 11AX C1 (WC-Ni / Si3N4)" : "API 11AX B1 (Stellite)",
+    q_theoretical_bpd: Number(activeEval.q_teo_bpd.toFixed(1)),
+    q_net_initial_bpd: Number(activeEval.q_net_init_bpd.toFixed(1)),
+    q_net_final_bpd: Number(activeEval.q_net_final_bpd.toFixed(1)),
+    slippage_initial_bpd: Number(activeEval.slip_init_bpd.toFixed(2)),
+    slippage_final_bpd: Number(activeEval.slip_final_bpd.toFixed(2)),
+    volumetric_efficiency_final_pct: Number(activeEval.eff_final_pct.toFixed(1)),
+    fs_barrel_burst: Number(activeEval.fs_burst.toFixed(2)),
+    fs_plunger_buckling: Number(activeEval.fs_buckling.toFixed(2)),
+    design_life_yr: design_life
+  };
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 7. Renderizado del Corte Técnico Vectorial (SVG) de la Bomba API 11AX con Fluido Reactivo
+function drawPumpSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    pump_type, seating_type, apiDesignation, region, chosenGrade,
+    p_int, p_disch, dp_bar, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, sand_lb, spm, bore_in, fit_num, slip_init_bpd
+  } = d;
+
+  // Escala cromática del fluido según Región ISO 15156-2 y CO2
+  let fluidTopColor = "#d99b26", fluidBotColor = "#9a5b13", fluidGlow = "#f59e0b", fluidLabel = "Dulce (Región 0)";
+  if (region === 0) {
+    if (pCO2_bar >= 1.5) {
+      fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+    } else {
+      fluidTopColor = "#d4a338"; fluidBotColor = "#785316"; fluidGlow = "#eab308"; fluidLabel = "Dulce (Región 0)";
+    }
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido bombeado: ${fluidLabel} | BSW ${wet_factor.toFixed(0)}% | Arena ${sand_lb} lb/kbbl`;
+  }
+
+  // Dinámica de velocidad de animación según SPM y presión
+  const cycleSec = Math.max(0.9, Math.min(4.5, 18 / Math.max(1, spm))).toFixed(2);
+  const flowDur = (parseFloat(cycleSec) * 0.65).toFixed(2);
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+  const co2Intensity = Math.min(1, y_co2 / 12);
+  const h2sIntensity = Math.min(1, y_h2s / 1.0);
+  const sandIntensity = Math.min(1, sand_lb / 40);
+  const rCo2 = (1.3 + co2Intensity * 2.2).toFixed(1);
+  const rH2s = (1.3 + h2sIntensity * 2.4).toFixed(1);
+  const opCo2 = (0.3 + co2Intensity * 0.6).toFixed(2);
+  const opH2s = (y_h2s > 0.001 ? 0.35 + h2sIntensity * 0.6 : 0).toFixed(2);
+  const opSand = (sand_lb > 0 ? 0.35 + sandIntensity * 0.65 : 0).toFixed(2);
+
+  // Dimensiones en el lienzo SVG
+  const cx = 152, top = 46, bot = 508;
+  const hwBore = Math.round(22 + ((bore_in - 1.25) / 1.5) * 14); // semiancho cámara del barril
+  const isHW = ["RHA", "RHB", "RHT", "THC"].includes(pump_type);
+  const tBarrelPx = isHW ? 7 : 4;
+  const hwTbg = hwBore + tBarrelPx + 12;
+  const gapPx = Math.max(1.5, Math.min(4.5, 1 + fit_num * 0.6)); // holgura visual Fit -1 a -5
+  const hwPlunger = hwBore - gapPx;
+
+  const bTop = 108, bBot = 456, bH = bBot - bTop;
+  const L_b = cx - hwBore, R_b = cx + hwBore;
+  const L_tbg = cx - hwTbg, R_tbg = cx + hwTbg;
+  const L_p = cx - hwPlunger, R_p = cx + hwPlunger;
+
+  // Color metalúrgico del barril y pistón
+  const barrelColor = chosenGrade.type === "CRA" ? "#a78bfa" : (chosenGrade.type === "CRA-SOFT" ? "#eab308" : (chosenGrade.id.includes("NICR") ? "#38bdf8" : "var(--acc)"));
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+
+  // Anclaje superior (RHA/RWA) vs Anclaje inferior (RHB/RWB/THC)
+  const isTopAnchor = pump_type === "RHA" || pump_type === "RWA";
+  const anchorY = isTopAnchor ? bTop + 14 : bBot - 16;
+
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipPumpBore"><rect x="${L_b}" y="${top}" width="${2 * hwBore}" height="${bot - top}"/></clipPath>
+      <clipPath id="clipTubingAnn"><rect x="${L_tbg}" y="${top}" width="${2 * hwTbg}" height="${bot - top}"/></clipPath>
+
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.92"/>
+        <stop offset="50%" stop-color="${fluidTopColor}" stop-opacity="0.80"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.55 ? '#0284c7' : fluidTopColor}" stop-opacity="0.72"/>
+      </linearGradient>
+
+      <pattern id="upStreamPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <path d="M 9 44 Q 13 24 9 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="6 4"/>
+        <path d="M 27 46 Q 23 24 27 4" stroke="${fluidGlow}" stroke-width="1.3" fill="none" opacity="0.5" stroke-dasharray="6 4"/>
+        <path d="M 13 26 L 18 19 L 23 26" stroke="#ffffff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+      </pattern>
+
+      <pattern id="waterCutPat" width="28" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 6 36 C 4 24, 9 14, 6 4" stroke="#38bdf8" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.65"/>
+        <circle cx="19" cy="18" r="2" fill="#7dd3fc" opacity="0.7"/>
+      </pattern>
+
+      <pattern id="gasSandPat" width="42" height="52" patternUnits="userSpaceOnUse">
+        <!-- Burbujas CO2 y H2S -->
+        <circle cx="10" cy="40" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="${opCo2}"/>
+        <circle cx="28" cy="16" r="${(rCo2 * 0.8).toFixed(1)}" fill="#e0f2fe" opacity="${opCo2}"/>
+        <circle cx="32" cy="42" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.8" opacity="${opH2s}"/>
+        <circle cx="15" cy="22" r="${(rH2s * 0.8).toFixed(1)}" fill="#bef264" opacity="${opH2s}"/>
+        <!-- Granos de arena (sólidos en suspensión) -->
+        <polygon points="20,34 23,36 21,39 18,37" fill="#f59e0b" opacity="${opSand}"/>
+        <polygon points="8,12 11,13 10,16 7,15" fill="#d97706" opacity="${opSand}"/>
+        <polygon points="34,26 37,28 35,31" fill="#fbbf24" opacity="${opSand}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.5px var(--mono); fill: var(--mut); }
+      #equipSvg .b { fill: var(--tx); font-weight: 700; }
+      @keyframes svgFlowUp { from { transform: translateY(0px); } to { transform: translateY(-48px); } }
+      @keyframes svgBubblesUp { 0% { transform: translate(0px,0px); } 50% { transform: translate(1.2px,-26px); } 100% { transform: translate(0px,-52px); } }
+      @keyframes plungerStroke {
+        0%, 100% { transform: translateY(-22px); }
+        50%      { transform: translateY(24px); }
+      }
+      @keyframes tvBallMove {
+        0%, 45%, 100% { transform: translateY(0px); }
+        50%, 92%      { transform: translateY(-7px); }
+      }
+      @keyframes svBallMove {
+        0%, 45%, 100% { transform: translateY(-8px); }
+        50%, 95%      { transform: translateY(0px); }
+      }
+      @keyframes slipLeakDown {
+        from { stroke-dashoffset: 24; }
+        to   { stroke-dashoffset: 0; }
+      }
+      #equipSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #equipSvg .bubbles-up { animation: svgBubblesUp ${flowDur}s linear infinite; }
+      #equipSvg .plunger-assy { animation: plungerStroke ${cycleSec}s ease-in-out infinite; }
+      #equipSvg .tv-ball { animation: tvBallMove ${cycleSec}s ease-in-out infinite; }
+      #equipSvg .sv-ball { animation: svBallMove ${cycleSec}s ease-in-out infinite; }
+      #equipSvg .slip-stream { animation: slipLeakDown 0.9s linear infinite; }
+    </style>
+
+    <!-- Cabecera de telemetría instantánea -->
+    <rect x="8" y="6" width="314" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" style="fill:var(--tx);font-weight:600;font-size:9.3px">${apiDesignation}</text>
+    <text x="314" y="21" text-anchor="end" style="fill:var(--acc);font-size:9px">Ps=${p_int} | Pd=${p_disch} bar | ${spm} SPM</text>
+
+    <!-- Pared exterior del Tubing de Producción (B4) que aloja la bomba -->
+    <rect x="${L_tbg - 5}" y="${top}" width="5" height="${bot - top}" fill="var(--mut)" opacity="0.55"/>
+    <rect x="${R_tbg}" y="${top}" width="5" height="${bot - top}" fill="var(--mut)" opacity="0.55"/>
+    <text x="${L_tbg - 9}" y="${top + 18}" text-anchor="end">Tubing</text>
+
+    <!-- Fluido producido ascendente en el interior de la bomba y hacia el tubing -->
+    <g clip-path="url(#clipPumpBore)">
+      <rect x="${L_b}" y="${top}" width="${2 * hwBore}" height="${bot - top}" fill="url(#prodFluidGrad)"/>
+      <rect x="${L_b}" y="${top}" width="${2 * hwBore}" height="${bot - top}" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.85).toFixed(2)}" class="flow-up"/>
+      <rect x="${L_b}" y="${top}" width="${2 * hwBore}" height="${bot - top}" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${L_b}" y="${top}" width="${2 * hwBore}" height="${bot - top}" fill="url(#gasSandPat)" class="bubbles-up"/>
+    </g>
+
+    <!-- Película protectora de inhibidor sobre la camisa interna del barril -->
+    <line x1="${L_b + 1.2}" x2="${L_b + 1.2}" y1="${bTop}" y2="${bBot}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${R_b - 1.2}" x2="${R_b - 1.2}" y1="${bTop}" y2="${bBot}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+
+    <!-- Barril (Camisa) estacionario API 11AX (B11 / B12) -->
+    <rect x="${L_b - tBarrelPx}" y="${bTop}" width="${tBarrelPx}" height="${bH}" fill="${barrelColor}" stroke="var(--tx)" stroke-width="0.7"/>
+    <rect x="${R_b}" y="${bTop}" width="${tBarrelPx}" height="${bH}" fill="${barrelColor}" stroke="var(--tx)" stroke-width="0.7"/>
+
+    <!-- Cono / Copas de Anclaje (Hold-down S11/S17) y Niple de Asiento -->
+    <polygon points="${L_tbg},${anchorY - 10} ${L_b - tBarrelPx},${anchorY - 4} ${L_b - tBarrelPx},${anchorY + 10} ${L_tbg},${anchorY + 16}" fill="var(--warn)" stroke="var(--tx)" stroke-width="0.8"/>
+    <polygon points="${R_tbg},${anchorY - 10} ${R_b + tBarrelPx},${anchorY - 4} ${R_b + tBarrelPx},${anchorY + 10} ${R_tbg},${anchorY + 16}" fill="var(--warn)" stroke="var(--tx)" stroke-width="0.8"/>
+    <text x="${R_tbg + 9}" y="${anchorY + 5}" style="fill:var(--warn);font-weight:600">Anclaje (${seating_type})</text>
+    <text x="${R_tbg + 9}" y="${anchorY + 16}">1850 m</text>
+
+    <!-- Válvula Fija (Standing Valve V11 + Jaula C14/C16) en la base del barril -->
+    <g transform="translate(0, ${bBot - 36})">
+      <!-- Asiento de carburo -->
+      <rect x="${L_b + 4}" y="20" width="${2 * hwBore - 8}" height="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+      <polygon points="${cx - 10},20 ${cx + 10},20 ${cx + 6},27 ${cx - 6},27" fill="var(--bg)"/>
+      <!-- Jaula de la válvula fija -->
+      <path d="M ${L_b + 6} 20 L ${L_b + 6} 2 L ${R_b - 6} 2 L ${R_b - 6} 20" fill="none" stroke="var(--tx)" stroke-width="1.8"/>
+      <!-- Bola de la válvula fija (abre en embolada ascendente) -->
+      <circle cx="${cx}" cy="14" r="7.5" fill="var(--warn)" stroke="#1e293b" stroke-width="1.2" class="sv-ball"/>
+    </g>
+    <text x="${R_tbg + 9}" y="${bBot - 18}" class="b">Válv. Fija (SV)</text>
+
+    <!-- Conjunto Móvil: Pescante (Pull Rod R11) + Pistón (Émbolo P21) + Válvula Viajera (TV) -->
+    <g class="plunger-assy">
+      <!-- Barra de válvula / Pescante (Pull Rod) y Guía G11 -->
+      <rect x="${cx - 3.5}" y="${top - 18}" width="7" height="${195 - (top - 18)}" fill="#cbd5e1" stroke="#0f172a" stroke-width="0.8"/>
+      <!-- Jaula superior del émbolo (C12) -->
+      <rect x="${L_p + 5}" y="190" width="${2 * hwPlunger - 10}" height="12" rx="2" fill="${barrelColor}" stroke="var(--tx)" stroke-width="1"/>
+
+      <!-- Cuerpo tubular del Pistón (Émbolo P21) con ranuras de lubricación -->
+      <rect x="${L_p}" y="202" width="6.5" height="126" fill="#e2e8f0" stroke="#0f172a" stroke-width="0.9"/>
+      <rect x="${R_p - 6.5}" y="202" width="6.5" height="126" fill="#e2e8f0" stroke="#0f172a" stroke-width="0.9"/>
+      <line x1="${L_p}" x2="${L_p + 6.5}" y1="232" y2="232" stroke="#0f172a" stroke-width="1.2"/>
+      <line x1="${L_p}" x2="${L_p + 6.5}" y1="262" y2="262" stroke="#0f172a" stroke-width="1.2"/>
+      <line x1="${L_p}" x2="${L_p + 6.5}" y1="292" y2="292" stroke="#0f172a" stroke-width="1.2"/>
+      <line x1="${R_p - 6.5}" x2="${R_p}" y1="232" y2="232" stroke="#0f172a" stroke-width="1.2"/>
+      <line x1="${R_p - 6.5}" x2="${R_p}" y1="262" y2="262" stroke="#0f172a" stroke-width="1.2"/>
+      <line x1="${R_p - 6.5}" x2="${R_p}" y1="292" y2="292" stroke="#0f172a" stroke-width="1.2"/>
+
+      <!-- Líneas de escurrimiento anular (Slippage) en la holgura Pistón-Barril -->
+      <line x1="${L_b + gapPx / 2}" x2="${L_b + gapPx / 2}" y1="200" y2="332" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="3 3" class="slip-stream"/>
+      <line x1="${R_b - gapPx / 2}" x2="${R_b - gapPx / 2}" y1="200" y2="332" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="3 3" class="slip-stream"/>
+
+      <!-- Válvula Viajera (Traveling Valve V11 + Jaula C13) en el extremo inferior del pistón -->
+      <rect x="${L_p + 2}" y="346" width="${2 * hwPlunger - 4}" height="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1"/>
+      <path d="M ${L_p + 4} 346 L ${L_p + 4} 328 L ${R_p - 4} 328 L ${R_p - 4} 346" fill="none" stroke="var(--tx)" stroke-width="1.6"/>
+      <circle cx="${cx}" cy="340" r="7" fill="var(--warn)" stroke="#1e293b" stroke-width="1.2" class="tv-ball"/>
+    </g>
+
+    <!-- Etiquetas técnicas laterales -->
+    <text x="${R_tbg + 9}" y="${bTop + 14}" class="b">Barril (${isHW ? 'Pared Gruesa' : 'Pared Delgada'})</text>
+    <text x="${R_tbg + 9}" y="${bTop + 26}">Ø ${bore_in.toFixed(2)}" | Fit -${fit_num}</text>
+
+    <text x="${R_tbg + 9}" y="256" class="b">Émbolo (P21)</text>
+    <text x="${R_tbg + 9}" y="268" style="fill:#38bdf8">Slip: ${slip_init_bpd.toFixed(1)} bpd</text>
+    <text x="${R_tbg + 9}" y="342" class="b">Válv. Viajera (TV)</text>
+
+    <!-- Flechas de succión en el fondo y descarga arriba -->
+    <path d="M ${cx} ${bot + 10} L ${cx} ${bot - 8} M ${cx - 5} ${bot - 3} L ${cx} ${bot - 9} L ${cx + 5} ${bot - 3}" stroke="${fluidGlow}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <text x="${cx}" y="${bot + 26}" text-anchor="middle" style="fill:${barrelColor};font-weight:700">${chosenGrade.id} + Válvulas WC/Si₃N₄</text>
+    <text x="${cx}" y="${bot + 40}" text-anchor="middle" style="font-size:9px;fill:var(--mut)">ΔP=${dp_bar} bar · CO₂=${pCO2_bar.toFixed(2)} bar · H₂S=${pH2S_kPa.toFixed(1)} kPa · Inhib=${inhib_avail}%</text>
+  `;
+}
+
+function copyGlobalState(btn){
+  const t=JSON.stringify(window.wellStreamState,null,2),done=()=>{btn.textContent="Copiado";setTimeout(()=>btn.textContent="Copiar JSON",1500)};
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(done).catch(()=>{
+    const r=document.createRange();r.selectNodeContents(document.getElementById("json_output"));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Texto seleccionado: Ctrl+C";});
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>

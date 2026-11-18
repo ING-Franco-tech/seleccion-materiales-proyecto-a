@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="es" class="a1-sim">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Paramétrico Universal - Módulo 3: Packer y Ancla de Tubería (API 11D1 / ISO 14310 / ISO 15156 / ISO 23936-2)</title>
+<style>
+:root{--bg:#121518;--panel:#1a1e22;--sunk:#101316;--line:#2c3238;--tx:#e9e7e2;--mut:#98a0a7;--acc:#8cc4d6;--ok:#6fcf97;--warn:#e6b450;--bad:#ef6f62;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--head:"Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",system-ui,sans-serif}
+@media(prefers-color-scheme:light){:root{--bg:#eceae5;--panel:#fbfaf7;--sunk:#f1efea;--line:#d3cfc6;--tx:#1d2125;--mut:#5d656c;--acc:#1f6a82;--ok:#1d7a46;--warn:#8f5f08;--bad:#b3322a}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,"Segoe UI",sans-serif;padding:clamp(12px,2vw,24px);max-width:1640px;margin:auto}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:20px;border-bottom:2px solid var(--tx)}
+.top h1{font:600 clamp(1.5rem,3vw,2.2rem)/1.1 var(--head);letter-spacing:.01em}
+.top p{color:var(--mut);margin-top:4px;max-width:68ch}
+.norms{list-style:none;display:flex;gap:6px;flex-wrap:wrap}
+.norms li{border:1px solid var(--line);background:var(--panel);padding:2px 9px;border-radius:4px;font:12px var(--mono);color:var(--mut)}
+.app{display:grid;grid-template-columns:minmax(310px,360px) minmax(0,1fr);gap:20px;align-items:start}
+aside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:2px}
+main{display:grid;gap:16px;min-width:0}
+.res{display:grid;grid-template-columns:minmax(280px,330px) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1180px){.app{grid-template-columns:1fr}aside{position:static;max-height:none}}
+@media(max-width:760px){.res{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px}
+main .card{margin:0}
+.card h2,summary{font:600 1.05rem var(--head);letter-spacing:.02em}
+.card h2{margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:var(--mut)}details[open]>summary::after{content:"–"}
+details .grid{margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}.f.w{grid-column:span 2}
+label{font-size:.78rem;color:var(--mut)}
+.in,select{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:5px;color:var(--tx)}
+.in:focus-within,select:focus{border-color:var(--acc)}
+.in input{flex:1;min-width:0;border:0;background:none;color:inherit;padding:6px 8px;font:13px var(--mono)}
+.in input:focus-visible{outline:none}
+.in span{padding:6px 8px 6px 0;color:var(--mut);font-size:.75rem;align-self:center}
+select{padding:6px 8px;font:13px system-ui;width:100%}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;padding:16px 18px;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:8px;background:var(--panel)}
+.verdict.ok{--c:var(--ok)}.verdict.bad{--c:var(--bad)}
+.verdict span{display:block;font-size:.76rem;color:var(--mut)}
+.verdict strong{font:600 1.25rem/1.2 var(--head)}.verdict .msg{grid-column:1/-1}.verdict .msg strong{color:var(--bad)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--sunk);border:1px solid var(--line);padding:10px 12px;border-radius:6px}
+.kpi .lbl{font-size:.74rem;color:var(--mut)}.kpi .val{font:600 1.08rem var(--mono);margin-top:2px}.kpi .sub{font-size:.72rem;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.74rem;font-weight:600;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tag.ok{--c:var(--ok)}.tag.warn{--c:var(--warn)}.tag.danger{--c:var(--bad)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:600px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:hover td{background:color-mix(in srgb,var(--tx) 4%,transparent)}
+.section-box{background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+.section-box h3{font:600 .95rem var(--head);margin-bottom:4px}
+.section-box p{font-size:.82rem;color:var(--mut);margin-bottom:4px}
+.btn{background:var(--tx);color:var(--bg);border:0;padding:6px 12px;border-radius:5px;font-weight:600;cursor:pointer;font-size:.8rem}
+.btn:hover{background:var(--acc)}
+pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:10px;color:var(--acc);overflow:auto;max-height:240px}
+#equipSvg{width:100%;height:auto;background:var(--sunk);border:1px solid var(--line);border-radius:6px}
+.legend{list-style:none;display:grid;gap:4px;margin-top:10px;font-size:.76rem;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+</style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+</script><script>
+const incomingWellStream = (() => {
+  try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
+  catch { return {}; }
+})();
+window.wellStreamState = {fluidStream_C1_C2: incomingWellStream};
+function incomingValue(key, fallback) {
+  const value = incomingWellStream[key];
+  return Number.isFinite(value) ? value : fallback;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('has_packer');
+  const installed = incomingWellStream.has_packer;
+  if (!input || !['yes', 'no'].includes(installed) || input.value === installed) return;
+  input.value = installed;
+  input.dispatchEvent(new Event('input', {bubbles:true}));
+  input.dispatchEvent(new Event('change', {bubbles:true}));
+});
+</script><style>
+.a1-sim .app > *, .a1-sim .res > *, .a1-sim .card {min-width:0}
+.embedded {color-scheme:light;--bg:#eeefed;--panel:#fff;--sunk:#f3f4f2;--line:#cdd3cf;--tx:#24312c;--mut:#55605b;--acc:#285d49;--ok:#1d7044;--warn:#865608;--bad:#a92d28;--head:"Segoe UI",system-ui,sans-serif}
+.embedded header.top, .embedded .barra .marca, .embedded .barra .firma {display:none}
+.embedded body {max-width:100%;padding-inline:10px}
+.embedded .app, .embedded .app > *, .embedded .res, .embedded .res > *, .embedded .card {min-width:0}
+.embedded .scroll table {min-width:0;overflow-wrap:anywhere}
+.embedded .scroll th {white-space:normal}
+.embedded .pestanas {flex-wrap:wrap}
+@media(max-width:760px) {
+  .embedded .app, .embedded .res {grid-template-columns:minmax(0,1fr)}
+  .embedded .modal-body {grid-template-columns:minmax(0,1fr)}
+}
+</style></head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Packer de producción y ancla de tubería</h1>
+    <p>Módulo 3 de 10, sistema A1. Aislamiento anular (C2 vs C4), envolvente combinada ISO 14310, resistencia SSC y calificación de elastómeros (RGD / extrusión).</p>
+  </div>
+  <ul class="norms">
+    <li>API Spec 11D1 / ISO 14310</li>
+    <li>ISO 15156-2 / -3</li>
+    <li>ISO 23936-2 / NACE TM0187</li>
+    <li>ISO 21457</li>
+  </ul>
+</header>
+
+<div class="app">
+  <aside><div id="form"></div></aside>
+  <main>
+    <section id="verdict" class="verdict" aria-live="polite"></section>
+
+    <div class="res">
+      <section class="card">
+        <h2>Corte técnico y envolvente</h2>
+        <svg id="equipSvg" viewBox="0 0 340 610" role="img" aria-label="Corte técnico del Packer de producción, línea capilar, ancla de tubería y envolvente ISO 14310"></svg>
+        <ul class="legend">
+          <li><i id="leg_fluid_sw" style="background:var(--bad);opacity:.8"></i><span id="leg_fluid_txt">Fluido producido en mandril (C1) y gas ácido inferior (C2)</span></li>
+          <li><i style="background:var(--ok);opacity:.45"></i>Fluido de empaque inhibido alcalino sobre el packer (C4, pH 9.5-10.5)</li>
+          <li><i style="background:var(--warn);opacity:.85"></i>Triple sello elastomérico + respaldos anti-extrusión y pasaje capilar 3/8"</li>
+          <li><i style="background:var(--acc);opacity:.75"></i>Cuñas bidireccionales (Slips) de Packer y Ancla de Tubería (TAC)</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Diagnóstico ambiental, mecánico y sellado anular</h2>
+        <div class="kpi-row">
+          <div class="kpi"><div class="lbl">Severidad H₂S / CO₂ (C1/C2)</div><div class="val" id="kpi_ph2s">-</div><div class="sub" id="kpi_pco2_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Región ISO 15156-2</div><div class="val" id="kpi_region">-</div><div class="sub" id="kpi_regime">-</div></div>
+          <div class="kpi"><div class="lbl">Holgura radial (Extrusion Gap)</div><div class="val" id="kpi_gap">-</div><div class="sub" id="kpi_gap_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Esfuerzo Von Mises Mandril</div><div class="val" id="kpi_vm">-</div><div class="sub" id="kpi_vm_sub">-</div></div>
+          <div class="kpi"><div class="lbl">Grado ISO 14310 / Calidad</div><div class="val" id="kpi_vgrade">-</div><div class="sub" id="kpi_vgrade_sub">-</div></div>
+        </div>
+        <div id="parts_recommendation"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Tabla 1 — Elegibilidad metalúrgica para mandril y cuerpo Tipo 1 (ISO 14310 / ISO 15156-2 y -3)</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Grado / Aleación</th>
+              <th>Fluencia (ksi / MPa)</th>
+              <th>Dureza máx.</th>
+              <th>Pared rem. mandril (mm)</th>
+              <th>FS Von Mises</th>
+              <th>Estado</th>
+              <th>Justificación técnica y normativa</th>
+            </tr>
+          </thead>
+          <tbody id="grades_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Tabla 2 — Calificación de elastómeros y sistema anti-extrusión (ISO 23936-2 / API 11D1)</h2>
+      <p style="font-size:.8rem;color:var(--mut);margin-bottom:8px">
+        Evaluado con mandril en <strong id="selected_grade_lbl" style="color:var(--acc)">-</strong> para Casing <strong id="selected_ geometry_lbl" style="color:var(--tx)">-</strong>
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Sistema Elastomérico + Respaldo</th>
+              <th>Límite T (°C)</th>
+              <th>Resistencia H₂S / Aminas C4</th>
+              <th>Grado RGD (ISO 23936-2)</th>
+              <th>Capacidad ΔP c/Gap (bar) [FS]</th>
+              <th>Ciclo ΔT máx. (°C)</th>
+              <th>Veredicto</th>
+            </tr>
+          </thead>
+          <tbody id="elastomers_tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>
+        <span>Estado global exportable (window.wellStreamState)</span>
+        <button class="btn" onclick="copyGlobalState(this)">Copiar JSON</button>
+      </h2>
+      <pre id="json_output"></pre>
+    </section>
+  </main>
+</div>
+
+<script>
+// Inicialización desde window.wellStreamState si existe, o valores base de la Ficha de Datos del Pozo A1
+const initFluid = (window.wellStreamState && window.wellStreamState.fluidStream_C1_C2) || {};
+
+const FORM = [
+  ["Química de corrientes C1 (Tubing) y C2 (Gas bajo packer)", [
+    ["p_int", "Presión en packer (1500 m)", "bar", incomingValue("p_bottom_op_bar", 45), 5, 1000, 1],
+    ["temp_c", "Temperatura en packer", "°C", incomingValue("temp_bottom_c", 68), 10, 230, 1],
+    ["y_co2", "CO₂ en gas (C1/C2)", "% mol", incomingValue("y_co2_pct", 3.1), 0, 100, 0.1],
+    ["y_h2s", "H₂S en gas (0.15 hoy / 0.30 año 10)", "% mol", incomingValue("y_h2s_pct", 0.15), 0, 100, 0.01],
+    ["ph", "pH in situ (C1/C2)", "", incomingValue("pH", 4.6), 1, 14, 0.1],
+    ["chlorides", "Cloruros (C1)", "mg/L", incomingValue("chlorides_mgL", initFluid.chlorides_mgL || 42000), 0, 250000, 500],
+    ["wet_factor", "Corte de agua / mojado", "%", incomingValue("bsw_pct", 78), 0, 100, 1],
+    ["inhib_avail", "Disponibilidad inhibidor (A)", "%", incomingValue("inhibitor_availability_pct", 90), 0, 100, 0.5],
+    ["v_inhib", "Velocidad con inhibidor", "mm/a", incomingValue("v_inhibited_mm_yr", 0.1), 0, 2, 0.01]
+  ]],
+  ["Ambiente anular C4, validación ISO 14310 y RGD", [
+    ["val_grade", "Grado validación ISO 14310", [
+      ["V0", "V0 (Gas + Axial + Ciclo T + Cero burbujas)"],
+      ["V1", "V1 (Gas + Axial + Ciclo T ≤ 20 cm³)"],
+      ["V2", "V2 (Gas + Carga axial ≤ 20 cm³)"],
+      ["V3", "V3 (Líquido + Axial + Ciclo T)"],
+      ["V4", "V4 (Líquido + Carga axial)"],
+      ["V6", "V6 (Definido por fabricante)"]
+    ], "V1"],
+    ["qual_grade", "Grado calidad ISO 14310", [
+      ["Q1", "Q1 (100% Dureza, 100% END, Trazab. colada)"],
+      ["Q2", "Q2 (Muestreo ISO 2859-1 + Drift + Prueba)"],
+      ["Q3", "Q3 (Estándar comercial COC/MTR)"]
+    ], "Q1"],
+    ["c4_env", "Fluido de empaque sobre packer (C4)", [
+      ["inhibited_brine", "Agua tratada pH 9.5-10.5 + Inhibidor amina"],
+      ["crude_diesel", "Crudo / Diésel deshidratado"],
+      ["sour_gas", "Sin fluido (Expuesto a gas ácido C2)"]
+    ], "inhibited_brine"],
+    ["delta_t", "Salto térmico operativo (ΔT)", "°C", 25, 0, 120, 5],
+    ["rgd_risk", "Riesgo descompresión rápida (RGD)", [
+      ["high", "Alto (Venteo / Despresurización anular gas)"],
+      ["low", "Bajo (Despresurización controlada líquida)"]
+    ], "high"],
+    ["capillary_pass", "Pasaje línea capilar química", [
+      ["yes_625", "Sí — 3/8 in en Alloy 625 (UNS N06625)"],
+      ["none", "No — Mandril estándar sin bypass capilar"]
+    ], "yes_625"]
+  ]],
+  ["Geometría y cargas de Packer + Ancla (TAC)", [
+    ["casing_spec", "Casing de alojamiento (API 5CT)", [
+      ["5.5_17", "5 1/2 in — 17.0 lb/ft (ID 124.3 mm)"],
+      ["7.0_26", "7 in — 26.0 lb/ft (ID 159.4 mm)"],
+      ["7.0_29", "7 in — 29.0 lb/ft (ID 157.1 mm) [Caso A1]"],
+      ["7.0_32", "7 in — 32.0 lb/ft (ID 154.8 mm)"],
+      ["9.625_47", "9 5/8 in — 47.0 lb/ft (ID 220.5 mm)"]
+    ], "7.0_29"],
+    ["tubing_spec", "Tubing y paso del mandril", [
+      ["2.375", "2 3/8 in — 4.7 lb/ft (ID paso 50.7 mm)"],
+      ["2.875", "2 7/8 in — 6.5 lb/ft (ID paso 62.0 mm) [Caso A1]"],
+      ["3.500", "3 1/2 in — 9.3 lb/ft (ID paso 76.0 mm)"]
+    ], "2.875"],
+    ["depth_packer", "Profundidad asentamiento", "m", incomingValue("depth_packer_m", 1500), 100, 5000, 50],
+    ["dp_below", "ΔP desde abajo (C2 → C4)", "bar", 55, 0, 700, 5],
+    ["dp_above", "ΔP desde arriba (C4 → C2)", "bar", 45, 0, 700, 5],
+    ["f_anchor", "Tensión ancla tubería (TAC)", "kN", 44, 0, 400, 2],
+    ["f_axial_pk", "Carga axial neta en packer", "kN", 85, 0, 800, 5],
+    ["design_life", "Vida de diseño (subsuelo)", "años", incomingValue("design_life_yr", 20), 1, 25, 1],
+    ["fs_req", "FS mín. envolvente y sello", "", 1.25, 1.0, 2.5, 0.05]
+  ]]
+];
+
+function buildForm() {
+  document.getElementById("form").innerHTML = FORM.map(([t, fs]) => `<details class="card" open><summary>${t}</summary><div class="grid">${fs.map(f => {
+    const [id, lb, u] = f, sel = Array.isArray(u);
+    const ctl = sel
+      ? `<select id="${id}">${u.map(o => `<option value="${o[0]}"${o[0] === f[3] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>`
+      : `<div class="in"><input type="number" id="${id}" value="${f[3]}"${f[4] != null ? ` min="${f[4]}"` : ""}${f[5] != null ? ` max="${f[5]}"` : ""} step="${f[6]}"><span>${u}</span></div>`;
+    return `<div class="f${sel ? " w" : ""}"><label for="${id}">${lb}</label>${ctl}</div>`;
+  }).join("")}</div></details>`).join("");
+}
+buildForm();
+
+const num = (id, d) => {
+  const v = parseFloat(document.getElementById(id).value);
+  return Number.isFinite(v) ? v : d;
+};
+
+// 1. Catálogo Geométrico de Casing y Mandril de Packer
+const CASING_GEOM = {
+  "5.5_17":   { label: '5 1/2" 17 lb/ft', od_mm: 139.7, id_mm: 124.26, packer_od_mm: 118.6 },
+  "7.0_26":   { label: '7" 26 lb/ft',     od_mm: 177.8, id_mm: 159.42, packer_od_mm: 151.4 },
+  "7.0_29":   { label: '7" 29 lb/ft',     od_mm: 177.8, id_mm: 157.08, packer_od_mm: 150.4 },
+  "7.0_32":   { label: '7" 32 lb/ft',     od_mm: 177.8, id_mm: 154.78, packer_od_mm: 148.8 },
+  "9.625_47": { label: '9 5/8" 47 lb/ft', od_mm: 244.5, id_mm: 220.52, packer_od_mm: 212.0 }
+};
+
+const MANDREL_GEOM = {
+  "2.375": { label: '2 3/8" (60.3 mm)', id_mm: 50.65, od_mm: 66.0, t_mm: 7.68 },
+  "2.875": { label: '2 7/8" (73.0 mm)', id_mm: 62.00, od_mm: 78.5, t_mm: 8.25 },
+  "3.500": { label: '3 1/2" (88.9 mm)', id_mm: 76.00, od_mm: 95.0, t_mm: 9.50 }
+};
+
+// 2. Catálogo Metalúrgico para Componentes Tipo 1 (Mandril, Cuerpo de Carga y Conos)
+const GRADES_CATALOG = [
+  { id: "J55/K55",  name: "API 5CT J55 / K55",                yp_ksi: 55,  hardness: "≤ 22 HRC típico", type: "CS",  costRank: 1 },
+  { id: "N80",      name: "API 5CT N80 Tipo 1 / Q",           yp_ksi: 80,  hardness: "Sin control SSC (<65°C)", type: "CS", costRank: 2 },
+  { id: "L80-1",    name: "API 5CT L80 Tipo 1 / AISI 4140",   yp_ksi: 80,  hardness: "≤ 22 HRC (250 HV)", type: "CS",  costRank: 3 },
+  { id: "C90",      name: "API 5CT C90 Tipo 1 (Cr-Mo Q&T)",   yp_ksi: 90,  hardness: "≤ 25.4 HRC",      type: "CS",  costRank: 4 },
+  { id: "T95",      name: "API 5CT T95 Tipo 1 (Cr-Mo Q&T)",   yp_ksi: 95,  hardness: "≤ 25.4 HRC",      type: "CS",  costRank: 5 },
+  { id: "13Cr",     name: "API 5CT L80 13Cr (UNS S42000)",    yp_ksi: 80,  hardness: "≤ 22 HRC",        type: "CRA", costRank: 6 },
+  { id: "S13Cr",    name: "Super 13Cr (UNS S41425)",          yp_ksi: 95,  hardness: "≤ 28 HRC",        type: "CRA", costRank: 7 },
+  { id: "22Cr",     name: "Dúplex 22Cr (UNS S31803)",         yp_ksi: 80,  hardness: "≤ 28 HRC",        type: "CRA", costRank: 8 },
+  { id: "Alloy825", name: "Inconel 825 / 925 (UNS N09925)",   yp_ksi: 95,  hardness: "≤ 35 HRC",        type: "CRA", costRank: 9 }
+];
+
+// 3. Catálogo de Sistemas Elastoméricos y Respaldos Anti-Extrusión (ISO 23936-2 / NACE TM0187)
+const ELASTOMER_CATALOG = [
+  {
+    id: "NBR_STD",
+    name: "NBR 80 Shore A + Respaldo Latón",
+    t_max_c: 100,
+    dt_max_c: 20,
+    h2s_max_kPa: 1.0,
+    amine_ok: true,
+    rgd_rating: 4, // Falla criterio ISO 23936-2 (máx 3) en RGD severo
+    base_dp_bar: 180,
+    gap_limit_mm: 4.5,
+    costRank: 1,
+    notes: "Nitrilo convencional; sufre endurecimiento/fractura por ataque de H₂S (>1 kPa) y ampollamiento en RGD."
+  },
+  {
+    id: "HNBR_90",
+    name: "HNBR 90/80/90 (Triple Durómetro) + Respaldo PTFE/Latón",
+    t_max_c: 140,
+    dt_max_c: 40,
+    h2s_max_kPa: 25.0,
+    amine_ok: true,
+    rgd_rating: 2, // Aprobado ISO 23936-2 (≤ 3)
+    base_dp_bar: 350,
+    gap_limit_mm: 5.0,
+    costRank: 2,
+    notes: "Nitrilo hidrogenado grado RGD; excelente resistencia a aminas (pH 9.5-10.5), abrasión y H₂S moderado (≤25 kPa)."
+  },
+  {
+    id: "FKM_GLT",
+    name: "FKM (Viton GLT) + Anillos Anti-Extrusión PEEK",
+    t_max_c: 190,
+    dt_max_c: 55,
+    h2s_max_kPa: 150.0,
+    amine_ok: false, // Sensible a inhibidores base amina y alto pH alcalino en caliente
+    rgd_rating: 2,
+    base_dp_bar: 420,
+    gap_limit_mm: 5.5,
+    costRank: 3,
+    notes: "Fluoroelastómero apto para alto H₂S y crudo, pero susceptible a degradación por aminas e hidróxidos (pH > 9)."
+  },
+  {
+    id: "FEPM_AFLAS",
+    name: "FEPM (Aflas 90) + Respaldo PEEK / Malla Inox",
+    t_max_c: 200,
+    dt_max_c: 65,
+    h2s_max_kPa: 350.0,
+    amine_ok: true,
+    rgd_rating: 1,
+    base_dp_bar: 500,
+    gap_limit_mm: 6.0,
+    costRank: 4,
+    notes: "Copolímero TFE/P inmune a aminas, fluido de empaque pH 10.5, vapor y alta concentración de H₂S con certificación RGD."
+  },
+  {
+    id: "FFKM_KALREZ",
+    name: "FFKM (Perfluoroelastómero) + Backups PEEK/Inconel",
+    t_max_c: 250,
+    dt_max_c: 95,
+    h2s_max_kPa: 2000.0,
+    amine_ok: true,
+    rgd_rating: 1,
+    base_dp_bar: 680,
+    gap_limit_mm: 6.5,
+    costRank: 5,
+    notes: "Inercia química total en servicio ultra-amargo, alta temperatura y ciclo térmico severo V0 (máximo costo)."
+  }
+];
+
+// 4. Clasificación ISO 15156-2 (Figura 1)
+function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+
+// 5. Elegibilidad Metalúrgica de Grados (ISO 15156-2 / -3)
+function evaluateGradeEligibility(grade, state) {
+  const { region, temp_c, pH2S_kPa, pH, chlorides } = state;
+  if (grade.id === "J55/K55") {
+    return { eligible: true, status: "Apto SSC (Baja fluencia)", reason: "Apto en Regiones 0 a 3 por baja dureza; limitado en capacidad de carga combinada." };
+  }
+  if (grade.id === "N80") {
+    if (region <= 1 || (region === 2 && temp_c > 65) || temp_c > 80) {
+      return { eligible: true, status: "Apto Condicionado", reason: "Cumple condición térmica ISO 15156-2, pero carece de control estricto ≤22 HRC para Q1." };
+    }
+    return { eligible: false, status: "Descartado (SSC)", reason: `Susceptible a SSC en Región ${region} a ${temp_c} °C (exige L80-1 templado y revenido ≤ 22 HRC).` };
+  }
+  if (grade.id === "L80-1" || grade.id === "C90" || grade.id === "T95") {
+    return { eligible: true, status: "Apto NACE (Tipo 1)", reason: `Acero Cr-Mo templado y revenido (${grade.hardness}), aprobado en Regiones 0 a 3 según ISO 15156-2.` };
+  }
+  if (grade.id === "13Cr") {
+    if (pH2S_kPa <= 10 && pH >= 3.5 && temp_c <= 150) {
+      return { eligible: true, status: "Apto CRA (pH₂S ≤ 10 kPa)", reason: "Inmune a CO₂ sin requerir sobreespesor interno; dentro del límite ISO 15156-3 (pH₂S ≤ 10 kPa, pH ≥ 3.5)." };
+    }
+    return { eligible: false, status: "Descartado (ISO 15156-3)", reason: `Excede ventana ambiental de 13Cr convencional (pH₂S = ${pH2S_kPa.toFixed(1)} kPa vs máx 10 kPa o pH < 3.5).` };
+  }
+  if (grade.id === "S13Cr") {
+    if (pH2S_kPa <= 10 && pH >= 3.5 && chlorides <= 100000) {
+      return { eligible: true, status: "Apto Super 13Cr", reason: "Alta resistencia mecánica (95 ksi) y a CO₂; válido hasta pH₂S ≤ 10 kPa (ISO 15156-3)." };
+    }
+    return { eligible: false, status: "Descartado (ISO 15156-3)", reason: `Supera límite de pH₂S = 10 kPa (${pH2S_kPa.toFixed(1)} kPa) para aceros martensíticos Super 13Cr.` };
+  }
+  if (grade.id === "22Cr") {
+    if (pH2S_kPa <= 10 && temp_c <= 232 && chlorides <= 120000) {
+      return { eligible: true, status: "Apto Dúplex 22Cr", reason: "Resistente a cloruros y CO₂ sin inhibidor cuando pH₂S ≤ 10 kPa (ISO 15156-3)." };
+    }
+    return { eligible: false, status: "Descartado (ISO 15156-3)", reason: `Supera límite de pH₂S ≤ 10 kPa (${pH2S_kPa.toFixed(1)} kPa) para acero inoxidable Dúplex 22Cr.` };
+  }
+  if (grade.id === "Alloy825") {
+    return { eligible: true, status: "Apto CRA Severo", reason: "Aleación base níquel (UNS N08825/N09925) apta para H₂S severo (Región 3), altos cloruros y temperatura." };
+  }
+}
+
+// 6. Motor Principal de Simulación en Tiempo Real
+function runSimulation() {
+  const p_int = num("p_int", 55);
+  const temp_c = num("temp_c", 72);
+  const y_co2 = num("y_co2", 3.1);
+  const y_h2s = num("y_h2s", 0.15);
+  const pH = num("ph", 4.6);
+  const chlorides = num("chlorides", 42000);
+  const wet_factor = num("wet_factor", 78);
+  const inhib_avail = num("inhib_avail", 98);
+  const v_inhib = num("v_inhib", 0.10);
+
+  const val_grade = document.getElementById("val_grade").value;
+  const qual_grade = document.getElementById("qual_grade").value;
+  const c4_env = document.getElementById("c4_env").value;
+  const delta_t = num("delta_t", 25);
+  const rgd_risk = document.getElementById("rgd_risk").value;
+  const capillary_pass = document.getElementById("capillary_pass").value;
+
+  const casing_key = document.getElementById("casing_spec").value;
+  const tubing_key = document.getElementById("tubing_spec").value;
+  const depth_packer = num("depth_packer", 1500);
+  const dp_below = num("dp_below", 55);
+  const dp_above = num("dp_above", 45);
+  const f_anchor = num("f_anchor", 44);
+  const f_axial_pk = num("f_axial_pk", 85);
+  const design_life = num("design_life", 6);
+  const fs_req = num("fs_req", 1.25);
+
+  const csg = CASING_GEOM[casing_key];
+  const mnd = MANDREL_GEOM[tubing_key];
+
+  // Presiones parciales y Región ISO 15156-2
+  const pCO2_bar = (y_co2 / 100) * (p_int + 1.01325);
+  const pCO2_psi = pCO2_bar * 14.5038;
+  const pH2S_bar = (y_h2s / 100) * (p_int + 1.01325);
+  const pH2S_kPa = pH2S_bar * 100;
+  const pH2S_psi = pH2S_bar * 14.5038;
+
+  const region = getISO15156Region(pH2S_kPa, pH);
+  const ratio_co2_h2s = pH2S_bar > 0 ? (pCO2_bar / pH2S_bar) : 9999;
+  let regimeTxt = "Dominio CO₂ (> 500)";
+  if (pH2S_bar > 0 && ratio_co2_h2s < 20) regimeTxt = `Dominio H₂S (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+  else if (pH2S_bar > 0 && ratio_co2_h2s <= 500) regimeTxt = `Mixto (CO₂/H₂S = ${ratio_co2_h2s.toFixed(1)})`;
+
+  // Velocidad de corrosión De Waard-Milliams (1991) + ISO 21457 en el mandril (C1) y falda inferior (C2)
+  const temp_K = temp_c + 273.15;
+  const v_base_co2 = pCO2_bar > 0.0001
+    ? Math.pow(10, 5.8 - (1710 / temp_K) + 0.67 * Math.log10(pCO2_bar))
+    : 0;
+  const v_uncontrolled = v_base_co2 * (wet_factor / 100);
+  const A_frac = Math.min(1, Math.max(0, inhib_avail / 100));
+  const v_design_int = A_frac * v_inhib + (1 - A_frac) * v_uncontrolled;
+  const ca_int_mm = v_design_int * design_life;
+
+  // Holgura radial de extrusión (ISO 14310 Cláusula 3.12: Extrusion Gap)
+  const extrusion_gap_mm = Math.max(0.2, (csg.id_mm - csg.packer_od_mm) / 2);
+  const seal_area_mm2 = (Math.PI / 4) * (csg.id_mm * csg.id_mm - mnd.od_mm * mnd.od_mm);
+  const dp_max_bar = Math.max(dp_below, dp_above);
+  // Fuerza pistón generada por la presión diferencial sobre el área anular del packer (kN)
+  const f_piston_kN = (dp_max_bar * 0.1 * seal_area_mm2) / 1000;
+  const f_total_axial_kN = f_axial_pk + f_anchor + f_piston_kN;
+
+  // Evaluar cada grado metalúrgico del mandril frente a corrosión + envolvente Von Mises (tensión + presión)
+  const stateObj = { region, temp_c, pH2S_kPa, pH, chlorides };
+  const gradesEval = GRADES_CATALOG.map(g => {
+    const envCheck = evaluateGradeEligibility(g, stateObj);
+    const isCRA = g.type === "CRA";
+    const eff_ca_mm = isCRA ? 0 : ca_int_mm;
+    const t_rem_mm = Math.max(0.5, mnd.t_mm - eff_ca_mm);
+    const id_corr_mm = mnd.od_mm - 2 * t_rem_mm;
+    const area_rem_mm2 = Math.max(10, (Math.PI / 4) * (mnd.od_mm * mnd.od_mm - id_corr_mm * id_corr_mm));
+
+    // Esfuerzo axial + Esfuerzo circunferencial (Hoop) + Von Mises en el mandril
+    const sigma_axial_MPa = (f_total_axial_kN * 1000) / area_rem_mm2;
+    const sigma_hoop_MPa = (dp_max_bar * 0.1 * mnd.od_mm) / (2 * t_rem_mm);
+    const sigma_vm_MPa = Math.sqrt(
+      sigma_axial_MPa * sigma_axial_MPa -
+      sigma_axial_MPa * sigma_hoop_MPa +
+      sigma_hoop_MPa * sigma_hoop_MPa
+    );
+
+    // Reducción térmica leve de fluencia sobre 65°C según ISO 14310 (6.3.4)
+    const tempDerate = temp_c > 65 ? Math.max(0.82, 1 - 0.0012 * (temp_c - 65)) : 1.0;
+    const yp_MPa = g.yp_ksi * 6.89476 * tempDerate;
+    const fs_vm = sigma_vm_MPa > 0 ? yp_MPa / sigma_vm_MPa : 99;
+    const mechOk = t_rem_mm >= 2.2 && fs_vm >= fs_req;
+    const fullEligible = envCheck.eligible && mechOk;
+
+    let reason = envCheck.reason;
+    if (envCheck.eligible && !mechOk) {
+      reason = `Cumple SSC, pero falla envolvente mecánica sobre pared remanente (${t_rem_mm.toFixed(2)} mm, FS = ${fs_vm.toFixed(2)} < ${fs_req}).`;
+    } else if (fullEligible) {
+      reason += ` Soporta carga combinada (${f_total_axial_kN.toFixed(0)} kN + ${dp_max_bar} bar) con FS = ${fs_vm.toFixed(2)}.`;
+    }
+
+    return { ...g, envCheck, t_rem_mm, sigma_vm_MPa, yp_MPa, fs_vm, mechOk, fullEligible, reason };
+  });
+
+  // Seleccionar el grado metálico óptimo de menor costo
+  const chosenGrade = gradesEval.find(g => g.fullEligible) || gradesEval.find(g => g.id === "L80-1");
+  document.getElementById("selected_grade_lbl").textContent = chosenGrade.name;
+  document.getElementById("selected_ geometry_lbl").textContent = `${csg.label} × Tubing ${mnd.label}`;
+
+  // Evaluar sistemas elastoméricos según ISO 23936-2 e ISO 14310
+  const reqGasSeal = ["V0", "V1", "V2"].includes(val_grade);
+  const reqTempCycle = ["V0", "V1", "V3"].includes(val_grade);
+  const hasAminesC4 = c4_env === "inhibited_brine";
+
+  const elastomersEval = ELASTOMER_CATALOG.map(el => {
+    // Factor de penalización por holgura de extrusión y temperatura sobre la presión admisible del sello
+    const gapFactor = Math.max(0.35, 1 - 0.12 * Math.max(0, extrusion_gap_mm - 2.5));
+    const tempFactor = temp_c > el.t_max_c ? 0.3 : Math.max(0.55, 1 - 0.003 * Math.max(0, temp_c - 60));
+    const dp_cap_bar = el.base_dp_bar * gapFactor * tempFactor;
+    const fs_dp = dp_max_bar > 0 ? dp_cap_bar / dp_max_bar : 99;
+
+    const tempOk = temp_c <= el.t_max_c && (!reqTempCycle || delta_t <= el.dt_max_c);
+    const h2sOk = pH2S_kPa <= el.h2s_max_kPa;
+    const amineOk = !hasAminesC4 || el.amine_ok;
+    const rgdOk = (rgd_risk === "low" && !reqGasSeal) ? el.rgd_rating <= 4 : el.rgd_rating <= 3;
+    const dpOk = fs_dp >= fs_req && extrusion_gap_mm <= el.gap_limit_mm;
+
+    const passes = tempOk && h2sOk && amineOk && rgdOk && dpOk;
+    let statusDetail = "Apto ISO 23936-2";
+    if (!tempOk) statusDetail = "Falla T / Ciclo ΔT";
+    else if (!h2sOk) statusDetail = `Falla H₂S (> ${el.h2s_max_kPa} kPa)`;
+    else if (!amineOk) statusDetail = "Atacado por Aminas/pH C4";
+    else if (!rgdOk) statusDetail = `Falla RGD (Grado ${el.rgd_rating} > 3)`;
+    else if (!dpOk) statusDetail = "Riesgo Extrusión / ΔP";
+
+    return { ...el, dp_cap_bar, fs_dp, tempOk, h2sOk, amineOk, rgdOk, dpOk, passes, statusDetail };
+  });
+
+  const chosenElastomer = elastomersEval.find(e => e.passes) || elastomersEval[1];
+
+  // Actualizar KPIs superiores
+  document.getElementById("kpi_ph2s").textContent = `${pH2S_kPa.toFixed(2)} kPa H₂S`;
+  document.getElementById("kpi_pco2_sub").textContent = `pCO₂: ${pCO2_bar.toFixed(2)} bar (${pCO2_psi.toFixed(1)} psi)`;
+
+  const regElem = document.getElementById("kpi_region");
+  regElem.innerHTML = region === 0
+    ? `<span class="tag ok">Región 0 (Dulce)</span>`
+    : `<span class="tag ${region === 3 ? 'danger' : 'warn'}">Región ${region} (SSC)</span>`;
+  document.getElementById("kpi_regime").textContent = regimeTxt;
+
+  document.getElementById("kpi_gap").textContent = `${extrusion_gap_mm.toFixed(2)} mm`;
+  document.getElementById("kpi_gap_sub").textContent = `ID Csg ${csg.id_mm.toFixed(1)} / OD Pk ${csg.packer_od_mm.toFixed(1)} mm`;
+
+  document.getElementById("kpi_vm").textContent = `${chosenGrade.sigma_vm_MPa.toFixed(0)} MPa`;
+  document.getElementById("kpi_vm_sub").textContent = `FS = ${chosenGrade.fs_vm.toFixed(2)} | Carga tot: ${f_total_axial_kN.toFixed(0)} kN`;
+
+  document.getElementById("kpi_vgrade").textContent = `ISO 14310 ${val_grade} / ${qual_grade}`;
+  document.getElementById("kpi_vgrade_sub").textContent = reqGasSeal ? "Prueba Gas + Envolvente" : "Prueba Líquida";
+
+  // Renderizar Tabla 1 (Grados metálicos)
+  document.getElementById("grades_tbody").innerHTML = gradesEval.map(g => {
+    const badgeClass = g.fullEligible ? "ok" : (g.envCheck.eligible ? "warn" : "danger");
+    const statusLbl = g.fullEligible ? "Óptimo / Elegible" : (g.envCheck.eligible ? "Falla Envolvente" : g.envCheck.status);
+    return `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${g.yp_ksi} ksi (${g.yp_MPa.toFixed(0)} MPa)</td>
+        <td>${g.hardness}</td>
+        <td>${g.t_rem_mm.toFixed(2)} mm</td>
+        <td>${g.fs_vm.toFixed(2)}</td>
+        <td><span class="tag ${badgeClass}">${statusLbl}</span></td>
+        <td>${g.reason}</td>
+      </tr>
+    `;
+  }).join("");
+
+  // Renderizar Tabla 2 (Elastómeros)
+  document.getElementById("elastomers_tbody").innerHTML = elastomersEval.map(e => {
+    const chemTxt = !e.h2sOk ? "Degradación por H₂S" : (!e.amineOk ? "Incompat. pH 10 / Aminas" : "Compatible C2 y C4");
+    return `
+      <tr>
+        <td><strong>${e.name}</strong><div style="font-size:.73rem;color:var(--mut);margin-top:2px">${e.notes}</div></td>
+        <td>${e.t_max_c} °C</td>
+        <td>${chemTxt}</td>
+        <td>Grado ${e.rgd_rating} ${e.rgd_rating <= 3 ? "(Apto ≤3)" : "(Falla >3)"}</td>
+        <td>${e.dp_cap_bar.toFixed(0)} bar [${e.fs_dp.toFixed(2)}]</td>
+        <td>±${e.dt_max_c} °C</td>
+        <td><span class="tag ${e.passes ? 'ok' : 'danger'}">${e.passes ? 'CUMPLE' : e.statusDetail}</span></td>
+      </tr>
+    `;
+  }).join("");
+
+  // Banner de Veredicto Global
+  const vd = document.getElementById("verdict");
+  if (chosenGrade.fullEligible && chosenElastomer.passes) {
+    vd.className = "verdict ok";
+    vd.innerHTML = `
+      <div><span>Mandril y Cuerpo (Tipo 1)</span><strong>${chosenGrade.name}</strong></div>
+      <div><span>Elemento de Empaque</span><strong>${chosenElastomer.name.split("+")[0].trim()}</strong></div>
+      <div><span>Validación / Calidad</span><strong>ISO 14310 ${val_grade} · ${qual_grade}</strong></div>
+      <div><span>FS Envolvente / Sello</span><strong>${chosenGrade.fs_vm.toFixed(2)} / ${chosenElastomer.fs_dp.toFixed(2)}</strong></div>
+    `;
+  } else {
+    vd.className = "verdict bad";
+    vd.innerHTML = `
+      <div class="msg">
+        <strong>Configuración fuera de la envolvente de diseño ISO 14310 / ISO 23936-2</strong>
+        <span>${!chosenGrade.fullEligible ? "El mandril supera el esfuerzo admisible sobre pared remanente. " : ""}${!chosenElastomer.passes ? "Ningún elastómero estándar supera simultáneamente ΔP, temperatura, aminas y RGD." : ""} Reduzca ΔP/cargas o aumente la disponibilidad del inhibidor.</span>
+      </div>
+    `;
+  }
+
+  // Recomendación detallada por Subcomponentes A, B y C
+  const capTxt = capillary_pass === "yes_625"
+    ? "Incluye pasaje hermético (feedthrough con sellos doble virola) para línea capilar de 3/8 in en Aleación de Níquel 625 (UNS N06625) hacia la succión de la bomba a 1850 m."
+    : "Mandril liso sin puerto de derivación capilar.";
+
+  document.getElementById("parts_recommendation").innerHTML = `
+    <div class="section-box">
+      <h3>A. Mandril Interno, Cuerpo de Carga (Tipo 1) y Pasaje Capilar</h3>
+      <p><strong>Material Seleccionado:</strong> <span style="color:var(--ok)">${chosenGrade.name}</span> (${chosenGrade.hardness}), calificado bajo <strong>ISO 14310 Grado ${qual_grade}</strong> (trazabilidad por colada, 100% dureza y 100% END por partículas magnéticas/líquidos penetrantes).</p>
+      <p><strong>Desempeño Mecánico y Corrosión:</strong> Espesor remanente tras ${design_life} años = ${chosenGrade.t_rem_mm.toFixed(2)} mm (CA int = ${(chosenGrade.type === 'CRA' ? 0 : ca_int_mm).toFixed(2)} mm a Vcorr = ${v_design_int.toFixed(2)} mm/a). Esfuerzo combinado Von Mises = ${chosenGrade.sigma_vm_MPa.toFixed(0)} MPa (FS = ${chosenGrade.fs_vm.toFixed(2)}). ${capTxt}</p>
+    </div>
+    <div class="section-box">
+      <h3>B. Elementos de Empaque Elastoméricos y Anillos Anti-Extrusión</h3>
+      <p><strong>Sistema de Sellado:</strong> <span style="color:var(--ok)">${chosenElastomer.name}</span>, validado bajo <strong>ISO 14310 Grado ${val_grade}</strong> e <strong>ISO 23936-2 Anexo B (RGD Grado ${chosenElastomer.rgd_rating} ≤ 3)</strong>.</p>
+      <p><strong>Aislamiento Anular (C2 vs C4):</strong> Con holgura radial de extrusión de ${extrusion_gap_mm.toFixed(2)} mm en Casing ${csg.label}, soporta hasta ${chosenElastomer.dp_cap_bar.toFixed(0)} bar (FS = ${chosenElastomer.fs_dp.toFixed(2)}), aislando el gas húmedo ácido inferior (C2, pH₂S = ${pH2S_kPa.toFixed(2)} kPa) del fluido de empaque alcalino superior (C4, pH 9.5–10.5).</p>
+    </div>
+    <div class="section-box">
+      <h3>C. Cuñas Bidireccionales (Slips), Conos y Ancla de Tubería (TAC)</h3>
+      <p><strong>Especificación de Anclaje:</strong> Cuñas tipo jaula/bidireccionales en acero de baja aleación carburizado superficialmente en los dientes de agarre y núcleo tenaz (exentas de límite SSC en compresión pura según Tabla 1 de ISO 15156-2, con resortes en <strong>Inconel X-750 / Elgiloy UNS R30003</strong> según ISO 15156-3).</p>
+      <p><strong>Ancla de Tubería (Debajo del Packer):</strong> Fija la sarta con <strong>${f_anchor} kN (${(f_anchor * 224.8).toFixed(0)} lbf)</strong> de tensión para eliminar el pandeo y el ciclo de fatiga por bombeo mecánico, equipada con anillo de corte de emergencia (<em>shear ring</em> calibrado según ISO 14310 7.4.10).</p>
+    </div>
+  `;
+
+  // Dibujar Esquema SVG Dinámico + Envolvente ISO 14310
+  drawPackerSVG({
+    p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, v_design_int, region,
+    csg, mnd, depth_packer, dp_below, dp_above, f_anchor, f_total_axial_kN,
+    chosenGrade, chosenElastomer, val_grade, qual_grade, capillary_pass, c4_env
+  });
+
+  // Actualizar Estado Global JSON (window.wellStreamState)
+  window.wellStreamState = window.wellStreamState || {};
+  window.wellStreamState.updatedAt = new Date().toISOString();
+  window.wellStreamState.fluidStream_C1_C2 = {
+    p_int_bar: p_int,
+    temp_c: temp_c,
+    y_co2_pct: y_co2,
+    y_h2s_pct: y_h2s,
+    pCO2_bar: Number(pCO2_bar.toFixed(4)),
+    pH2S_kPa: Number(pH2S_kPa.toFixed(3)),
+    pH: pH,
+    chlorides_mgL: chlorides,
+    iso15156_region: region,
+    inhibitor_availability_pct: inhib_avail,
+    wet_factor_pct: wet_factor,
+    v_inhibited_mm_yr: v_inhib,
+    design_life_yr: design_life
+  };
+  window.wellStreamState.productionPacker_A2 = {
+    setting_depth_m: depth_packer,
+    casing_host: csg.label,
+    tubing_mandrel: mnd.label,
+    validation_grade_iso14310: val_grade,
+    quality_grade_iso14310: qual_grade,
+    extrusion_gap_mm: Number(extrusion_gap_mm.toFixed(2)),
+    recommended_mandrel_grade: chosenGrade.name,
+    recommended_elastomer_system: chosenElastomer.name,
+    anchor_tension_kN: f_anchor,
+    total_axial_load_kN: Number(f_total_axial_kN.toFixed(1)),
+    von_mises_stress_MPa: Number(chosenGrade.sigma_vm_MPa.toFixed(1)),
+    fs_envelope: Number(chosenGrade.fs_vm.toFixed(2)),
+    fs_seal_extrusion: Number(chosenElastomer.fs_dp.toFixed(2)),
+    capillary_bypass_3_8_in: capillary_pass === "yes_625"
+  };
+
+  document.getElementById("json_output").textContent = JSON.stringify(window.wellStreamState, null, 2);
+}
+
+// 7. Renderizado Vectorial SVG: Corte Técnico Packer + Ancla + Fluido Reactivo + Envolvente ISO 14310
+function drawPackerSVG(d) {
+  const svg = document.getElementById("equipSvg");
+  const {
+    p_int, temp_c, y_co2, y_h2s, pCO2_bar, pH2S_kPa, pH,
+    wet_factor, inhib_avail, region,
+    csg, mnd, depth_packer, dp_below, dp_above, f_anchor, f_total_axial_kN,
+    chosenGrade, chosenElastomer, val_grade, capillary_pass, c4_env
+  } = d;
+
+  // Escala cromática del fluido según Región ISO 15156-2
+  let fluidTopColor = "#d4a338", fluidBotColor = "#785316", fluidGlow = "#eab308", fluidLabel = "Dulce (Región 0)";
+  if (region === 0 && pCO2_bar >= 1.5) {
+    fluidTopColor = "#e07a2e"; fluidBotColor = "#8f3914"; fluidGlow = "#f97316"; fluidLabel = "Dulce CO₂ Activo";
+  } else if (region === 1) {
+    fluidTopColor = "#b8b42d"; fluidBotColor = "#656314"; fluidGlow = "#eab308"; fluidLabel = "Amargo Leve (Reg. 1)";
+  } else if (region === 2) {
+    fluidTopColor = "#e68a2e"; fluidBotColor = "#8c3b14"; fluidGlow = "#f97316"; fluidLabel = "Amargo Medio (Reg. 2)";
+  } else if (region === 3) {
+    fluidTopColor = "#ef5350"; fluidBotColor = "#7f1d1d"; fluidGlow = "#ef4444"; fluidLabel = "Amargo Severo (Reg. 3)";
+  }
+
+  const legSw = document.getElementById("leg_fluid_sw");
+  const legTxt = document.getElementById("leg_fluid_txt");
+  if (legSw && legTxt) {
+    legSw.style.background = `linear-gradient(180deg, ${fluidTopColor}, ${fluidBotColor})`;
+    legTxt.textContent = `Fluido C1/C2: ${fluidLabel} | BSW ${wet_factor}% | T=${temp_c}°C`;
+  }
+
+  // Dinámica de animación del flujo
+  const flowDrive = Math.min(1, Math.max(0.15, (p_int / 120) * 0.7 + ((temp_c - 20) / 180) * 0.3));
+  const flowDur = (3.2 - flowDrive * 2.1).toFixed(2);
+  const bubbleDur = (2.7 - flowDrive * 1.8).toFixed(2);
+  const waterFrac = Math.min(1, Math.max(0, wet_factor / 100));
+
+  const rCo2 = (1.4 + Math.min(1, y_co2 / 10) * 2.2).toFixed(1);
+  const rH2s = (1.3 + Math.min(1, y_h2s / 1.0) * 2.5).toFixed(1);
+  const opH2s = (y_h2s > 0.001 ? 0.45 + Math.min(0.5, y_h2s / 2) : 0).toFixed(2);
+  const inhibOp = ((inhib_avail / 100) * 0.85).toFixed(2);
+
+  // Coordenadas del corte técnico del Packer (arriba) y Ancla de Tubería (abajo)
+  const cx = 155, top = 42, bot = 420, H = bot - top;
+  const csgHw = Math.round(54 + ((csg.od_mm - 139.7) / (244.5 - 139.7)) * 18); // semiancho interior del casing
+  const mndHw = Math.round(18 + ((mnd.id_mm - 50.6) / (76.0 - 50.6)) * 10);    // semiancho paso mandril
+  const mndWall = 6;
+  const csgL = cx - csgHw, csgR = cx + csgHw;
+  const tbL = cx - mndHw, tbR = cx + mndHw;
+  const mwL = tbL - mndWall, mwR = tbR + mndWall;
+
+  const pkTopY = 120, pkSealTopY = 166, pkSealBotY = 226, pkBotY = 278;
+  const tacTopY = 318, tacBotY = 382;
+  const steelColor = chosenGrade.type === "CRA" ? "#a78bfa" : (region >= 2 ? "#6fcf97" : "#8cc4d6");
+  const c4Color = c4_env === "inhibited_brine" ? "#10b981" : (c4_env === "crude_diesel" ? "#eab308" : "#ef4444");
+
+  // Coordenadas del mini-gráfico de Envolvente de Desempeño ISO 14310 (abajo: y = 450 a 595)
+  const envX0 = 46, envY0 = 525, envW = 250, envH = 110;
+  // Escala del polígono de envolvente: X = ΔP (-500 a +500 bar), Y = Carga axial (-300 a +600 kN)
+  const dpCap = Math.min(500, chosenElastomer.dp_cap_bar);
+  const fCap = Math.min(600, (chosenGrade.yp_MPa * 1200) / 1000);
+  const mapX = dp => envX0 + envW / 2 + (Math.max(-550, Math.min(550, dp)) / 550) * (envW / 2);
+  const mapY = f => envY0 - (Math.max(-350, Math.min(650, f)) / 650) * (envH / 2);
+
+  const polyPts = [
+    `${mapX(-dpCap)},${mapY(fCap * 0.85)}`,
+    `${mapX(0)},${mapY(fCap)}`,
+    `${mapX(dpCap)},${mapY(fCap * 0.78)}`,
+    `${mapX(dpCap)},${mapY(-fCap * 0.45)}`,
+    `${mapX(-dpCap * 0.75)},${mapY(-fCap * 0.45)}`,
+    `${mapX(-dpCap)},${mapY(0)}`
+  ].join(" ");
+
+  const opDp = dp_below >= dp_above ? dp_below : -dp_above;
+  const opX = mapX(opDp);
+  const opY = mapY(f_total_axial_kN);
+  const isOk = chosenGrade.fullEligible && chosenElastomer.passes;
+
+  // Línea capilar de 3/8" en Alloy 625 atravesando el packer por el costado izquierdo
+  const capX = mwL - 9;
+  const capillarySvg = capillary_pass === "yes_625" ? `
+    <line x1="${capX}" x2="${capX}" y1="${top}" y2="${bot}" stroke="#f472b6" stroke-width="3" stroke-dasharray="none"/>
+    <rect x="${capX - 3}" y="${pkSealTopY - 8}" width="6" height="${pkSealBotY - pkSealTopY + 16}" fill="#db2777" stroke="var(--tx)" stroke-width="0.8"/>
+    <text x="${capX - 5}" y="${top + 32}" text-anchor="end" style="fill:#f472b6;font-size:8.5px;font-weight:700">Capilar 3/8" (Alloy 625)</text>
+  ` : "";
+
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="clipMandrel"><rect x="${tbL}" y="${top}" width="${2 * mndHw}" height="${H}"/></clipPath>
+      <clipPath id="clipAnnulusBotL"><rect x="${csgL}" y="${pkSealBotY}" width="${mwL - csgL}" height="${bot - pkSealBotY}"/></clipPath>
+      <clipPath id="clipAnnulusBotR"><rect x="${mwR}" y="${pkSealBotY}" width="${csgR - mwR}" height="${bot - pkSealBotY}"/></clipPath>
+
+      <linearGradient id="prodFluidGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="${fluidBotColor}" stop-opacity="0.92"/>
+        <stop offset="55%" stop-color="${fluidTopColor}" stop-opacity="0.78"/>
+        <stop offset="100%" stop-color="${waterFrac > 0.5 ? '#0284c7' : fluidTopColor}" stop-opacity="0.7"/>
+      </linearGradient>
+
+      <linearGradient id="c4FluidGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${c4Color}" stop-opacity="0.5"/>
+        <stop offset="50%" stop-color="${c4Color}" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="${c4Color}" stop-opacity="0.5"/>
+      </linearGradient>
+
+      <pattern id="upStreamPat" width="32" height="44" patternUnits="userSpaceOnUse">
+        <path d="M 8 38 Q 12 22 8 6" stroke="${fluidGlow}" stroke-width="1.2" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 24 40 Q 20 22 24 4" stroke="${fluidGlow}" stroke-width="1.2" fill="none" opacity="0.5" stroke-dasharray="5 4"/>
+        <path d="M 12 24 L 16 18 L 20 24" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.65"/>
+      </pattern>
+
+      <pattern id="waterCutPat" width="24" height="36" patternUnits="userSpaceOnUse">
+        <path d="M 5 32 C 3 22, 8 14, 5 4" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.65"/>
+        <circle cx="15" cy="18" r="1.8" fill="#7dd3fc" opacity="0.7"/>
+      </pattern>
+
+      <pattern id="gasBubblesPat" width="36" height="48" patternUnits="userSpaceOnUse">
+        <circle cx="9" cy="36" r="${rCo2}" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.6" opacity="0.75"/>
+        <circle cx="24" cy="18" r="${(rCo2 * 0.8).toFixed(1)}" fill="#e0f2fe" opacity="0.7"/>
+        <circle cx="27" cy="38" r="${rH2s}" fill="#fde047" stroke="#eab308" stroke-width="0.7" opacity="${opH2s}"/>
+        <circle cx="14" cy="12" r="${(rH2s * 0.8).toFixed(1)}" fill="#bef264" opacity="${opH2s}"/>
+      </pattern>
+    </defs>
+
+    <style>
+      #equipSvg text { font: 9.5px var(--mono); fill: var(--mut); }
+      #equipSvg .title { fill: var(--tx); font-weight: 700; font-size: 10px; }
+      @keyframes svgFlowUp { from { transform: translateY(0px); } to { transform: translateY(-44px); } }
+      @keyframes svgWaterUp { from { transform: translateY(0px); } to { transform: translateY(-36px); } }
+      @keyframes svgBubblesUp {
+        0% { transform: translate(0px, 0px); }
+        50% { transform: translate(1.2px, -24px); }
+        100% { transform: translate(0px, -48px); }
+      }
+      #equipSvg .flow-up { animation: svgFlowUp ${flowDur}s linear infinite; }
+      #equipSvg .flow-up-fast { animation: svgWaterUp ${(flowDur * 0.82).toFixed(2)}s linear infinite; }
+      #equipSvg .bubbles-up { animation: svgBubblesUp ${bubbleDur}s linear infinite; }
+    </style>
+
+    <!-- Barra superior de estado en vivo -->
+    <rect x="8" y="6" width="324" height="24" rx="4" fill="var(--panel)" stroke="var(--line)"/>
+    <circle cx="20" cy="18" r="5" fill="${fluidTopColor}" stroke="${fluidGlow}" stroke-width="1.5"/>
+    <text x="30" y="21" class="title">${fluidLabel}</text>
+    <text x="324" y="21" text-anchor="end" style="fill:var(--acc)">Prof: ${depth_packer}m | ΔP: ${Math.max(dp_below, dp_above)}bar | ${val_grade}</text>
+
+    <!-- Paredes del Casing de Producción (7") -->
+    <rect x="${csgL - 8}" y="${top}" width="8" height="${H}" fill="var(--acc)" opacity="0.65"/>
+    <rect x="${csgR}" y="${top}" width="8" height="${H}" fill="var(--acc)" opacity="0.65"/>
+
+    <!-- Cámara Anular Superior (Corriente 4: Fluido de Empaque pH 9.5-10.5 sobre el Packer) -->
+    <rect x="${csgL}" y="${top}" width="${mwL - csgL}" height="${pkSealTopY - top}" fill="url(#c4FluidGrad)"/>
+    <rect x="${mwR}" y="${top}" width="${csgR - mwR}" height="${pkSealTopY - top}" fill="url(#c4FluidGrad)"/>
+    <text x="${csgR - 4}" y="${top + 18}" text-anchor="end" style="fill:var(--ok);font-weight:700">C4: Fluido Empaque (pH 9.5-10.5)</text>
+
+    <!-- Cámara Anular Inferior (Corriente 2: Gas húmedo ácido bajo el Packer) -->
+    <g clip-path="url(#clipAnnulusBotL)">
+      <rect x="${csgL}" y="${pkSealBotY}" width="${mwL - csgL}" height="${bot - pkSealBotY}" fill="url(#prodFluidGrad)" opacity="0.45"/>
+      <rect x="${csgL}" y="${pkSealBotY}" width="${mwL - csgL}" height="${bot - pkSealBotY}" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+    <g clip-path="url(#clipAnnulusBotR)">
+      <rect x="${mwR}" y="${pkSealBotY}" width="${csgR - mwR}" height="${bot - pkSealBotY}" fill="url(#prodFluidGrad)" opacity="0.45"/>
+      <rect x="${mwR}" y="${pkSealBotY}" width="${csgR - mwR}" height="${bot - pkSealBotY}" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+    <text x="${csgR - 4}" y="${bot - 8}" text-anchor="end" style="fill:${fluidGlow};font-weight:700">↑ C2: Gas Anular (H₂S/CO₂)</text>
+
+    <!-- Interior del Mandril / Tubing: Corriente 1 ascendiendo dinámicamente -->
+    <g clip-path="url(#clipMandrel)">
+      <rect x="${tbL}" y="${top}" width="${2 * mndHw}" height="${H}" fill="url(#prodFluidGrad)"/>
+      <rect x="${tbL}" y="${top}" width="${2 * mndHw}" height="${H}" fill="url(#waterCutPat)" opacity="${(waterFrac * 0.9).toFixed(2)}" class="flow-up-fast"/>
+      <rect x="${tbL}" y="${top}" width="${2 * mndHw}" height="${H}" fill="url(#upStreamPat)" class="flow-up"/>
+      <rect x="${tbL}" y="${top}" width="${2 * mndHw}" height="${H}" fill="url(#gasBubblesPat)" class="bubbles-up"/>
+    </g>
+
+    <!-- Película protectora de inhibidor en la pared interior del mandril -->
+    <line x1="${tbL + 1.5}" x2="${tbL + 1.5}" y1="${top}" y2="${bot}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+    <line x1="${tbR - 1.5}" x2="${tbR - 1.5}" y1="${top}" y2="${bot}" stroke="#22d3ee" stroke-width="2" opacity="${inhibOp}"/>
+
+    <!-- Pared Metálica del Mandril de Paso (Tipo 1) -->
+    <rect x="${mwL}" y="${top}" width="${mndWall}" height="${H}" fill="${steelColor}" stroke="#101316" stroke-width="0.8"/>
+    <rect x="${tbR}" y="${top}" width="${mndWall}" height="${H}" fill="${steelColor}" stroke="#101316" stroke-width="0.8"/>
+
+    <!-- CUERPO DEL PACKER DE PRODUCCIÓN (1500 m) -->
+    <!-- Cabezal y cuñas superiores del Packer -->
+    <polygon points="${mwL},${pkTopY} ${csgL + 2},${pkTopY + 18} ${csgL + 2},${pkTopY + 34} ${mwL},${pkTopY + 42}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+    <polygon points="${mwR},${pkTopY} ${csgR - 2},${pkTopY + 18} ${csgR - 2},${pkTopY + 34} ${mwR},${pkTopY + 42}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+    <!-- Dientes de agarre de cuñas superiores -->
+    <path d="M ${csgL + 2} ${pkTopY + 20} l -3 3 l 3 3 l -3 3 l 3 3 M ${csgR - 2} ${pkTopY + 20} l 3 3 l -3 3 l 3 3 l -3 3" stroke="var(--tx)" stroke-width="1.2" fill="none"/>
+
+    <!-- Anillos Anti-Extrusión Superiores (PEEK / PTFE / Latón) -->
+    <rect x="${csgL + 1}" y="${pkSealTopY - 8}" width="${mwL - csgL - 1}" height="8" fill="#e6b450" stroke="#101316" stroke-width="0.8"/>
+    <rect x="${mwR}" y="${pkSealTopY - 8}" width="${csgR - mwR - 1}" height="8" fill="#e6b450" stroke="#101316" stroke-width="0.8"/>
+
+    <!-- Triple Elemento Elastomérico de Empaque (HNBR / FEPM / FKM) -->
+    <rect x="${csgL}" y="${pkSealTopY}" width="${mwL - csgL}" height="18" rx="3" fill="#22c55e" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${mwR}" y="${pkSealTopY}" width="${csgR - mwR}" height="18" rx="3" fill="#22c55e" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${csgL}" y="${pkSealTopY + 20}" width="${mwL - csgL}" height="20" rx="3" fill="#16a34a" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${mwR}" y="${pkSealTopY + 20}" width="${csgR - mwR}" height="20" rx="3" fill="#16a34a" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${csgL}" y="${pkSealTopY + 42}" width="${mwL - csgL}" height="18" rx="3" fill="#22c55e" stroke="var(--tx)" stroke-width="1"/>
+    <rect x="${mwR}" y="${pkSealTopY + 42}" width="${csgR - mwR}" height="18" rx="3" fill="#22c55e" stroke="var(--tx)" stroke-width="1"/>
+
+    <!-- Anillos Anti-Extrusión Inferiores -->
+    <rect x="${csgL + 1}" y="${pkSealBotY}" width="${mwL - csgL - 1}" height="8" fill="#e6b450" stroke="#101316" stroke-width="0.8"/>
+    <rect x="${mwR}" y="${pkSealBotY}" width="${csgR - mwR - 1}" height="8" fill="#e6b450" stroke="#101316" stroke-width="0.8"/>
+
+    <!-- Cono y Cuñas Inferiores del Packer -->
+    <polygon points="${mwL},${pkSealBotY + 10} ${csgL + 2},${pkBotY - 22} ${csgL + 2},${pkBotY - 6} ${mwL},${pkBotY}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+    <polygon points="${mwR},${pkSealBotY + 10} ${csgR - 2},${pkBotY - 22} ${csgR - 2},${pkBotY - 6} ${mwR},${pkBotY}" fill="var(--acc)" stroke="var(--tx)" stroke-width="1"/>
+
+    <!-- ANCLA DE TUBERÍA (TUBING ANCHOR CATCHER - TAC) DEBAJO DEL PACKER -->
+    <rect x="${mwL - 10}" y="${tacTopY}" width="10" height="${tacBotY - tacTopY}" fill="${steelColor}" stroke="var(--tx)" stroke-width="0.8"/>
+    <rect x="${mwR}" y="${tacTopY}" width="10" height="${tacBotY - tacTopY}" fill="${steelColor}" stroke="var(--tx)" stroke-width="0.8"/>
+    <polygon points="${mwL - 10},${tacTopY + 10} ${csgL + 1},${tacTopY + 24} ${csgL + 1},${tacBotY - 24} ${mwL - 10},${tacBotY - 10}" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+    <polygon points="${mwR + 10},${tacTopY + 10} ${csgR - 1},${tacTopY + 24} ${csgR - 1},${tacBotY - 24} ${mwR + 10},${tacBotY - 10}" fill="var(--warn)" stroke="var(--tx)" stroke-width="1"/>
+    <path d="M ${csgL + 1} ${tacTopY + 26} l -3 4 l 3 4 l -3 4 l 3 4 M ${csgR - 1} ${tacTopY + 26} l 3 4 l -3 4 l 3 4 l -3 4" stroke="var(--tx)" stroke-width="1.3" fill="none"/>
+
+    <!-- Línea Capilar de Inyección Química 3/8" -->
+    ${capillarySvg}
+
+    <!-- Etiquetas laterales del corte mecánico -->
+    <text x="12" y="${pkSealTopY + 25}" class="title" style="fill:var(--ok)">Packer</text>
+    <text x="12" y="${pkSealTopY + 37}">${depth_packer} m</text>
+    <text x="12" y="${tacTopY + 30}" class="title" style="fill:var(--warn)">Ancla TAC</text>
+    <text x="12" y="${tacTopY + 42}">${f_anchor} kN</text>
+
+    <!-- DIAGRAMA DE ENVOLVENTE DE DESEMPEÑO ISO 14310 (Figura 1 de la norma) -->
+    <rect x="10" y="434" width="320" height="168" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="20" y="451" class="title">Envolvente ISO 14310 (${val_grade}) — ΔP vs Carga Axial</text>
+
+    <!-- Ejes de la envolvente -->
+    <line x1="${envX0}" x2="${envX0 + envW}" y1="${envY0}" y2="${envY0}" stroke="var(--mut)" stroke-dasharray="2 2"/>
+    <line x1="${envX0 + envW / 2}" x2="${envX0 + envW / 2}" y1="${envY0 - envH / 2 - 8}" y2="${envY0 + envH / 2 + 6}" stroke="var(--mut)" stroke-dasharray="2 2"/>
+
+    <!-- Polígono de capacidad nominal del Packer -->
+    <polygon points="${polyPts}" fill="${isOk ? 'rgba(111, 207, 151, 0.16)' : 'rgba(239, 111, 98, 0.16)'}" stroke="${isOk ? 'var(--ok)' : 'var(--bad)'}" stroke-width="1.8"/>
+
+    <!-- Punto de operación actual (ΔP, Fuerza Axial Total) -->
+    <circle cx="${opX}" cy="${opY}" r="5" fill="${isOk ? 'var(--ok)' : 'var(--bad)'}" stroke="#ffffff" stroke-width="1.5"/>
+    <text x="${Math.min(285, opX + 8)}" y="${opY - 5}" style="fill:var(--tx);font-weight:700;font-size:8.8px">Op(${ Math.abs(opDp)}bar, ${f_total_axial_kN.toFixed(0)}kN)</text>
+
+    <!-- Leyendas de ejes de la envolvente -->
+    <text x="${envX0}" y="${envY0 + 12}">← ΔP Arriba</text>
+    <text x="${envX0 + envW}" y="${envY0 + 12}" text-anchor="end">ΔP Abajo →</text>
+    <text x="${envX0 + envW / 2 + 4}" y="${envY0 - envH / 2}">+Tensión (kN)</text>
+    <text x="${envX0 + envW / 2 + 4}" y="${envY0 + envH / 2 + 4}">-Compresión</text>
+  `;
+}
+
+function copyGlobalState(btn) {
+  const t = JSON.stringify(window.wellStreamState, null, 2);
+  const done = () => {
+    btn.textContent = "Copiado";
+    setTimeout(() => btn.textContent = "Copiar JSON", 1500);
+  };
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById("json_output"));
+    const s = getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+    btn.textContent = "Texto seleccionado: Ctrl+C";
+  });
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", runSimulation);
+  el.addEventListener("change", runSimulation);
+});
+
+runSimulation();
+</script>
+</body>
+</html>
