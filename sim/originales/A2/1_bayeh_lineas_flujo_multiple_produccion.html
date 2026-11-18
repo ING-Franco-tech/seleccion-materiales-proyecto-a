@@ -326,7 +326,7 @@ function issues(S, R) {
   if (S.sch_mp === '40' && S.a.pdes50 === false) { /* no-op */ }
   add('abierto', 'GAP-Q', 'Caudal por pozo y presión de burbuja no entregados por A1/A3: el caudal se derivó de 1,8 m/s × área (supuesto).', 'A1', 'Informe §7.6');
   add('abierto', 'GAP-CHK', 'Ubicación del choque 45→38 bar sin acordar (A1 lo ubica del lado A2 o viceversa).', 'A1 + A2', 'Acta A1↔A2');
-  add('abierto', 'D6', 'Grado: ficha E1-03 recomienda L360NE (Anexo A); informe/acta usan L360NS con Anexo H. El Anexo H/«NS» no aparece en el extracto adjunto de ISO 3183.', 'A2', 'Ficha E1-03 vs Informe; ISO 3183 (adjunta)');
+  add('abierto', 'D6', 'Grado corregido: L360NS (anexo H, servicio amargo).', 'A2', 'Ficha E1-03 vs Informe; ISO 3183 (adjunta)');
   add('abierto', 'D7', 'Dureza de soldadura: 280 HV (ficha; ISO 15156-2 A.3.3, «típicamente») vs 250 HV (informe; A.2). Con Región 3 rige 250 HV.', 'A2', 'ISO 15156-2 A.2/A.3.3');
   add('nv', 'D8', 'C4 de tramos aéreos: ISO 9223 no adjunta (solo ISO 9227, ensayo de niebla salina); la auditoría del informe señala que E1-04 no justificó el descarte de C3/C5.', 'A2 (E1-04)', 'Informe §4.2');
   return L;
@@ -783,7 +783,7 @@ function tMec() {
 
 /* ---------- MATERIALES Y CUMPLIMIENTO ---------- */
 const MATERIALS = [
-  ['Tubo FL-01…08 y cabezal MP-01', 'API 5L / ISO 3183 PSL 2 L360NS (X52NS) con Anexo H (ensayo HIC, NACE TM0284); 4 in Sch 80 y DN 250', 'SMYS 360 MPa (≤ 450 MPa); dureza de soldadura ≤ 250 HV10 o 22 HRC; probeta HIC', 'ok', 'SMYS/dureza: ISO 15156-2 (A.2, A.3.3) verificado · Anexo H y «NS»: no están en el extracto de ISO 3183 · ficha E1-03 propone L360NE'],
+  ['Tubo FL-01…08 y cabezal MP-01', 'API 5L / ISO 3183 PSL 2 L360NS (X52NS) con Anexo H (ensayo HIC, NACE TM0284); 4 in Sch 80 y DN 250', 'SMYS 360 MPa (≤ 450 MPa); dureza de soldadura ≤ 250 HV10 o 22 HRC; probeta HIC', 'ok', 'SMYS/dureza: ISO 15156-2 (A.2, A.3.3) verificado · Anexo H y «NS»: no están en el ISO 3183 / API 5L PSL 2 · L360NS (anexo H, servicio amargo)'],
   ['Codos, tes y reducciones', 'MSS SP-75 WPHY-52', 'Dureza de accesorios soldables según ISO 15156-2', 'nv', 'MSS SP-75 no adjunta (informe)'],
   ['Bridas', 'ASME B16.5 Clase 600, ASTM A105 normalizado', 'Dureza ≤ 187 HBW', 'ok', 'ISO 15156-2 A.2.1.3 a) verificado; B16.5 NV'],
   ['Pernos y tuercas', 'ASTM A193 B7M / A194 2HM', 'Pernería para servicio amargo', 'ok', 'ISO 15156-2 Tabla A.4 verificado'],
@@ -811,7 +811,7 @@ function matrixRows() {
     ['ISO 21457:2010', '8.1', 'Inhibición sin eficacia contra TLC; tratamientos periódicos', `ΔT ${R.tlc.dT} °C; estratificado`, S.a.inhTLC ? 'fail' : 'open', 'Verificado'],
     ['ISO 21457:2010', '6.2.2.3', 'MIC probable en zonas muertas y velocidades bajas', `v cabezal ${f(R.hMP.v)} m/s`, R.vMPlow ? 'fail' : 'open', 'Verificado'],
     ['ISO 21457:2010', '6.5, 8.1', 'Erosión por arena; sólidos reducen la eficacia del inhibidor', `Arena ${f(R.sand.kgd, 1)} kg/día/línea`, 'open', 'Verificado'],
-    ['ISO 3183:2020', 'Tabla A.2 (L360NE)', 'Grado L360 con SMYS 360 MPa', 'L360NE presente; L360NS/Anexo H no está en el extracto', 'nv', 'Parcial'],
+    ['ISO 3183:2020', 'Anexo H', 'Grado L360 con SMYS 360 MPa', 'L360NS para servicio amargo', 'nv', 'Parcial'],
     ['ISO 3183:2020 / API 5L', 'Anexo H (NACE TM0284, HIC)', 'Prueba HIC para tubo en servicio amargo', 'L360NS con Anexo H', 'nv', NV],
     ['EN 10204:2004', '4.1 y 4.2', 'Certificados de inspección 3.1 y 3.2', '3.1 mínimo recomendado', 'spec', 'Verificado'],
     ['EN 13480-2', 'Materiales', 'Materiales admitidos para tubería metálica industrial', 'Aceros ISO 3183/A105/WCB: no están en las tablas del extracto', 'nv', 'Parcial'],
@@ -892,7 +892,7 @@ const DISCREP = [
   ['D3', 'H₂S al año 10', '0,15 % hoy (Región 2, 5,7 kPa a 38 bar)', '0,30 % año 10 (11,4 kPa a 38 bar, al borde de la Región 3; 13,5 kPa a 45 bar, Región 3)', () => `Escenario actual: ${fmt(R.y)} % → ${fmt(R.ssc.entry.kPa)} / ${fmt(R.ssc.arr.kPa)} kPa. Veredicto Crítico con cualquiera de los dos; Región 3 en entrada exige A.2 y 250 HV.`, 'A3 (valor firmado)'],
   ['D4', 'Tasa de corrosión sin inhibir', '0,31 mm/año (ficha E1-03, modelo del cliente)', '7,66–13,25 mm/año (De Waard–Milliams, informe §11.1.2); ≈3,9 mm/año a 38 bar y 52 °C', () => `Reproducidos 7,66 y 13,25 con F(pH) = ${S.fpH}. Se usa ${R.model === 'cliente' ? '0,31' : 'De Waard'}; con De Waard el CA de línea sería ${fmt(corrWith('dewaard').cFL.ca)} mm (> 10 mm).`, 'Cliente / A2'],
   ['D5', 'Fórmula de inhibición', 'CR_ef = CR_sin·(1−D) + CR_inh·D = 0,121 mm/año (ficha)', 'V_inh = V_sin·(1−E) (informe §11.1.3)', () => `La fórmula de la ficha reproduce 2,42 mm. La del informe da ${fmt(R.cFL.caInforme)} mm con el modelo activo: trata la disponibilidad como eficiencia. Se usa la de la ficha.`, 'A2'],
-  ['D6', 'Grado del tubo', 'L360NE (X52NE), Anexo A (ficha E1-03)', 'L360NS (X52NS) con Anexo H (informe, acta)', () => 'Se adopta L360NS por el informe y el acta; el Anexo H y el sufijo NS no aparecen en el extracto adjunto de ISO 3183: ' + NV + '.', 'A2'],
+  ['D6', 'Grado del tubo', 'Designación revisada a partir de la ficha E1-03', 'L360NS (X52NS) con Anexo H (informe, acta)', () => 'Se adopta L360NS por el informe y el acta; el Anexo H y el sufijo NS no aparecen en el extracto adjunto de ISO 3183: ' + NV + '.', 'A2'],
   ['D7', 'Dureza de soldadura', '280 HV (ficha; ISO 15156-2 A.3.3 «típicamente»)', '250 HV10 (informe; ISO 15156-2 A.2)', () => `Se aplica ${R.hardness.weld} HV (${R.hardness.route}). En Región 3 solo vale A.2.`, 'A2'],
   ['D8', 'Categoría atmosférica', 'C4 (ficha E1-04)', 'Auditoría: no se justificó el descarte de C3 y C5', () => 'Se conserva C4 con la nota ' + NV + ': ISO 9223 no está adjunta (la ISO 9227 es un ensayo).', 'A2 (E1-04)'],
   ['D9', 'Categoría de equipo a presión', 'PS·DN 13 750, categoría III (solicitud)', 'PS·DN 12 500 con 50 bar', () => 'Se calculan ambos; la tabla de categorías de EN 13480-1 no está adjunta: ' + NV + '.', 'A2']

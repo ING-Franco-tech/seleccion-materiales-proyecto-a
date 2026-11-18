@@ -1,5 +1,10 @@
 # Correcciones de los simuladores originales
 
+## Observaciones de estudiantes
+
+- Cortes, Navarro, Bayeh y Cano. Los tubos para servicio amargo se identifican como L360NS y L290NS conforme a ISO 3183 / API 5L PSL 2 (anexo H, servicio amargo). Corrección aplicada a las fichas, las tablas y las copias generadas.
+- Cortes. La presión de operación de TL-201, PL-201, PL-202, XV-201 y la descarga de P-301 es de 45 bar(g). La presión de diseño permanece en 50 bar(g). Fuente: Informe A2, base de diseño del escenario A, pág. 3.
+
 | Archivo | Problema | Corrección | Fuente o razón |
 | --- | --- | --- | --- |
 | `modulo/simulador_parametrico_universal_casing_api_5ct.html` | Valores y estado de entrada | CS-103: P/Pdis 45/112 bar(g), T/Tdis 68/85 °C, A 90 %. Cada campo toma el dato correspondiente a su etiqueta. | `D.eq` y `D.G` |

@@ -1532,7 +1532,7 @@ th {
     <!-- ==================== 10. INFORMES ==================== -->
     <section id="tab-bomba" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-bomba">
         <h2>P-301 · Bombas de transferencia A/B</h2>
-        <p>Succión de referencia de la simulación: 3 bar(a). Ficha de descarga C5: 40 bar(g) en operación,
+        <p>Succión de referencia de la simulación: 3 bar(a). Ficha de descarga C5: 45 bar(g) en operación,
         50 bar(g) de diseño, 68 °C en operación y 85 °C de diseño.</p>
         <iframe title="Evaluación de P-301" loading="lazy" src="../../A2_navarro.html?embed=1&amp;equipo=P-301"
           style="width:100%;height:65vh;border:0"></iframe></section><section id="tab-informes" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-informes">
@@ -1577,7 +1577,7 @@ const DEFAULT_STATE = {
   selectedHotspot: 1,
   crossingType: 'aerial', // 'aerial' | 'buried'
   bsw: 1,
-  p53: 40,
+  p53: 45,
   p61: 3,
   temp: 68,
   co2: 3.1,
@@ -1601,7 +1601,7 @@ const DEFAULT_STATE = {
     {
       id: 'preset-base',
       name: `Caso Base Crudo Tratado (BSW 1% · Succión 3 bar(a))`,
-      params: { crossingType: 'aerial', bsw: 1, p53: 40, p61: 3, temp: 68, co2: 3.1, h2s: 0.15, ph: 4.6, solids: 5, velocity: 1.8, designCode: 'B31.4', pipeThickness: 10.97, spanLength: 18 },
+      params: { crossingType: 'aerial', bsw: 1, p53: 45, p61: 3, temp: 68, co2: 3.1, h2s: 0.15, ph: 4.6, solids: 5, velocity: 1.8, designCode: 'B31.4', pipeThickness: 10.97, spanLength: 18 },
       assumptions: { inh90: true, dryCrudeA3: true, biocidePig: true, tlcVapor: true, c4Justified: true, a3PvtClosed: false }
     },
     {
@@ -2769,7 +2769,7 @@ function applyAllInputsToDom() {
 
 function applyPreset(name) {
   if (name === 'normal') {
-    Object.assign(appState, { bsw: 1, p53: 40, p61: 3, temp: 68, h2s: 0.15, solids: 5, velocity: 1.8 });
+    Object.assign(appState, { bsw: 1, p53: 45, p61: 3, temp: 68, h2s: 0.15, solids: 5, velocity: 1.8 });
     appState.assumptions.inh90 = true;
     appState.assumptions.dryCrudeA3 = true;
   } else if (name === 'tabla9') {

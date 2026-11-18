@@ -20,4 +20,4 @@
 | A3 | Sebastián Arciniegas | T-304 (4), L-303 (1), F-301 (2), P-302 (4), L-304 (4), WH-301 (3) | Selector por equipo |
 | A3 | Kevin Rodríguez | PC-A3 (1), FG-301 (6), Q-301 (4), D-301 (1), PC-301 (1) | Selector por equipo |
 
-Conteo base del motor compartido (en envolvente / atención / fuera): **141 / 4 / 0** frente a 145 / 0 / 0 de la publicación anterior. El generador extrae el motor de la copia corregida que abre Integración.
+Conteo base del motor compartido (en envolvente / atención / fuera): **141 / 4 / 0**. El generador extrae el motor de la copia corregida que abre Integración.
