@@ -2467,7 +2467,7 @@ const ESC = [{"key":"base","name":"Base de diseño","state":{"G":{"H2Shoy":0.15,
    Cuando el material del acta se sale de envolvente con los parámetros actuales, cada pieza pasa al material
    más económico del catálogo que cumple (mismo motor y mismas reglas de candidatos()). Si las condiciones
    vuelven a la envolvente, regresa al material del acta. Lo elegido a mano se respeta. */
-const AUTO = { on: true, sel: {}, man: {}, nada: {}, t: null, busy: false };
+const AUTO = { on: true, sel: {}, man: {}, nada: {}, log: [], t: null, busy: false };
 function autoSel() {
   if (!APP.R) return false;
   Object.keys(AUTO.sel).forEach(t => { if (ST.mat[t] !== AUTO.sel[t].k) delete AUTO.sel[t]; });
@@ -2492,8 +2492,10 @@ function autoSel() {
         ST.mat[p.tag] = nk;
         if (pick.ca) ST.pz[p.tag] = Object.assign(ST.pz[p.tag] || {}, { ca: pick.ca }); else if (ST.pz[p.tag]) delete ST.pz[p.tag].ca;
         AUTO.sel[p.tag] = { k: nk, ok: pick.s === 0, por: acta ? acta.lim : '' };
+        AUTO.log.push(`${p.tag}: ${(MAT[nk] || {}).n || nk}`);
       } else {
         delete ST.mat[p.tag]; if (ST.pz[p.tag]) delete ST.pz[p.tag].ca; delete AUTO.sel[p.tag];
+        AUTO.log.push(`${p.tag}: vuelve al material del acta`);
       }
       ch = true;
     } else if (nk && AUTO.sel[p.tag]) AUTO.sel[p.tag].ok = pick.s === 0;
@@ -2505,20 +2507,38 @@ function autoProgramar() {
   clearTimeout(AUTO.t);
   AUTO.t = setTimeout(() => {
     AUTO.busy = true;
-    try { if (autoSel()) APP.cambio('Selección automática del material', true); }
+    try { AUTO.log = []; if (autoSel()) { APP.cambio('Selección automática del material', true); autoAviso(AUTO.log); } }
     finally { AUTO.busy = false; }
   }, 220);
 }
 function autoResumen(tag) {
-  if (!AUTO.on) return `<div class="nota">Selección automática apagada: cada pieza usa el material elegido en la lista.</div>`;
-  const L = (M.byEq[tag] || []).filter(p => AUTO.sel[p.tag]).map(p => {
-    const a = AUTO.sel[p.tag], m = MAT[a.k];
-    return `<li title="${esc(a.por ? 'El del acta falla por: ' + a.por : '')}"><b>${p.tag}</b> → ${esc(m ? m.n : a.k)}${a.ok ? '' : ' <span class="pill p1">mejora parcial</span>'}</li>`;
-  });
-  (M.byEq[tag] || []).filter(p => AUTO.nada[p.tag] && !AUTO.sel[p.tag]).forEach(p => L.push(`<li title="${esc('Límite: ' + AUTO.nada[p.tag])}"><b>${p.tag}</b>: ningún material lo resuelve, sigue el del acta</li>`));
-  return L.length
-    ? `<div class="aviso info" style="margin:0"><b>Material elegido automáticamente.</b> Con estas condiciones el material del acta se sale de la envolvente; se elige el más económico de ${MATS.length} opciones que cumple (pase el cursor para ver por qué):<ul style="margin:4px 0 0 16px;padding:0;max-height:120px;overflow:auto">${L.join('')}</ul></div>`
-    : `<div class="nota">Selección automática activa (${MATS.length} materiales): con estas condiciones el material del acta cumple en todas las piezas.</div>`;
+  const R = APP.R, q = R && R.eqs[tag];
+  const corto = s => String(s || '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim().slice(0, 42);
+  const filas = (M.byEq[tag] || []).map(p => {
+    const r = q && q.piezas.find(x => x.tag === p.tag), mk = ST.mat[p.tag];
+    const a = AUTO.sel[p.tag], m = mk ? MAT[mk] : null;
+    const origen = a && a.k === mk ? '<span class="pill p1">automático</span>' : (mk ? '<span class="pill">manual</span>' : '<span class="pill p0">acta</span>');
+    const nombre = m ? m.n : corto(p.material);
+    const s = r ? r.s : 0;
+    const motivo = a && a.por ? 'El del acta falla por: ' + a.por : (AUTO.nada[p.tag] ? 'Ningún material lo resuelve. Límite: ' + AUTO.nada[p.tag] : '');
+    return `<div title="${esc(motivo)}" style="padding:5px 6px;border-radius:4px;border-left:3px solid ${a && a.k === mk ? '#f2a900' : (mk ? '#586b82' : '#2fb67a')};background:${a && a.k === mk ? 'color-mix(in srgb,#f2a900 13%,transparent)' : 'transparent'}"><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap"><b>${p.tag}</b>${origen}<span class="pill p${s}">${['OK', 'Atención', 'Falla'][s]}</span>${AUTO.nada[p.tag] && !a ? '<span class="pill p2">sin solución</span>' : ''}</div><div style="font-size:12px;line-height:1.3;margin-top:2px">${esc(nombre)}</div></div>`;
+  }).join('');
+  const nAuto = (M.byEq[tag] || []).filter(p => AUTO.sel[p.tag] && AUTO.sel[p.tag].k === ST.mat[p.tag]).length;
+  const cab = !AUTO.on ? 'Selección automática apagada: cada pieza usa el material de la lista.'
+    : (nAuto ? `<b>${nAuto} pieza${nAuto > 1 ? 's' : ''} con material elegido automáticamente</b> (el más económico de ${MATS.length} que cumple). Pase el cursor por una fila para ver por qué.`
+             : `Selección automática activa (${MATS.length} materiales). Con estas condiciones el material del acta cumple en todas las piezas.`);
+  return `<div style="border:1px solid var(--line);border-radius:6px;padding:6px 8px"><div style="font-weight:700;font-size:12.5px;margin-bottom:2px">Material en uso por pieza</div><div class="nota" style="margin:0 0 6px">${cab}</div><div style="display:grid;gap:4px">${filas}</div></div>`;
+}
+function autoAviso(cambios) {
+  if (!cambios.length) return;
+  let el = document.getElementById('autoAviso');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'autoAviso';
+    el.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9999;max-width:min(760px,92vw);background:#12233a;color:#fff;border-left:5px solid #f2a900;border-radius:6px;padding:10px 14px;font:13px/1.45 system-ui,Segoe UI,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.25);transition:opacity .4s';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<b>Selección automática del material</b><br>' + cambios.slice(0, 8).map(c => esc(c)).join('<br>') + (cambios.length > 8 ? `<br>… y ${cambios.length - 8} más` : '');
+  el.style.opacity = '1'; clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = '0'; }, 7000);
 }
 document.addEventListener('click', ev => {
   const b = ev.target.closest('#autoMat'); if (!b) return;
