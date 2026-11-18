@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const {master, plant, moduleFile, assignments} = require('./originales.js');
+const {master, plant, moduleFile, assignments, a2Files} = require('./originales.js');
 const esc = value => String(value ?? '—').replace(/[&<>"]/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const number = value => new Intl.NumberFormat('es-CO').format(value);
@@ -32,7 +32,7 @@ const simulator = (file, label, heading, caption, content, modules = []) => {
   const url = modules[0]?.url ?? (original ? '../sim/originales/' + original : '../sim/' + encodeURIComponent(file) + '.html');
   const embedQuery = file === 'integrado' ? '?embed=1&amp;pestana=planta' : '?embed=1';
   const tabs = modules.length ? `<div class="sim-tabs" role="tablist" aria-label="Módulos de ${esc(label)}">${modules.map((mod, index) =>
-    `<button type="button" role="tab" aria-controls="visor-${file}" aria-selected="${index === 0}" tabindex="${index === 0 ? 0 : -1}" data-module="${mod.url ?? '../sim/originales/' + mod.file}"${mod.notes ? ` data-notes="${esc(JSON.stringify(mod.notes))}"` : ''}>${esc(mod.title)}</button>`).join('')}</div>` : '';
+    `<button type="button" role="tab" aria-controls="visor-${file}" aria-selected="${index === 0}" tabindex="${index === 0 ? 0 : -1}" data-module="${mod.url ?? '../sim/originales/' + mod.file}"${mod.original ? ' data-original' : ''}${mod.notes ? ` data-notes="${esc(JSON.stringify(mod.notes))}"` : ''}>${esc(mod.title)}</button>`).join('')}</div>` : '';
   return `<div class="sim-layout">
     <div class="sim-head">${heading}<div class="sim-actions">
       <button type="button" popovertarget="tabla-${file}">Tabla</button>
@@ -116,6 +116,11 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
       const modules = key === 'A1' ? assignments[person.nombre.split(/\s+/).at(-1)].map(([name, title]) =>
         ({file:moduleFile(name), title})) : person.simuladores?.map(sim =>
         ({url:'../sim/' + sim.file + '.html', title:sim.titulo, notes:presenter[sim.file]})) ?? [];
+      if (key === 'A2') {
+        const file = a2Files[person.key.slice('A2_'.length)];
+        if (!file) throw Error('Falta el simulador original de ' + person.key);
+        modules.push({file:'A2/' + file, title:'Simulador original', original:true});
+      }
       const scenarioTables = person.simuladores ? person.simuladores.map((sim, index) =>
         `<section data-sim-matrix${index ? ' hidden' : ''}><h4>${esc(sim.titulo)}</h4>${matrix(sim.tags)}</section>`).join('') :
         matrix(Object.keys(data.base));

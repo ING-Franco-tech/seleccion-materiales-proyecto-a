@@ -67,7 +67,11 @@ function show(position) {
   if (location.hash !== hash) history.replaceState(null, '', hash);
 }
 function updateGuide(slide) {
-  const tab = slide.querySelector('.sim-tabs [aria-selected="true"]');
+  let tab = slide.querySelector('.sim-tabs [aria-selected="true"]');
+  if (tab?.hasAttribute('data-original')) {
+    const matrices = [...slide.querySelectorAll('[data-sim-matrix]')];
+    tab = slide.querySelectorAll('.sim-tabs [role="tab"]')[matrices.findIndex(matrix => !matrix.hidden)];
+  }
   guideNotes.replaceChildren(...JSON.parse(tab?.dataset.notes ?? slide.dataset.notes).map(note => {
     const item = document.createElement('li');
     item.textContent = note;
@@ -94,6 +98,7 @@ for (const [slide, frame] of cached) {
       frame.dataset.src = tab.dataset.module + (tab.dataset.module.includes('?') ? '&' : '?') + 'embed=1';
       frame.src = frameSource(frame);
       slide.querySelector('.sim-open').href = tab.dataset.module;
+      if (tab.hasAttribute('data-original')) return;
       slide.querySelectorAll('[data-sim-matrix]').forEach((matrix, i) => {
         matrix.hidden = i !== position;
       });

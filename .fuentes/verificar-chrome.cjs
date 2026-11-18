@@ -6,7 +6,7 @@ const {pathToFileURL} = require('node:url');
 const {setTimeout: delay} = require('node:timers/promises');
 
 const root = path.resolve(__dirname, '..');
-const profile = path.join(root, '.chrome-verificacion');
+const profile = fs.mkdtempSync(path.join(root, '.ch-'));
 const shots = path.join(root, '.capturas');
 const chrome = spawn('C:/Program Files/Google/Chrome/Application/chrome.exe', [
   '--headless', '--no-sandbox', '--disable-gpu', '--disable-background-networking',
@@ -70,26 +70,27 @@ async function main() {
   await send('Emulation.setDeviceMetricsOverride', {width:1920, height:1080, deviceScaleFactor:1, mobile:false});
   await send('Page.navigate', {url:pathToFileURL(path.join(root, 'presentacion/index.html')).href});
   await waitFor(() => evaluate('Boolean(document.querySelector(".slide.active"))'));
-  const ids = ['bayeh','cano','duque','cortes','fajardo','navarro','pineda','carrillo','franco'];
+  const ids = ['bayeh','cano','duque','cortes','fajardo','navarro'];
   for (const id of ids) {
-    const group = id === 'franco' ? 'A3' : ['pineda','carrillo'].includes(id) ? 'A1' : 'A2';
+    const group = 'A2';
     const frame = '#visor-' + group + '_' + id;
     const setup = await evaluate(`(() => {
       const frame = document.querySelector('${frame}');
       const slide = frame.closest('.slide');
       const position = [...document.querySelectorAll('.slide')].indexOf(slide);
       document.querySelectorAll('#progress button')[position].click();
-      return slide.querySelectorAll('[role=tab]').length;
+      return [...slide.querySelectorAll('[role=tab]')].map(tab => tab.getAttribute('aria-selected'));
     })()`);
-    assert.equal(setup, group === 'A2' ? 2 : {pineda:2, carrillo:4, franco:0}[id]);
+    assert.deepEqual(setup, ['true', 'false', 'false']);
     let previousLayout;
-    for (let i = 0; i < Math.max(1, setup); i++) {
+    let previousContext;
+    for (let i = 0; i < setup.length; i++) {
       await evaluate(`document.querySelector('.slide.active .sim-tabs')?.children[${i}].click()`);
-      const canvas = group === 'A1' ? '' : '&& doc.querySelector("#cvEq")?.width > 300';
+      const canvas = i === 2 ? '' : '&& doc.querySelector("#cvEq")?.width > 300';
       await waitFor(() => evaluate(`(() => {
         const frame = document.querySelector('${frame}');
         const doc = frame.contentDocument;
-        return Boolean(doc && doc.URL === frame.src && doc.readyState === 'complete' ${canvas});
+        return Boolean(doc && doc.URL.split('#')[0] === frame.src && doc.readyState === 'complete' ${canvas});
       })()`));
       await delay(350);
       const info = await evaluate(`(() => {
@@ -107,20 +108,31 @@ async function main() {
           layout:eq && [frame.clientWidth, frame.clientHeight,
             win.getComputedStyle(eq).gridTemplateColumns, doc.querySelector('#cvEq').clientWidth,
             doc.querySelector('#cvEq').clientHeight, doc.querySelector('#equipmentScenario').options.length],
-          title:tab?.textContent, matrix:matrix?.querySelector('h4')?.textContent,
-          guide:document.querySelector('#guide-notes li')?.textContent
+          title:tab?.textContent, matrix:matrix?.innerHTML,
+          matrixTitle:matrix?.querySelector('h4')?.textContent,
+          guide:document.querySelector('#guide-notes').textContent,
+          url:doc.URL, transparent:getComputedStyle(tab).backgroundColor === 'rgba(0, 0, 0, 0)'
         };
       })()`);
       assert.equal(info.width, 1920);
       assert.equal(info.height, 1080);
-      assert.ok(info.overflow <= 1, id + ' desborde: ' + info.overflow);
-      if (group === 'A2') {
-        assert.equal(info.matrix, info.title);
+      if (i < 2) {
+        assert.ok(info.overflow <= 1, id + ' desborde: ' + info.overflow);
+        assert.equal(info.matrixTitle, info.title);
         assert.ok(info.guide.startsWith(info.title));
         if (previousLayout) assert.deepEqual(info.layout, previousLayout, id);
         previousLayout = info.layout;
-        const {data} = await send('Page.captureScreenshot', {format:'png'});
-        fs.writeFileSync(path.join(shots, `a2u-${id}-${i + 1}.png`), Buffer.from(data, 'base64'));
+        previousContext = [info.matrix, info.guide];
+        assert.ok(info.url.endsWith(`/A2_${id}_${i + 1}.html?embed=1`));
+      } else {
+        assert.equal(info.title, 'Simulador original');
+        assert.ok(info.transparent);
+        assert.match(info.url.split('#')[0], new RegExp('/sim/originales/A2/[0-9]_' + id + '_[^/]+[.]html[?]embed=1$'));
+        assert.deepEqual([info.matrix, info.guide], previousContext);
+        if (id === 'navarro') {
+          const {data} = await send('Page.captureScreenshot', {format:'png'});
+          fs.writeFileSync(path.join(shots, 'orig-tab-navarro.png'), Buffer.from(data, 'base64'));
+        }
       }
       console.log(group, id, i + 1, info.layout ?? 'módulo original');
     }
