@@ -25,3 +25,17 @@
 - El diferencial de colapso, cargas, arena, cloruros, pulsación, presión de salida del choque y tiempos de intervención no tienen un equivalente inequívoco en `D.eq`. Se conservaron sus supuestos. Choque y aguja toman el entorno de XT-101 por su ubicación en el árbol.
 - Casing representa CS-103. Revestimientos CS-101/102 y el pozo inyector WI-101 tienen servicios distintos; el módulo original no ofrece modelos independientes para ellos. La barra pulida y los sellos siguen siendo subcomponentes de sus módulos.
 - Las correlaciones de desgaste/corrosión, factores de diseño, rangos metalúrgicos y tablas API de los estudiantes requieren trazabilidad por material, producto y edición. Se mantienen como criterios del modelo.
+
+## A2
+
+- Bayeh y Cano conservan sus ocho ramales y el cálculo de severidad se alinea con la Figura 1. Se actualizan las condiciones base de flujo y prueba desde D.
+- Duque conserva la conversión a presión absoluta según la base del formulario y evalúa la Figura 1 para el pH seleccionado.
+- Cortes identifica TL-201 en títulos, ficha y exportaciones. La base toma diámetro, espesor mínimo, longitud y condiciones C5 de D. Evalúa la Figura 1 con 0,30 kPa de H₂S en C5 y con presión absoluta cuando se modifica la fracción de H₂S.
+- Fajardo usa el caudal del campo y la presión operativa de CI-201. Navarro distingue el punto de succión de la ficha P-301 y ofrece evaluación de las piezas de la bomba.
+- Los seis originales se copian con modo embebido y comunicación de la tecla N.
+
+### Dudas no corregidas de A2
+
+- El caudal nominal, rating y curva certificada de las bombas, el volumen del tanque y la temperatura de la solución requieren fichas del proveedor.
+- La base de C1 conserva la convención absoluta que reproducen las parciales documentadas de 45 bar. La de C5 distingue el punto de burbuja, la succión y la descarga manométrica. Los ensayos de PVT y las condiciones de gas libre en succión siguen pendientes.
+- Se conservan geometrías, correlaciones y supuestos propios de cada informe cuando D no identifica un equivalente inequívoco. La ficha de alcance permite consultar las condiciones y piezas de D.

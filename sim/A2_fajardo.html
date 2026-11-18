@@ -348,7 +348,22 @@ table.mapa th{white-space:nowrap}
   body{background:#fff;color:#111}
 }
 </style>
-<style>
+<script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+window.addEventListener('keydown', event => {
+  if (parent === window || event.repeat || event.ctrlKey || event.altKey || event.metaKey ||
+      event.key.toLowerCase() !== 'n' || event.target.closest('input,textarea,select,[contenteditable]')) return;
+  event.preventDefault();
+  parent.postMessage({projectAKey:'n'}, '*');
+});
+window.addEventListener('message', event => {
+  if (parent === window || event.data?.projectAKey !== 'n') return;
+  if ([...document.querySelectorAll('iframe')].some(frame => frame.contentWindow === event.source))
+    parent.postMessage({projectAKey:'n'}, '*');
+});
+</script><style>
 :root { --grupo: #27a9e1; --acc: color-mix(in srgb,var(--grupo),#102b41 38%); }
 .app, .embebido .app { min-height:0; grid-template-rows:auto minmax(0,1fr); }
 .top { flex-wrap:wrap; padding:7px 12px; gap:8px; border-top:4px solid var(--grupo); }
@@ -358,6 +373,8 @@ table.mapa th{white-space:nowrap}
 #equipmentTabs button, #equipmentScenario { border:1px solid var(--line2); background:#fff; border-radius:6px; padding:4px 7px; font-weight:600; }
 #equipmentTabs button[aria-pressed=true] { background:color-mix(in srgb,var(--grupo),#fff 72%); border-color:var(--grupo); }
 #equipmentScenario { max-width:100%; font-size:12px; }
+.wells svg {display:block;max-width:100%;height:auto}
+.wells[open] {flex-basis:100%}
 #v-equipo .equipo { grid-template-columns:minmax(0,22fr) minmax(0,55fr) minmax(0,23fr); height:100%; min-height:0; overflow:hidden; }
 #v-equipo .lado { grid-column:auto; min-width:0; overflow:auto; overflow-wrap:anywhere; padding:8px; }
 #v-equipo .lado > .pnl { flex-shrink:0; }
@@ -493,6 +510,13 @@ function region(pH2S_kPa, pH) {
   if (pH >= boundary1_2) return 1;
   if (pH >= boundary2_3) return 2;
   return 3;
+}
+function isoPressureLimit(pH, region) {
+  const cap = region === 1 ? 6.5 : 5.5;
+  const slope = region === 1 ? 4.5 : 3.5;
+  if (pH >= cap) return 1000;
+  if (region === 2 && pH < 3.5) return 0.3;
+  return Math.max(0.3, Math.pow(10, pH - slope));
 }
 const pressureForGas = (pressure, equipment) => pressure + (equipment.sistema === 'A1' ? 1.01325 : 0);
 function yH2S(G,anio){ return G.H2Shoy+(G.H2S10-G.H2Shoy)*Math.min(Math.max(anio,0),10)/10; }
@@ -893,7 +917,7 @@ function evalX(E, tag, anio) {
   if (mk === 'acta') {
     R = { s: base.s, checks: base.checks.slice(), c: base.c, evaluado: base.evaluado, pp: base.pp, reg: base.reg, k, mat: null };
   } else {
-    const m = MAT[mk], checks = [], pp = k.y2 * ((p.m && p.m.Pas && k.def.Pas) ? k.P : k.Phead);
+    const m = MAT[mk], checks = [], pp = k.y2 * ((p.m && p.m.Pas && k.def.Pas) ? k.P : k.Phead) + (k.def.sistema === 'A1' ? 1.01325 * k.y2 : 0) + (k.def.sistema === 'A1' ? 1.01325 * k.y2 : 0);
     const reg = Motor.region(pp, k.pH);
     let c = null;
     const V = vSinInhibir(p, k), A = (k.A !== null && k.A !== undefined) ? k.A : (EQ[p.eq].A || 0);
@@ -991,7 +1015,7 @@ function evalEq(E, tag, y) {
   return { tag, s, piezas: l, peor: l.slice().sort((a, b) => b.s - a.s || (b.dano.cons - a.dano.cons))[0] };
 }
 function evalTodo(st, y) {
-  const { E, her, S } = efectivo(st);
+  const { E, her, S } = st.preset ? {E:st, her:{}, S:M.planta(st)} : efectivo(st);
   const eqs = {}; D.eq.forEach(e => eqs[e.tag] = evalEq(E, e.tag, y));
   const c = [0, 0, 0]; Object.values(eqs).forEach(q => q.piezas.forEach(r => c[r.s]++));
   return { E, her, S, eqs, c };
@@ -1308,7 +1332,7 @@ const PL = (() => {
   }
   function init(el, tipEl, abrir) {
     svg = el; tip = tipEl; onAbrir = abrir;
-    svg.innerHTML = fondo() + tuberias() + equipos() + marcas() + '<g id="ondas"></g>';
+    svg.innerHTML = fondo() + tuberias() + equipos() + marcas() + "<g transform=\"translate(400 50)\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"780\" height=\"122\" viewBox=\"0 0 780 122\"\n    role=\"img\" aria-label=\"8 pozos, líneas de flujo y ramales en cada múltiple\">\n    <rect width=\"780\" height=\"122\" rx=\"5\" fill=\"#fff\"/>\n    <g font-family=\"system-ui\" font-size=\"13\" text-anchor=\"middle\" fill=\"#243c46\" stroke=\"#17657f\" stroke-width=\"1.5\"><g><text stroke=\"none\" x=\"34\" y=\"17\">P-1</text><text stroke=\"none\" x=\"34\" y=\"33\">FL-01</text>\n    <path fill=\"none\" d=\"M34 37v20h-12v24m12-24h12v49\"/><circle cx=\"22\" cy=\"81\" r=\"3\"/><circle cx=\"46\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"112\" y=\"17\">P-2</text><text stroke=\"none\" x=\"112\" y=\"33\">FL-02</text>\n    <path fill=\"none\" d=\"M112 37v20h-12v24m12-24h12v49\"/><circle cx=\"100\" cy=\"81\" r=\"3\"/><circle cx=\"124\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"190\" y=\"17\">P-3</text><text stroke=\"none\" x=\"190\" y=\"33\">FL-03</text>\n    <path fill=\"none\" d=\"M190 37v20h-12v24m12-24h12v49\"/><circle cx=\"178\" cy=\"81\" r=\"3\"/><circle cx=\"202\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"268\" y=\"17\">P-4</text><text stroke=\"none\" x=\"268\" y=\"33\">FL-04</text>\n    <path fill=\"none\" d=\"M268 37v20h-12v24m12-24h12v49\"/><circle cx=\"256\" cy=\"81\" r=\"3\"/><circle cx=\"280\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"346\" y=\"17\">P-5</text><text stroke=\"none\" x=\"346\" y=\"33\">FL-05</text>\n    <path fill=\"none\" d=\"M346 37v20h-12v24m12-24h12v49\"/><circle cx=\"334\" cy=\"81\" r=\"3\"/><circle cx=\"358\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"424\" y=\"17\">P-6</text><text stroke=\"none\" x=\"424\" y=\"33\">FL-06</text>\n    <path fill=\"none\" d=\"M424 37v20h-12v24m12-24h12v49\"/><circle cx=\"412\" cy=\"81\" r=\"3\"/><circle cx=\"436\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"502\" y=\"17\">P-7</text><text stroke=\"none\" x=\"502\" y=\"33\">FL-07</text>\n    <path fill=\"none\" d=\"M502 37v20h-12v24m12-24h12v49\"/><circle cx=\"490\" cy=\"81\" r=\"3\"/><circle cx=\"514\" cy=\"106\" r=\"3\"/></g><g><text stroke=\"none\" x=\"580\" y=\"17\">P-8</text><text stroke=\"none\" x=\"580\" y=\"33\">FL-08</text>\n    <path fill=\"none\" d=\"M580 37v20h-12v24m12-24h12v49\"/><circle cx=\"568\" cy=\"81\" r=\"3\"/><circle cx=\"592\" cy=\"106\" r=\"3\"/></g></g>\n    <path d=\"M16 81H602m-586 25H602\" stroke=\"#17657f\" stroke-width=\"2\"/>\n    <text x=\"612\" y=\"85\" fill=\"#243c46\">MF-201 · Producción</text><text x=\"612\" y=\"110\" fill=\"#243c46\">MF-202 · Prueba</text>\n    </svg></g>" + '<g id="ondas"></g>';
     svg.addEventListener('click', ev => { const q = ev.target.closest('.eq'); if (q) onAbrir(q.dataset.tag); });
     svg.addEventListener('keydown', ev => { if (ev.key === 'Enter') { const q = ev.target.closest('.eq'); if (q) onAbrir(q.dataset.tag); } });
     svg.addEventListener('mousemove', ev => {
@@ -2337,22 +2361,12 @@ function initEquipo() {
 }
 
 /* ===================== Escenarios ===================== */
-const ESC = [
-  { k: 'acta', n: 'Configuración del acta', ideal: true, d: 'Condiciones de diseño y materiales seleccionados en el acta PA-MAT-ACT-001 Rev. C. Es la configuración de referencia.', f: () => { } },
-  { k: 'y10', n: 'Año 10 del yacimiento', d: 'El H₂S llega a 0,30 % (SD-08).', casc: ['Más pH₂S en todo el campo', 'Las piezas de acero pasan de región 2 a región 3 de ISO 15156-2'], f: s => { s.G.anio = 10; } },
-  { k: 'adv', n: 'Yacimiento más agrio', d: 'H₂S 0,60 % al año 10, CO₂ 4,5 %, pH 4,3.', casc: ['Más CO₂: corrosión más rápida en A1 y A2', 'Más H₂S y menos pH: región 3 y límites de ISO 15156-3 para los CRA'], f: s => { s.G.anio = 10; s.G.H2S10 = .6; s.G.CO2 = 4.5; s.G.pH = 4.3; } },
-  { k: 'ci', n: 'Falla de la bomba de inhibidor CI-201', d: 'CI-201 entrega el inhibidor solo el 60 % del tiempo.', casc: ['CI-201 → FL-201, MF-201, MF-202, V-201 y FM-201', 'Corrosión por CO₂ sin inhibir en la recolección'], f: s => { s.eq['CI-201'] = { A: .6 }; } },
-  { k: 'o2', n: 'Entrada de aire en el desnatador', d: 'Oxígeno de 500 µg/l en T-303 por falla del manto de gas.', casc: ['T-303 → F-301 → T-304 → P-302 → L-304 → WH-301 → WI-101', 'Picadura por oxígeno en todo el tren de inyección'], f: s => { s.eq['T-303'] = { O2: 500 }; } },
-  { k: 'gas', n: 'Gas asociado insuficiente', d: 'La relación gas-aceite cae a 30 pie³/bbl.', casc: ['Menos gas → FG-301 no alcanza el mínimo', 'Se pierde el manto de los tanques → oxígeno en el agua de inyección', 'Baja la potencia firme para la bomba de inyección'], f: s => { s.G.GOR = 30; } },
-  { k: 'frio', n: 'Tratador frío', d: 'H-301 opera a 52 °C.', casc: ['H-301 deshidrata menos → el crudo sale con más agua', 'BS&W > 1 % en T-302, P-301, PL-201, TL-201 y PL-202', 'Corrosión en la línea de transferencia de 14 km'], f: s => { s.eq['H-301'] = { T: 52 }; } },
-  { k: 'pozos', n: 'Doce pozos con más agua', d: '12 pozos en producción y corte de agua de 88 %.', casc: ['Más líquido → el tratador se satura → BS&W alto en la exportación', 'Más agua a reinyectar → más potencia de la bomba P-302'], f: s => { s.G.npozos = 12; s.G.bsw = 88; } },
-  { k: 'bio', n: 'Biocida suspendido', d: 'Q-301 dosifica solo el 40 % del tiempo.', casc: ['Bacterias sulfato-reductoras activas', 'Corrosión bajo depósito (MIC) en el tren de agua y en el fondo de T-301'], f: s => { s.eq['Q-301'] = { BIO: 40 }; } },
-  { k: 'calor', n: 'Temperatura sostenida en 85 °C', d: 'Los equipos calientes operan a la temperatura de diseño.', casc: ['Más velocidad de corrosión por CO₂', 'Elastómeros y recubrimientos en su límite'], f: s => { D.eq.forEach(e => { if (e.T >= 60 && e.Pdis !== null) s.eq[e.tag] = Object.assign(s.eq[e.tag] || {}, { T: 85 }); }); } },
-  { k: 'pres', n: 'Presión sobre el diseño', d: 'Equipos presurizados al 110 % de la presión de diseño.', casc: ['Disparo de alivio y pérdida de contención en recipientes y líneas'], f: s => { D.eq.forEach(e => { if (e.Pdis !== null && e.P > 5) s.eq[e.tag] = Object.assign(s.eq[e.tag] || {}, { P: e.Pdis * 1.1 }); }); } },
-];
+const ESC = [{"key":"base","name":"Base de diseño","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{}}},{"key":"y10","name":"Año 10 del yacimiento","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":10,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{}}},{"key":"adv","name":"Yacimiento más agrio","state":{"G":{"H2Shoy":0.15,"H2S10":0.6,"CO2":4.5,"pH":4.3,"anio":10,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{}}},{"key":"inh","name":"Inhibidor por debajo de lo acordado","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{"CS-103":{"A":0.8},"TB-101":{"A":0.8},"VR-101":{"A":0.8},"BP-101":{"A":0.8},"BS-101":{"A":0.8},"PK-101":{"A":0.8},"WH-101":{"A":0.8},"XT-101":{"A":0.8},"SSV-101":{"A":0.8},"SL-101":{"A":0.8},"WI-101":{"A":0.8},"FL-201":{"A":0.8999999999999999},"MF-201":{"A":0.8999999999999999},"MF-202":{"A":0.8999999999999999},"V-201":{"A":0.8999999999999999},"PL-201":{"A":0.8},"PL-202":{"A":0.8},"TL-201":{"A":0.8},"XV-201":{"A":0.8},"CI-201":{"A":0.8},"FM-201":{"A":0.8999999999999999},"P-301":{"A":0.8},"L-302":{"A":0.8},"L-303":{"A":0.8},"L-304":{"A":0.8}}}},{"key":"o2","name":"Manto de gas caído (oxígeno)","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{"WI-101":{"O2":500},"T-303":{"O2":500},"T-304":{"O2":500},"F-301":{"O2":500},"P-302":{"O2":500},"L-304":{"O2":500},"WH-301":{"O2":500}}}},{"key":"bsw","name":"Crudo tratado con agua","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{"PL-201":{"BSW":3},"PL-202":{"BSW":3},"TL-201":{"BSW":3},"XV-201":{"BSW":3},"P-301":{"BSW":3},"T-302":{"BSW":3},"L-302":{"BSW":3}}}},{"key":"calor","name":"Temperatura sostenida en 85 °C","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{"CS-101":{"T":85},"CS-102":{"T":85},"CS-103":{"T":85},"TB-101":{"T":85},"VR-101":{"T":85},"BP-101":{"T":85},"BS-101":{"T":85},"PK-101":{"T":85},"WH-101":{"T":85},"XT-101":{"T":85},"SSV-101":{"T":85},"SL-101":{"T":85},"WI-101":{"T":85},"FL-201":{"T":85},"MF-201":{"T":85},"MF-202":{"T":85},"V-201":{"T":85},"PL-201":{"T":85},"PL-202":{"T":85},"TL-201":{"T":85},"XV-201":{"T":85},"CI-201":{"T":85},"FM-201":{"T":85},"P-301":{"T":85},"V-301":{"T":85},"H-301":{"T":85},"T-301":{"T":85},"T-302":{"T":85},"T-303":{"T":85},"T-304":{"T":85},"L-302":{"T":85},"V-302":{"T":85},"L-301":{"T":85},"FL-301":{"T":85},"FG-301":{"T":85},"L-303":{"T":85},"F-301":{"T":85},"P-302":{"T":85},"L-304":{"T":85},"WH-301":{"T":85},"Q-301":{"T":85}}}},{"key":"pres","name":"Presión sobre el diseño","state":{"G":{"H2Shoy":0.15,"H2S10":0.3,"CO2":3.1,"pH":4.6,"anio":0,"vida":20,"Vinh":0.1,"tope":10,"GOR":100,"npozos":8,"qliq":600,"bsw":78,"Qdulce":900,"Pnom":65,"nmt":4,"derr":0.9,"PCI":33,"etae":0.28,"demanda":174,"gasmin":1100,"dP_op":67,"P_inj":70,"Pbase_kW":74},"eq":{"CS-101":{"P":55.00000000000001},"CS-102":{"P":55.00000000000001},"CS-103":{"P":123.20000000000002},"TB-101":{"P":123.20000000000002},"VR-101":{"P":123.20000000000002},"BP-101":{"P":55.00000000000001},"BS-101":{"P":123.20000000000002},"PK-101":{"P":123.20000000000002},"WH-101":{"P":55.00000000000001},"XT-101":{"P":55.00000000000001},"SSV-101":{"P":55.00000000000001},"SL-101":{"P":55.00000000000001},"WI-101":{"P":132},"FL-201":{"P":55.00000000000001},"MF-201":{"P":55.00000000000001},"MF-202":{"P":55.00000000000001},"V-201":{"P":55.00000000000001},"PL-201":{"P":55.00000000000001},"PL-202":{"P":55.00000000000001},"TL-201":{"P":55.00000000000001},"XV-201":{"P":55.00000000000001},"CI-201":{"P":110.00000000000001},"FM-201":{"P":55.00000000000001},"P-301":{"P":55.00000000000001},"V-301":{"P":16.5},"H-301":{"P":16.5},"L-302":{"P":16.5},"V-302":{"P":16.5},"L-303":{"P":16.5},"F-301":{"P":16.5},"P-302":{"P":132},"L-304":{"P":132},"WH-301":{"P":132},"Q-301":{"P":132}}}}].map(({key, name, state}) => ({
+      k:key, n:name, f:target => Object.assign(target, JSON.parse(JSON.stringify(state)), {preset:true})
+    }));
 
 const APP = {
-  vista: 'planta', R: null, esc: 'acta', play: false, velo: 2, Racta: null,
+  vista: 'planta', R: null, esc: 'base', play: false, velo: 2, Racta: null,
   ir(v) {
     this.vista = v;
     document.querySelectorAll('.nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.v === v));
@@ -2376,7 +2390,7 @@ const APP = {
     ['#plAnioLbl', '#eqAnioLbl'].forEach(id => $(id).innerHTML = `${fmt(ST.G.anio, 1)} <small>años</small>`);
   },
   cambio(motivo, keepEsc) {
-    if (!keepEsc) this.esc = '';
+    if (!keepEsc) { this.esc = ''; delete ST.preset; }
     this.recalc();
     if (this.vista === 'planta') this.panelesPlanta();
     if (this.vista === 'equipo') renderEquipo(true);
@@ -2595,8 +2609,10 @@ const scenarioSelect = $('#equipmentScenario');
 scenarioSelect.innerHTML = ESC.map(e => '<option value="' + e.k + '">' + esc(e.n) + '</option>').join('')
   + '<option value="" disabled>Escenario modificado</option>';
 scenarioSelect.onchange = () => APP.aplicarEsc(scenarioSelect.value);
+ESC[0].f(ST);
 APP.recalc();
-abrirEquipo(D.eq[0].tag);
+const initialEquipment = new URLSearchParams(location.search).get('equipo');
+abrirEquipo(D.eq.some(e => e.tag === initialEquipment) ? initialEquipment : D.eq[0].tag);
 initEquipo();
 initTiempo();
 new ResizeObserver(() => {

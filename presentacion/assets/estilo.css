@@ -1,6 +1,12 @@
 :root{--navy:#0B3A63;--navy2:#1D5486;--navy-l:#EAF0F6;--green:#2B7336;--green-l:#E8F3EA;--ink:#17222D;--ink2:#4B5866;--mut:#76838F;--line:#DDE4EB;--panel:#F5F8FB;--red:#B83A2A;--red-l:#FBEAE7;--amber:#A86B12;--amber-l:#FBF1DF;--slab:'Roboto Slab',Georgia,serif;--sans:Inter,'Segoe UI',Arial,sans-serif}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#E9EEF3;color:var(--ink);font-family:var(--sans)}
+#guide-toggle{position:absolute;z-index:5;right:45px;bottom:48px;padding:4px 9px;border:1px solid #c7d3de;border-radius:5px;background:#fff;color:#31495e;font:inherit;font-size:13px}
+#guide{position:fixed;inset:0 0 0 auto;width:min(380px,42vw);box-sizing:border-box;padding:20px;overflow:auto;background:#f8fafc;border-left:1px solid #bbcbd8;color:#182c40}
+#guide h2{font-size:19px;margin:0 30px 15px 0}
+#guide-close{position:absolute;right:14px;top:15px;border:1px solid #bbcbd8;background:#fff;border-radius:4px;font-size:20px}
+#guide ol{padding-left:21px;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+#guide li+li{margin-top:12px}
 button{font:inherit;cursor:pointer}a{color:inherit}
 #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--scale,1));overflow:hidden;background:#fff}
 .slide{position:absolute;inset:0;display:none;overflow:hidden}.slide.active{display:block}

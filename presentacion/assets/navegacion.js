@@ -10,7 +10,24 @@ const source = document.getElementById('source');
 const editor = new URLSearchParams(location.search).get('editor') === '1';
 document.body.classList.toggle('editor', editor);
 let index = 0;
-const resize = () => stage.style.setProperty('--scale', Math.min(innerWidth / 1600, innerHeight / 900));
+const guide = document.getElementById('guide');
+const guideButton = document.getElementById('guide-toggle');
+const guideNotes = document.getElementById('guide-notes');
+function resize() {
+  const available = innerWidth - (guide.hidden ? 0 : guide.offsetWidth);
+  stage.style.left = available / 2 + 'px';
+  stage.style.setProperty('--scale', Math.min(available / 1600, innerHeight / 900));
+}
+function toggleGuide() {
+  guide.hidden = !guide.hidden;
+  guideButton.setAttribute('aria-expanded', String(!guide.hidden));
+  resize();
+}
+guideButton.onclick = toggleGuide;
+document.getElementById('guide-close').onclick = () => {
+  toggleGuide();
+  guideButton.focus();
+};
 const fromHash = () => (parseInt(location.hash.slice(1), 10) || 1) - 1;
 const segments = slides.map((_, i) => {
   const dot = document.createElement('button');
@@ -39,6 +56,12 @@ function show(position) {
     }
   });
   const slide = slides[index];
+  guideNotes.replaceChildren(...JSON.parse(slide.dataset.notes).map(note => {
+    const item = document.createElement('li');
+    item.textContent = note;
+    return item;
+  }));
+  guide.scrollTop = 0;
   part.textContent = slide.dataset.part;
   speaker.textContent = slide.dataset.speaker;
   speaker.hidden = !speaker.textContent;
@@ -64,7 +87,7 @@ for (const [slide, frame] of cached) {
         button.tabIndex = button === tab ? 0 : -1;
       }
       frame.title = tab.textContent;
-      frame.dataset.src = tab.dataset.module + '?embed=1';
+      frame.dataset.src = tab.dataset.module + (tab.dataset.module.includes('?') ? '&' : '?') + 'embed=1';
       frame.src = frameSource(frame);
       slide.querySelector('.sim-open').href = tab.dataset.module;
     });
@@ -88,6 +111,11 @@ for (const [slide, frame] of cached) {
 }
 document.addEventListener('keydown', event => {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key.toLowerCase() === 'n' && !event.repeat) {
+    event.preventDefault();
+    toggleGuide();
+    return;
+  }
   if (event.key === ' ' && event.target.closest('button')) return;
   if (['f', 'p'].includes(event.key.toLowerCase())) {
     event.preventDefault();
@@ -110,9 +138,13 @@ stage.addEventListener('contextmenu', event => {
   show(index + 1);
 });
 window.addEventListener('message', event => {
-  if (document.fullscreenElement) return;
-  if (!event.data || !['ArrowLeft','ArrowRight'].includes(event.data.projectAKey)) return;
+  if (!event.data || !['ArrowLeft','ArrowRight','n'].includes(event.data.projectAKey)) return;
   if (![...cached.values()].some(frame => frame.contentWindow === event.source && frame.closest('.active'))) return;
+  if (event.data.projectAKey === 'n') {
+    toggleGuide();
+    return;
+  }
+  if (document.fullscreenElement) return;
   show(index + (event.data.projectAKey === 'ArrowRight' ? 1 : -1));
 });
 window.addEventListener('resize', resize);

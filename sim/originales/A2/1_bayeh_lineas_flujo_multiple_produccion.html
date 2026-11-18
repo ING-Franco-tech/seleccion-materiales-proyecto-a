@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+window.addEventListener('keydown', event => {
+  if (parent === window || event.repeat || event.ctrlKey || event.altKey || event.metaKey ||
+      event.key.toLowerCase() !== 'n' || event.target.closest('input,textarea,select,[contenteditable]')) return;
+  event.preventDefault();
+  parent.postMessage({projectAKey:'n'}, '*');
+});
+window.addEventListener('message', event => {
+  if (parent === window || event.data?.projectAKey !== 'n') return;
+  if ([...document.querySelectorAll('iframe')].some(frame => frame.contentWindow === event.source))
+    parent.postMessage({projectAKey:'n'}, '*');
+});
+</script><script>function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+function isoPressureLimit(pH, region) {
+  const cap = region === 1 ? 6.5 : 5.5;
+  const slope = region === 1 ? 4.5 : 3.5;
+  if (pH >= cap) return 1000;
+  if (region === 2 && pH < 3.5) return 0.3;
+  return Math.max(0.3, Math.pow(10, pH - slope));
+}</script>
+      <style>.embedded body{margin-inline:0;max-width:100%}
+      .embedded *{box-sizing:border-box}.embedded main,.embedded .app>*{min-width:0}
+      .embedded svg,.embedded canvas,.embedded img{max-width:100%}
+      .embedded .tw,.embedded .scrolltable{overflow:auto}
+      </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Sistema A2 · FL-01…FL-08 + MP-01 · Integridad y selección de materiales</title>
+<style>
+:root{
+  --ink:#16232d; --ink2:#44565f; --paper:#eef1f0; --card:#ffffff; --line:#cdd5d8; --soft:#e3e9eb;
+  --accent:#17576f; --accent2:#0f3f52; --crit:#b3261e; --apl:#c9631a; --cond:#a8860f; --ok:#1d7a5f; --nv:#6c7a82;
+  --soil:#b08a62; --water:#5aa0c0; --hot:#d2482a; --warm:#e2a13b;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ink:#e6edf0; --ink2:#a5b5bd; --paper:#10181d; --card:#18232a; --line:#2f3f48; --soft:#202e36;
+  --accent:#5fb4d3; --accent2:#8fcfe6; --crit:#ff7a6e; --apl:#ff9d4d; --cond:#e3c258; --ok:#4fc79c; --nv:#92a2aa; --soil:#8a6a49;
+  color-scheme:dark;}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 var(--sans)}
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:.1px;margin:0 0 .4em}
+h1{font-size:1.5rem} h2{font-size:1.25rem;margin-top:1.2em} h3{font-size:1.02rem;margin-top:1em}
+p{margin:.4em 0}
+a{color:var(--accent)}
+header.top{position:sticky;top:0;z-index:20;background:var(--accent2);color:#fff;padding:8px 18px 0;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+@media (prefers-color-scheme:dark){header.top{background:#0c2430}}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.brand b{font-family:var(--serif);font-size:1.05rem}
+.brand span{opacity:.8;font-size:.82rem}
+.scen{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:6px 0 8px;font-size:.82rem}
+.scen label{display:flex;align-items:center;gap:6px;color:#dbe9ef}
+.scen select,.scen input{background:#fff;color:#16232d;border:0;border-radius:4px;padding:3px 6px;font:inherit}
+.scen input[type=number]{width:52px}
+.pill{border-radius:999px;padding:1px 9px;font-size:.75rem;font-weight:600;background:rgba(255,255,255,.16)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;margin:0 -18px;padding:0 14px;scrollbar-width:thin}
+nav.tabs button{background:transparent;color:#cfe1e9;border:0;border-bottom:3px solid transparent;padding:9px 13px;font:inherit;cursor:pointer;white-space:nowrap}
+nav.tabs button:hover{color:#fff}
+nav.tabs button[aria-selected=true]{color:#fff;border-bottom-color:var(--warm);font-weight:600}
+nav.tabs button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--warm);outline-offset:1px}
+main{max-width:1320px;margin:0 auto;padding:16px 18px 60px}
+.tab{display:none}.tab.on{display:block}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.sim{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.sim{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.card h3:first-child,.card h2:first-child{margin-top:0}
+.note{color:var(--ink2);font-size:.85rem}
+.kpi{border-left:4px solid var(--line);padding:8px 12px;background:var(--card);border-radius:0 6px 6px 0;border:1px solid var(--line);border-left-width:5px}
+.kpi.crit{border-left-color:var(--crit)}.kpi.apl{border-left-color:var(--apl)}.kpi.cond{border-left-color:var(--cond)}.kpi.ok{border-left-color:var(--ok)}.kpi.nv{border-left-color:var(--nv)}
+.kpi .v{font-family:var(--serif);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--ink2);font-size:.8rem}
+.badge{display:inline-block;border-radius:4px;padding:0 7px;font-size:.75rem;font-weight:700;color:#fff;white-space:nowrap}
+.badge.crit,.badge.fail{background:var(--crit)}.badge.apl,.badge.open{background:var(--apl)}.badge.cond{background:var(--cond)}
+.badge.ok,.badge.spec{background:var(--ok)}.badge.nv{background:var(--nv)}
+@media (prefers-color-scheme:dark){.badge{color:#0b1216}}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600;position:sticky;top:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tw{overflow-x:auto;max-width:100%}
+.fld{display:grid;grid-template-columns:1fr 92px 46px;gap:6px;align-items:center;margin:3px 0;font-size:.85rem}
+.fld input,.fld select,.sel{width:100%;padding:3px 5px;border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--ink);font:inherit}
+.fld .u{color:var(--ink2);font-size:.78rem}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:0 0 12px;padding:8px 12px 10px}
+legend{font-family:var(--serif);padding:0 6px;font-weight:600}
+.asm{display:grid;grid-template-columns:22px 1fr;gap:2px 8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.asm:last-child{border-bottom:0}
+.asm .t{font-weight:600}.asm .s{grid-column:2;color:var(--ink2);font-size:.8rem}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:5px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+@media (prefers-color-scheme:dark){.btn{color:#0b1216}}
+.btn.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:hover{filter:brightness(1.08)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chain{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin:6px 0}
+.chain>div{flex:1 1 150px;border:1px solid var(--line);background:var(--card);padding:8px 10px;position:relative}
+.chain>div+div{margin-left:18px}
+.chain>div+div::before{content:"";position:absolute;left:-19px;top:50%;width:18px;height:2px;background:var(--accent)}
+.chain b{font-family:var(--serif)}
+.scope{display:flex;flex-wrap:wrap;gap:8px}
+.scope label{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:8px 12px;cursor:pointer;flex:1 1 200px}
+.scope input{margin-right:6px}
+.scope label:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.vis{display:grid;grid-template-columns:1fr 330px;gap:14px;align-items:start}
+@media (max-width:1050px){.vis{grid-template-columns:1fr}}
+.visbox{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px}
+svg{max-width:100%;height:auto;display:block}
+svg text{font-family:var(--sans)}
+.risklist{display:flex;flex-direction:column;gap:5px}
+.ri{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);cursor:pointer;font-size:.84rem}
+.ri:hover,.ri.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.dot{width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700;font-size:.75rem;display:flex;align-items:center;justify-content:center}
+.dot.crit{background:var(--crit)}.dot.apl{background:var(--apl)}.dot.cond{background:var(--cond)}.dot.ok{background:var(--ok)}.dot.nv{background:var(--nv)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--ink2);margin:4px 2px}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px}
+.flow{stroke-dasharray:5 15;animation:dash var(--dur,1.4s) linear infinite}
+.paused .flow{animation-play-state:paused}
+@keyframes dash{to{stroke-dashoffset:-20}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+.mk{cursor:pointer}.mk circle{stroke:#fff;stroke-width:2}.mk.sel circle{stroke:var(--ink);stroke-width:3}
+.mk text{fill:#fff;font-weight:700;font-size:11px;pointer-events:none}
+.issue{display:grid;grid-template-columns:70px 1fr;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.86rem}
+.issue .m{color:var(--ink2);font-size:.78rem}
+.md h1{font-size:1.4rem;border-bottom:2px solid var(--accent);padding-bottom:4px}.md h2{border-bottom:1px solid var(--line);padding-bottom:2px}
+.md table{margin:8px 0}.md blockquote{margin:8px 0;padding:4px 12px;border-left:4px solid var(--cond);background:var(--soft)}
+.md code{background:var(--soft);padding:0 4px;border-radius:3px}
+.reportbox{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px 24px;max-height:70vh;overflow:auto}
+.warn{border-left:5px solid var(--apl);background:var(--soft);padding:8px 12px;border-radius:0 6px 6px 0;margin:8px 0}
+.warn.crit{border-left-color:var(--crit)}
+.legendsw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+@media print{
+  header.top,nav.tabs,.btnrow,.noprint{display:none!important}
+  body{background:#fff;color:#000}.tab{display:none!important}#tab-inf{display:block!important}
+  .reportbox{border:0;max-height:none;overflow:visible;padding:0}
+  .card{border:0;padding:0}.card:not(.printable){display:none}
+  th{position:static}
+  h1,h2{break-after:avoid}table{break-inside:auto}tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><b>Simulador A2 · FL-01…FL-08 + MP-01</b><span>Proyecto A · Magdalena Medio · Equipo A2 (UIS) · integridad y selección de materiales</span></div>
+  <div class="scen" id="scenbar"></div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Secciones"></nav>
+</header>
+<main>
+  <section class="tab" id="tab-inicio"></section>
+  <section class="tab" id="tab-sim"></section>
+  <section class="tab" id="tab-vis"></section>
+  <section class="tab" id="tab-cor"></section>
+  <section class="tab" id="tab-mec"></section>
+  <section class="tab" id="tab-mat"></section>
+  <section class="tab" id="tab-esc"></section>
+  <section class="tab" id="tab-inf"></section>
+</main>
+<script>
+/* ===================== MOTOR DE CÁLCULO (puro, sin DOM) ===================== */
+'use strict';
+const WALL_FL = { '40': 6.02, '80': 8.56, '160': 13.49 };                 // NPS 4, ASME B36.10M (NO VERIFICADO: norma no adjunta)
+const WALL_MP = { '40': 9.27, 'XS': 12.70, '80': 15.09, '120': 21.44 };   // NPS 10, ASME B36.10M (NO VERIFICADO)
+const FLANGE600 = [[38, 102.1], [50, 100.2], [100, 93.2], [150, 90.2], [200, 87.6]]; // ASME B16.5 Tabla 2-1.1 grupo 1.1 (NO VERIFICADO: norma no adjunta)
+
+function defaultState() {
+  return {
+    caso: 'hoy', inhib: true, nWells: 8, scope: 'both',
+    P_head: 45, P_arr: 45, T_in: 68, T_out: 68, T_max: 85,
+    co2: 3.1, h2s_hoy: 0.15, h2s_y10: 0.3, pH: 4.6, cl: 42000, wc: 78, sand: 12, orgAc: 220,
+    life: 20, crU: 0.31, crI: 0.1, availAlt: 75, fpH: 0, cuScale: 1,
+    OD_fl: 114.3, sch_fl: '80', L_fl: 1850, v_fl: 1.8,
+    DN_mp: 250, OD_mp: 273.1, sch_mp: '80',
+    rho: 850, mu: 5, rough: 0.046, Ccoef: 100, vmin: 1.0,
+    S_allow: 138, E: 1.0, W: 1.0, Y: 0.4, tol: 12.5,
+    R3: 12.6, sensMetric: 'marginFL', cp: -980,
+    a: { avail90: true, base031: true, pdes50: true, tmp52: false, selA2: true, tol125: true, h2s030: true, inhTLC: false }
+  };
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function dewaard(T, pCO2, fpH) {            // log10 V = 5.8 − 1710/(T+273,15) + 0,67 log10 pCO2 − F(pH)   [informe, §11.1.2]
+  return Math.pow(10, 5.8 - 1710 / (T + 273.15) + 0.67 * Math.log10(pCO2) - (fpH || 0));
+}
+function interp(tab, x) {
+  if (x <= tab[0][0]) return tab[0][1];
+  for (let i = 1; i < tab.length; i++) if (x <= tab[i][0]) {
+    const [x0, y0] = tab[i - 1], [x1, y1] = tab[i]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+  return tab[tab.length - 1][1];
+}
+function mech(OD, wall, CA, Pbar, S, tol) {   // ASME B31.3 (3a): t = P·D / (2(S·E·W + P·Y))  — NO VERIFICADO contra texto
+  const P = Pbar / 10, SEW = S.S_allow * S.E * S.W;
+  const t = P * OD / (2 * (SEW + P * S.Y)), tm = t + CA;
+  const wmin = wall * (1 - tol / 100), trem = wmin - CA;
+  const mawp = tt => tt > 0 ? 10 * 2 * SEW * tt / (OD - 2 * S.Y * tt) : 0;
+  return { t, tm, tnomReq: tm / (1 - tol / 100), wall, wmin, trem, margin: wmin - tm, ok: wmin >= tm,
+           mawpNew: mawp(wmin), mawpEol: mawp(trem), util: tm / wmin };
+}
+function minSch(tab, tnomReq) {
+  const e = Object.entries(tab).sort((a, b) => a[1] - b[1]).find(([, w]) => w >= tnomReq);
+  return e ? e[0] : null;
+}
+function hyd(Dm, v, S, L) {
+  const A = Math.PI / 4 * Dm * Dm, Q = A * v, mu = S.mu / 1000;
+  const Re = S.rho * v * Dm / mu, eps = S.rough / 1000;
+  const f = Re < 2300 ? 64 / Re : 0.25 / Math.pow(Math.log10(eps / (3.7 * Dm) + 5.74 / Math.pow(Re, 0.9)), 2);
+  const dP = L ? f * L / Dm * S.rho * v * v / 2 / 1e5 : null;
+  const rhoLb = S.rho * 0.062428, veFt = S.Ccoef / Math.sqrt(rhoLb), ve = veFt * 0.3048;   // API RP 14E: Ve = C/√ρ  (NO VERIFICADO)
+  return { Dm, A, Q, Qh: Q * 3600, bpd: Q * 86400 * 6.28981, Re, f, dP, ve, ratio: v / ve, v };
+}
+
+function compute(S) {
+  const a = S.a, R = {};
+  R.Pdes = a.pdes50 ? 50 : 55;
+  R.T_mp = a.tmp52 ? 52 : S.T_out;
+  R.avail = a.avail90 ? 0.95 : S.availAlt / 100;
+  R.model = a.base031 ? 'cliente' : 'dewaard';
+  R.tol = a.tol125 ? S.tol : 15;
+  R.y = (S.caso === 'y10' && a.h2s030) ? S.h2s_y10 : S.h2s_hoy;
+  const pt = (P, T) => ({ P, T, pCO2: S.co2 / 100 * P, pH2S_bar: R.y / 100 * P, pH2S_kPa: R.y / 100 * P * 100 });
+  R.pts = { entry: pt(S.P_head, S.T_in), arr: pt(S.P_arr, S.T_out), mp: pt(S.P_arr, R.T_mp) };
+  R.pts.mp8 = pt(S.P_arr, S.T_max);
+
+  /* ---- Corrosión interna CO2 ---- */
+  const corr = p => {
+    const dw = dewaard(p.T, p.pCO2, S.fpH) * S.cuScale;
+    const cu = (R.model === 'cliente' ? S.crU * S.cuScale : dw), ci = S.crI;
+    const effInh = cu * (1 - R.avail) + ci * R.avail;                       // fórmula ficha E1-03
+    return { dw, cu, ci, effInh, eff: S.inhib ? effInh : cu, informe: cu * (1 - R.avail),   // informe §11.1.3: Vu·(1−E)
+             caInh: effInh * S.life, caNo: cu * S.life, ca: (S.inhib ? effInh : cu) * S.life, caInforme: cu * (1 - R.avail) * S.life };
+  };
+  R.cFL = corr(R.pts.entry); R.cMP = corr(R.pts.mp);
+  R.cClient = { cu: S.crU * S.cuScale, effInh: S.crU * S.cuScale * (1 - R.avail) + S.crI * R.avail };
+  R.dw = { in68: dewaard(68, S.co2 / 100 * 45, S.fpH), in85: dewaard(85, S.co2 / 100 * 45, S.fpH),
+           arr52: dewaard(52, S.co2 / 100 * 38, S.fpH), mp: dewaard(R.T_mp, S.co2 / 100 * 38, S.fpH) };
+  R.ratioDW = R.dw.in68 / S.crU;
+  R.profile = [];
+  for (let i = 0; i <= 20; i++) {
+    const x = i / 20, T = S.T_in + (S.T_out - S.T_in) * x, P = S.P_head + (S.P_arr - S.P_head) * x;
+    R.profile.push({ x: x * S.L_fl, T, P, dw: dewaard(T, S.co2 / 100 * P, S.fpH) * S.cuScale, cl: S.crU * S.cuScale });
+  }
+
+  /* ---- Servicio amargo (ISO 15156-2) ---- */
+  S.R3 = isoPressureLimit(S.pH, 2);
+  const reg = k => getISO15156Region(k, S.pH);
+  const ssc = p => ({ kPa: p.pH2S_kPa, reg: reg(p.pH2S_kPa), times: p.pH2S_kPa / 0.3, margin: (S.R3 - p.pH2S_kPa) / S.R3,
+                      ratio: p.pH2S_bar > 0 ? p.pCO2 / p.pH2S_bar : Infinity });
+  R.ssc = { entry: ssc(R.pts.entry), arr: ssc(R.pts.arr) };
+  R.ssc.gov = a.selA2 ? R.ssc.arr : R.ssc.entry;
+  R.ssc.worst = Math.max(R.ssc.entry.reg, R.ssc.arr.reg);
+  R.sscGrid = [0.15, 0.30].map(yy => [38, 45].map(P => ({ y: yy, P, kPa: yy / 100 * P * 100, reg: reg(yy / 100 * P * 100) }))).flat();
+  R.hardness = R.ssc.worst === 3 ? { weld: 250, route: 'A.2 (obligatoria en Región 3, 7.2.1.4)' } : { weld: 280, route: 'A.2 (250 HV) o A.3.3 (≈280 HV típico)' };
+
+  /* ---- Hidráulica ---- */
+  const wFL = WALL_FL[S.sch_fl], wMP = WALL_MP[S.sch_mp];
+  R.wFL = wFL; R.wMP = wMP;
+  R.hFL = hyd((S.OD_fl - 2 * wFL) / 1000, S.v_fl, S, S.L_fl);
+  R.Pcalc = S.P_head - R.hFL.dP;
+  const n = Math.max(1, Math.min(8, S.nWells));
+  const Qtot = n * R.hFL.Q, DmMP = (S.OD_mp - 2 * wMP) / 1000, Amp = Math.PI / 4 * DmMP * DmMP, vMP = Qtot / Amp;
+  R.hMP = hyd(DmMP, vMP, S, null); R.hMP.Qtot = Qtot; R.hMP.Qh = Qtot * 3600; R.hMP.bpd = Qtot * 86400 * 6.28981; R.hMP.n = n;
+  R.sand = { lbd: R.hFL.bpd * S.sand / 1000, kgd: R.hFL.bpd * S.sand / 1000 * 0.4536, lbdMP: R.hMP.bpd * S.sand / 1000 };
+  R.vMPlow = vMP < S.vmin;
+
+  /* ---- Integridad mecánica ---- */
+  R.mFL = mech(S.OD_fl, wFL, R.cFL.ca, R.Pdes, S, R.tol);
+  R.mMP = mech(S.OD_mp, wMP, R.cMP.ca, R.Pdes, S, R.tol);
+  R.mFLno = mech(S.OD_fl, wFL, R.cFL.caNo, R.Pdes, S, R.tol);
+  R.mFLinh = mech(S.OD_fl, wFL, R.cFL.caInh, R.Pdes, S, R.tol);
+  R.mFL.minSch = minSch(WALL_FL, R.mFL.tnomReq); R.mMP.minSch = minSch(WALL_MP, R.mMP.tnomReq);
+  R.caLimit = { typ: 6, max: 10 };
+  R.caStatus = ca => ca <= 1.5 ? 'no corrosivo (1–1,5 mm)' : ca <= 3 ? 'ligeramente corrosivo (≈3 mm)' : ca <= 6 ? 'severo (≈6 mm)' : ca <= 10 ? 'sobre el típico; bajo el límite 8–10 mm' : 'EXCEDE el límite 8–10 mm de ISO 21457 8.2';
+  R.flange = { T: S.T_max, rating: interp(FLANGE600, S.T_max), ratingOp: interp(FLANGE600, R.T_mp) };
+  R.flange.margin = R.flange.rating - R.Pdes;
+  R.ped = { PS: R.Pdes, DN: S.DN_mp, psdn: R.Pdes * S.DN_mp, psdn55: 55 * S.DN_mp, psdn50: 50 * S.DN_mp };
+
+  /* ---- Mecanismos cualitativos ---- */
+  R.tlc = { dT: S.T_in - S.T_out, level: a.inhTLC ? 'cond' : 'apl' };
+  R.mic = { level: R.vMPlow ? 'crit' : 'apl' };
+  R.eros = { fl: R.hFL.ratio, mp: R.hMP.ratio, level: Math.max(R.hFL.ratio, R.hMP.ratio) > 1 ? 'crit' : Math.max(R.hFL.ratio, R.hMP.ratio) > 0.5 ? 'apl' : 'cond' };
+  R.issues = issues(S, R);
+  return R;
+}
+
+/* ---- Discrepancias, abiertos y fallas dinámicas ---- */
+function issues(S, R) {
+  const L = [], add = (sev, id, text, owner, src) => L.push({ sev, id, text, owner, src });
+  const f = x => (Math.round(x * 100) / 100).toLocaleString('es-CO');
+  if (R.model === 'cliente' && R.ratioDW > 3)
+    add('abierto', 'D4', `La tasa del cliente (${S.crU} mm/año) es ${Math.round(R.ratioDW)}× menor que De Waard–Milliams del informe (${f(R.dw.in68)}–${f(R.dw.in85)} mm/año a 68–85 °C). El CA ${f(R.cFL.ca)} mm solo vale si 0,31 es correcto.`, 'A2 + Cliente', 'Ficha E1-03 vs Informe §11.1.2');
+  if (R.model === 'dewaard' && R.cFL.ca > R.caLimit.max)
+    add('falla', 'CA', `Con De Waard el CA de las líneas (${f(R.cFL.ca)} mm) supera el límite 8–10 mm de ISO 21457 8.2: el acero al carbono no cierra a 20 años.`, 'A2', 'ISO 21457 8.2');
+  if (Math.abs(R.cFL.informe - R.cFL.effInh) * S.life > 0.01 && S.inhib)
+    add('abierto', 'D5', `Fórmula del informe Vu·(1−E) da ${f(R.cFL.informe)} mm/año (CA ${f(R.cFL.caInforme)} mm) frente a ${f(R.cFL.effInh)} mm/año de la ficha (CA ${f(R.cFL.caInh)} mm).`, 'A2', 'Informe §11.1.3 vs Ficha E1-03');
+  if (!R.mFL.ok) add('falla', 'ESP-FL', `Línea de flujo ${S.sch_fl === '80' ? 'Sch 80' : 'Sch ' + S.sch_fl}: espesor mínimo con tolerancia ${f(R.mFL.wmin)} mm < t_m requerido ${f(R.mFL.tm)} mm (déficit ${f(-R.mFL.margin)} mm). Sch mínimo: ${R.mFL.minSch || 'ninguno de la tabla'}.`, 'A2', 'ASME B31.3 (NV)');
+  if (!R.mMP.ok) add('falla', 'ESP-MP', `Cabezal DN 250 Sch ${S.sch_mp}: ${f(R.mMP.wmin)} mm < t_m ${f(R.mMP.tm)} mm. Sch mínimo: ${R.mMP.minSch || 'ninguno de la tabla'}.`, 'A2', 'ASME B31.3 (NV)');
+  if (R.ssc.entry.reg === 3) add('falla', 'SSC3', `Entrada de línea en Región 3 (${f(R.ssc.entry.kPa)} kPa ≥ ${S.R3} kPa): solo A.2 de ISO 15156-2 (7.2.1.4); dureza de soldadura 250 HV, no 280 HV. A1 selecciona con 0,30 %; A2 con 0,15 %.`, 'A1 + A2 + A3', 'Acta A1↔A2; ISO 15156-2 7.2.1.4');
+  else if (R.ssc.arr.reg === 2 && R.ssc.arr.margin < 0.15)
+    add('abierto', 'SSC-B', `Llegada al múltiple en Región 2 pero a ${Math.round(R.ssc.arr.margin * 100)} % del borde de Región 3 (${f(R.ssc.arr.kPa)} de ${S.R3} kPa).`, 'A3 (valor H₂S año 10 por escrito)', 'Acta A1↔A2');
+  if (!S.a.pdes50) add('abierto', 'D1', 'Presión de diseño 55 bar (A1) aplicada: PS·DN = ' + R.ped.psdn55 + '. Falta confirmación escrita de A3; la ficha E1-03 usa 50 bar.', 'A3', 'Acta A1↔A2 vs Ficha E1-03');
+  else add('abierto', 'D1', 'Presión de diseño 50 bar (ficha E1-03) aceptada como supuesto; A1 declara 55 bar de diseño en superficie. Sin firma de A3.', 'A3', 'Acta A1↔A2 vs Ficha E1-03');
+  add('abierto', 'D2', `Temperatura en el múltiple: ${R.T_mp} °C aplicada (52 °C Tabla 7/ficha vs 68 °C base de diseño; máx. 85 °C para clase de brida y 3LPE).`, 'A2 + Cliente', 'Informe Tabla 7 vs Tabla 9');
+  if (!S.a.avail90 || R.avail < 0.9) add('falla', 'AVL', `Disponibilidad de inhibidor ${Math.round(R.avail * 100)} % < 90 % garantizado: el CA 2,42 mm no queda validado (CA recalculado ${f(R.cFL.caInh)} mm).`, 'A3', 'Acta A2↔A3');
+  if (!S.inhib) add('falla', 'NOINH', `Sin inhibición: CA ${f(R.cFL.caNo)} mm (${R.caStatus(R.cFL.caNo)}).`, 'A2', 'ISO 21457 8.2');
+  if (S.a.inhTLC) add('abierto', 'TLC*', 'Se aceptó que el inhibidor líquido controla la corrosión en la parte alta: contradice ISO 21457 8.1 (no es eficaz contra TLC).', 'A2 + A3', 'ISO 21457 8.1');
+  else add('abierto', 'TLC', 'TLC en tramos estratificados de baja pendiente (ΔT ' + R.tlc.dT + ' °C): requiere inhibidor de fase vapor/batch y aislamiento; sin firma en acta A2↔A3.', 'A3', 'ISO 21457 8.1; Informe §7.6');
+  if (R.vMPlow) add('abierto', 'MIC-V', `Velocidad en cabezal ${f(R.hMP.v)} m/s < ${S.vmin} m/s (umbral supuesto): sedimentación de agua+arena y MIC en el cabezal con ${R.hMP.n} pozo(s).`, 'A2 + A3', 'ISO 21457 6.2.2.3 (cualitativo)');
+  if (R.eros.level === 'crit') add('falla', 'ERO', 'Relación v/Ve > 1 (API RP 14E, NV).', 'A2', 'API RP 14E (NV)');
+  if (S.sch_mp === '40' && S.a.pdes50 === false) { /* no-op */ }
+  add('abierto', 'GAP-Q', 'Caudal por pozo y presión de burbuja no entregados por A1/A3: el caudal se derivó de 1,8 m/s × área (supuesto).', 'A1', 'Informe §7.6');
+  add('abierto', 'GAP-CHK', 'Ubicación del choque 45→38 bar sin acordar (A1 lo ubica del lado A2 o viceversa).', 'A1 + A2', 'Acta A1↔A2');
+  add('abierto', 'D6', 'Grado: ficha E1-03 recomienda L360NE (Anexo A); informe/acta usan L360NS con Anexo H. El Anexo H/«NS» no aparece en el extracto adjunto de ISO 3183.', 'A2', 'Ficha E1-03 vs Informe; ISO 3183 (adjunta)');
+  add('abierto', 'D7', 'Dureza de soldadura: 280 HV (ficha; ISO 15156-2 A.3.3, «típicamente») vs 250 HV (informe; A.2). Con Región 3 rige 250 HV.', 'A2', 'ISO 15156-2 A.2/A.3.3');
+  add('nv', 'D8', 'C4 de tramos aéreos: ISO 9223 no adjunta (solo ISO 9227, ensayo de niebla salina); la auditoría del informe señala que E1-04 no justificó el descarte de C3/C5.', 'A2 (E1-04)', 'Informe §4.2');
+  return L;
+}
+
+/* ---- Escenarios y sensibilidad ---- */
+function scen(S, ov) { const S2 = clone(S); Object.assign(S2, ov); return compute(S2); }
+function sensitivity(S, metric) {
+  const getM = R => metric === 'ca' ? R.cFL.ca : metric === 'marginFL' ? R.mFL.margin : R.mMP.margin;
+  const base = getM(compute(S));
+  const V = [
+    ['Tasa sin inhibir ×0,5 / ×1,5', s => s.cuScale = 0.5, s => s.cuScale = 1.5],
+    ['Tasa inhibida 0,05 / 0,20 mm/año', s => s.crI = 0.05, s => s.crI = 0.20],
+    ['Disponibilidad 95 % / 80 %', s => { s.a.avail90 = false; s.availAlt = 95; }, s => { s.a.avail90 = false; s.availAlt = 80; }],
+    ['Vida de diseño 15 / 25 años', s => s.life = 15, s => s.life = 25],
+    ['Presión de diseño 50 / 55 bar', s => s.a.pdes50 = true, s => s.a.pdes50 = false],
+    ['T de entrada 58 / 78 °C (solo De Waard)', s => s.T_in = 58, s => s.T_in = 78],
+    ['Presión de cabezal 40 / 50 bar (pCO₂)', s => s.P_head = 40, s => s.P_head = 50],
+    ['Tolerancia de fabricación 10 / 15 %', s => s.a.tol125 = true, s => s.a.tol125 = false],
+    ['Esfuerzo admisible S 152 / 124 MPa', s => s.S_allow = 152, s => s.S_allow = 124]
+  ];
+  if (V[7]) V[7][1] = s => { s.a.tol125 = true; s.tol = 10; };
+  const rows = V.map(([n, lo, hi]) => {
+    const a = clone(S), b = clone(S); lo(a); hi(b);
+    return { n, lo: getM(compute(a)), hi: getM(compute(b)), base };
+  });
+  rows.sort((x, y) => Math.max(Math.abs(y.lo - base), Math.abs(y.hi - base)) - Math.max(Math.abs(x.lo - base), Math.abs(x.hi - base)));
+  return { base, rows };
+}
+if (typeof module !== 'undefined') module.exports = { defaultState, compute, dewaard, scen, sensitivity, mech, WALL_FL, WALL_MP, clone };
+
+/* ===================== INTERFAZ ===================== */
+let S = defaultState(), R = compute(S), TAB = 'inicio', SELRISK = null, PLAY = true, REPORT_TS = null;
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const fmt = (x, d = 2) => (x === null || x === undefined || !isFinite(x)) ? '—' : x.toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LV = { crit: 'Crítico', apl: 'Aplica', cond: 'Condicional', ok: 'Cumple', nv: 'No verificado', fail: 'Falla', open: 'Abierto', spec: 'Especificado' };
+const badge = (k, t) => `<span class="badge ${k}">${esc(t || LV[k])}</span>`;
+const REGN = r => r === 0 ? 'Región 0 (<0,3 kPa)' : r === 3 ? 'Región 3' : 'Región 2';
+const REGCLS = r => r === 3 ? 'crit' : r === 2 ? 'apl' : 'ok';
+const NV = 'NO VERIFICADO CONTRA TEXTO ORIGINAL';
+
+/* ---------- Gráficos SVG sin dependencias ---------- */
+function ticks(a, b, n = 5) {
+  const span = b - a || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0))), r = step0 / mag;
+  const step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag, out = [];
+  for (let v = Math.ceil(a / step) * step; v <= b + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function lineChart(o) {
+  const W = o.w || 560, H = o.h || 250, m = { l: 54, r: 14, t: 12, b: 42 };
+  const all = o.series.flatMap(s => s.pts);
+  let x0 = o.xmin ?? Math.min(...all.map(p => p[0])), x1 = o.xmax ?? Math.max(...all.map(p => p[0]));
+  let y0 = o.ymin ?? Math.min(0, ...all.map(p => p[1])), y1 = o.ymax ?? Math.max(...all.map(p => p[1])) * 1.08;
+  if (y1 === y0) y1 = y0 + 1;
+  const X = x => m.l + (x - x0) / (x1 - x0) * (W - m.l - m.r), Y = y => H - m.b - (y - y0) / (y1 - y0) * (H - m.t - m.b);
+  let s = `<svg style="max-width:760px;width:100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title || 'gráfico')}">`;
+  ticks(y0, y1).forEach(t => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="var(--ink2)">${fmt(t, t % 1 ? 1 : 0)}</text>`);
+  ticks(x0, x1).forEach(t => s += `<line x1="${X(t)}" x2="${X(t)}" y1="${H - m.b}" y2="${H - m.b + 4}" stroke="var(--ink2)"/><text x="${X(t)}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" fill="var(--ink2)">${fmt(t, 0)}</text>`);
+  s += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="none" stroke="var(--ink2)"/>`;
+  (o.hl || []).forEach(h => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(h.y)}" y2="${Y(h.y)}" stroke="${h.c || 'var(--crit)'}" stroke-dasharray="6 4" stroke-width="1.5"/>`);
+  o.series.forEach(se => s += `<polyline fill="none" stroke="${se.c}" stroke-width="2.4" ${se.dash ? 'stroke-dasharray="7 4"' : ''} points="${se.pts.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ')}"/>`);
+  s += `<text x="${(m.l + W - m.r) / 2}" y="${H - 4}" text-anchor="middle" font-size="11.5" fill="var(--ink2)">${esc(o.xl || '')}</text>`;
+  s += `<text transform="translate(13 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle" font-size="11.5" fill="var(--ink2)">${esc(o.yl || '')}</text></svg>`;
+  return s + legendHtml(o.series.map(x => [x.c, x.name, x.dash]).concat((o.hl || []).filter(h => h.label).map(h => [h.c || 'var(--crit)', h.label, true])));
+}
+function legendHtml(items) { return '<div class="legend">' + items.map(([c, n]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('') + '</div>'; }
+function barChart(o) {   // o:{cats,series:[{name,c,vals}],yl,hl,w,h}
+  const W = o.w || 560, H = o.h || 240, m = { l: 54, r: 12, t: 12, b: 36 };
+  const vals = o.series.flatMap(s => s.vals);
+  const y0 = Math.min(0, ...vals) * 1.1, y1 = Math.max(...vals, o.hl ? o.hl.y : 0) * 1.12 || 1;
+  const Y = y => H - m.b - (y - y0) / (y1 - y0) * (H - m.t - m.b), gw = (W - m.l - m.r) / o.cats.length, bw = Math.min(34, gw / (o.series.length + 1));
+  let s = `<svg style="max-width:760px;width:100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title || 'barras')}">`;
+  ticks(y0, y1).forEach(t => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="var(--ink2)">${fmt(t, t % 1 ? 1 : 0)}</text>`);
+  o.cats.forEach((c, i) => {
+    const cx = m.l + gw * (i + .5);
+    o.series.forEach((se, j) => {
+      const v = se.vals[i], x = cx - bw * o.series.length / 2 + j * bw, col = (o.negc && v < 0) ? 'var(--crit)' : se.c;
+      s += `<rect x="${x}" width="${bw - 2}" y="${Math.min(Y(v), Y(0))}" height="${Math.abs(Y(v) - Y(0))}" fill="${col}"/>`;
+    });
+    s += `<text x="${cx}" y="${H - m.b + 15}" text-anchor="middle" font-size="11.5" fill="var(--ink)">${esc(c)}</text>`;
+  });
+  s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--ink2)"/>`;
+  if (o.hl) s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(o.hl.y)}" y2="${Y(o.hl.y)}" stroke="${o.hl.c || 'var(--crit)'}" stroke-dasharray="6 4" stroke-width="1.5"/>`;
+  s += `<text transform="translate(13 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle" font-size="11.5" fill="var(--ink2)">${esc(o.yl || '')}</text></svg>`;
+  const lg = o.series.map(x => [x.c, x.name]); if (o.hl && o.hl.label) lg.push([o.hl.c || 'var(--crit)', o.hl.label]);
+  return s + (lg.length > 1 || o.hl ? legendHtml(lg) : '');
+}
+function tornado(rows, base, unit) {
+  const W = 700, rh = 28, H = rows.length * rh + 44, lx = 270, rw = W - lx - 20;
+  const ext = Math.max(...rows.map(r => Math.max(Math.abs(r.lo - base), Math.abs(r.hi - base))), 0.01) * 1.15;
+  const X = v => lx + rw / 2 + (v - base) / ext * rw / 2;
+  let s = `<svg style="max-width:760px;width:100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="Diagrama de tornado">`;
+  rows.forEach((r, i) => {
+    const y = 14 + i * rh, c = '#1c6a8a', d = '#c4551d';
+    s += `<text x="${lx - 8}" y="${y + 15}" text-anchor="end" font-size="11.5" fill="var(--ink)">${esc(r.n)}</text>`;
+    s += `<rect x="${Math.min(X(base), X(r.lo))}" y="${y + 3}" width="${Math.abs(X(r.lo) - X(base))}" height="${rh - 10}" fill="${c}"/>`;
+    s += `<rect x="${Math.min(X(base), X(r.hi))}" y="${y + 3}" width="${Math.abs(X(r.hi) - X(base))}" height="${rh - 10}" fill="${d}" opacity=".9"/>`;
+  });
+  s += `<line x1="${X(base)}" x2="${X(base)}" y1="6" y2="${H - 26}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  s += `<text x="${X(base)}" y="${H - 10}" text-anchor="middle" font-size="11.5" fill="var(--ink2)">base = ${fmt(base)} ${unit}</text></svg>`;
+  return s + legendHtml([['#1c6a8a', 'Primer valor del par'], ['#c4551d', 'Segundo valor del par']]);
+}
+function sscChart() {
+  const W = 560, H = 300, m = { l: 52, r: 16, t: 14, b: 44 }, xl0 = -0.6, xl1 = 3, y0 = 3, y1 = 7;
+  const X = k => m.l + (Math.log10(k) - xl0) / (xl1 - xl0) * (W - m.l - m.r), Y = p => H - m.b - (p - y0) / (y1 - y0) * (H - m.t - m.b);
+  let s = `<svg style="max-width:760px;width:100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="Diagrama pH2S contra pH, regiones de severidad SSC">`;
+  s += `<rect x="${m.l}" y="${m.t}" width="${X(0.3) - m.l}" height="${H - m.t - m.b}" fill="var(--ok)" opacity=".15"/>`;
+  [0, 1].forEach(e => s += `<line x1="${X(Math.pow(10, e))}" x2="${X(Math.pow(10, e))}" y1="${m.t}" y2="${H - m.b}" stroke="var(--line)"/><text x="${X(Math.pow(10, e))}" y="${H - m.b + 16}" text-anchor="middle" font-size="11" fill="var(--ink2)">${fmt(Math.pow(10, e), 0)}</text>`);
+  [3, 4, 5, 6, 7].forEach(p => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${Y(p) + 4}" text-anchor="end" font-size="11" fill="var(--ink2)">${p}</text>`);
+  s += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="none" stroke="var(--ink2)"/>`;
+  s += `<line x1="${X(0.3)}" x2="${X(0.3)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--ok)" stroke-width="2"/>`;
+  for (const [offset, floor, cap] of [[4.5,3,6.5],[3.5,3.5,5.5]]) {
+    const points = Array.from({length:81}, (_, i) => 0.3 * Math.pow(1000 / 0.3, i / 80));
+    const d = points.map((k, i) => (i ? 'L' : 'M') + X(k) + ' ' +
+      Y(Math.max(floor, Math.min(cap, offset + Math.log10(k))))).join(' ');
+    s += '<path fill="none" stroke="var(--crit)" stroke-width="2" d="' + d + '"/>';
+  }
+  s += `<text x="${m.l + 4}" y="${m.t + 14}" font-size="11" fill="var(--ok)">Región 0 (&lt; 0,3)</text>`;
+  s += `<text x="${(X(0.3) + X(S.R3)) / 2}" y="${m.t + 14}" text-anchor="middle" font-size="11" fill="var(--ink2)">Fronteras SSC · Figura 1</text>`;
+  s += `<text x="${X(S.R3) + 6}" y="${m.t + 14}" font-size="11" fill="var(--crit)">R2/R3 al pH actual</text>`;
+  const pts = R.sscGrid.map((g, i) => ({ ...g, i: i + 1 }));
+  pts.forEach((g, i) => {
+    const x = X(g.kPa), y = Y(S.pH), up = i % 2 === 0, cur = (g.y === R.y);
+    s += `<line x1="${x}" x2="${x}" y1="${y}" y2="${y + (up ? -22 : 22)}" stroke="var(--ink2)"/><circle cx="${x}" cy="${y}" r="5" fill="${g.reg === 3 ? 'var(--crit)' : 'var(--apl)'}" stroke="${cur ? 'var(--ink)' : '#fff'}" stroke-width="${cur ? 2.5 : 1.5}"/>`;
+    s += `<text x="${x}" y="${y + (up ? -27 : 35)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${g.i}</text>`;
+  });
+  s += `<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--ink2)">pH₂S (kPa, escala log)</text>`;
+  s += `<text transform="translate(13 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle" font-size="11.5" fill="var(--ink2)">pH in situ</text></svg>`;
+  return s;
+}
+
+/* ---------- Estado global, barra de escenario, navegación ---------- */
+const TABS = [['inicio', 'Inicio'], ['sim', 'Simulación conjunta'], ['vis', 'Esquema animado'], ['cor', 'Corrosión y mecanismos'], ['mec', 'Integridad mecánica'], ['mat', 'Materiales y cumplimiento'], ['esc', 'Escenarios y sensibilidad'], ['inf', 'Informes']];
+function buildChrome() {
+  $('#tabs').innerHTML = TABS.map(([k, t]) => `<button role="tab" data-tab="${k}" aria-selected="${k === TAB}">${t}</button>`).join('');
+  $('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) go(b.dataset.tab); };
+  $('#scenbar').innerHTML = `
+   <label>Horizonte <select id="sc-caso"><option value="hoy">Hoy · 0,15 % H₂S</option><option value="y10">Año 10 · 0,30 % H₂S</option></select></label>
+   <label>Inhibidor <select id="sc-inh"><option value="1">Con inhibición (25–50 ppm)</option><option value="0">Sin inhibición</option></select></label>
+   <label>Pozos activos <select id="sc-w"><option value="8">8 pozos</option><option value="2">2 pozos</option><option value="4">4 pozos</option></select></label>
+   <span class="pill" id="sc-pill"></span>`;
+  $('#sc-caso').onchange = e => { S.caso = e.target.value; update(); };
+  $('#sc-inh').onchange = e => { S.inhib = e.target.value === '1'; update(); };
+  $('#sc-w').onchange = e => { S.nWells = +e.target.value; update(); };
+}
+function syncChrome() {
+  $('#sc-caso').value = S.caso; $('#sc-inh').value = S.inhib ? '1' : '0'; $('#sc-w').value = String(S.nWells);
+  $('#sc-pill').textContent = `Región SSC ${R.ssc.worst} · CA ${fmt(R.cFL.ca)} mm · ${R.issues.filter(i => i.sev === 'falla').length} fallas · ${R.issues.filter(i => i.sev === 'abierto').length} abiertos`;
+  $$('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === TAB));
+}
+function go(t) { TAB = t; $$('.tab').forEach(x => x.classList.toggle('on', x.id === 'tab-' + t)); renderTab(); syncChrome(); window.scrollTo(0, 0); }
+function update() { R = compute(S); syncChrome(); renderTab(); }
+function renderTab() {
+  const f = { inicio: tInicio, sim: tSim, vis: tVis, cor: tCor, mec: tMec, mat: tMat, esc: tEsc, inf: tInf }[TAB];
+  f();
+}
+const kpi = (cls, v, l) => `<div class="kpi ${cls}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+
+/* ---------- INICIO ---------- */
+function tInicio() {
+  const el = $('#tab-inicio'), nf = R.issues.filter(i => i.sev === 'falla').length, na = R.issues.filter(i => i.sev === 'abierto').length;
+  const sc = S.scope;
+  el.innerHTML = `
+  <h1>Sistema A2 · Recolección y múltiple de producción</h1>
+  <p class="note">Proyecto A — campo de crudo pesado (18 °API) del Magdalena Medio · Equipo A2 (UIS). Simulación conjunta de las <b>líneas de flujo FL-01 a FL-08</b> (4 in Sch 80, 1 850 m) y del <b>múltiple MP-01</b> (cabezal DN 250). Los resultados cambian en vivo con el escenario de la barra superior y con los supuestos de la pestaña <i>Simulación conjunta</i>.</p>
+  <div class="chain">
+    <div><b>A1 · Árbol</b><br><span class="note">${fmt(S.P_head, 0)} bar · ${fmt(S.T_in, 0)} °C<br>brida de salida (frontera)</span></div>
+    <div><b>FL-01…FL-08</b><br><span class="note">8 × 4 in L360NS · enterradas a 1,2 m<br>2 tramos aéreos + cruce de quebrada</span></div>
+    <div><b>MP-01 · DN 250</b><br><span class="note">${fmt(S.P_arr, 0)} bar · ${R.T_mp} °C<br>VB-P y VR en cada línea</span></div>
+    <div><b>A3 · V-301</b><br><span class="note">separador trifásico<br>frontera A2/A3</span></div>
+  </div>
+  <h3>Equipos a evaluar</h3>
+  <div class="scope" id="scope">
+    <label><input type="radio" name="scope" value="fl" ${sc === 'fl' ? 'checked' : ''}>Líneas de flujo (FL)</label>
+    <label><input type="radio" name="scope" value="mp" ${sc === 'mp' ? 'checked' : ''}>Múltiple de producción (MP-01)</label>
+    <label><input type="radio" name="scope" value="both" ${sc === 'both' ? 'checked' : ''}>Ambos, conectados</label>
+  </div>
+  <p class="note">La selección filtra las columnas de Corrosión, Integridad y el informe; el cálculo conjunto siempre transfiere datos de FL a MP.</p>
+  <h3>Estado general del escenario</h3>
+  <div class="grid g4">
+    ${kpi(REGCLS(R.ssc.worst), 'Región ' + R.ssc.worst, `Servicio amargo · pH₂S ${fmt(R.ssc.entry.kPa)} kPa (45 bar) / ${fmt(R.ssc.arr.kPa)} kPa (38 bar)`)}
+    ${kpi(R.cFL.ca > 10 ? 'crit' : R.cFL.ca > 6 ? 'apl' : 'ok', fmt(R.cFL.ca) + ' mm', `Sobreespesor FL (${S.inhib ? 'con' : 'sin'} inhibidor, modelo ${R.model === 'cliente' ? 'cliente' : 'De Waard'}) · ${R.caStatus(R.cFL.ca)}`)}
+    ${kpi(R.mFL.ok ? 'ok' : 'crit', (R.mFL.margin >= 0 ? '+' : '') + fmt(R.mFL.margin) + ' mm', `Margen de pared FL Sch ${S.sch_fl} (${R.mFL.ok ? 'cumple' : 'NO cumple'})`)}
+    ${kpi(R.mMP.ok ? 'ok' : 'crit', (R.mMP.margin >= 0 ? '+' : '') + fmt(R.mMP.margin) + ' mm', `Margen de pared MP DN 250 Sch ${S.sch_mp} (${R.mMP.ok ? 'cumple' : 'NO cumple'})`)}
+    ${kpi(R.flange.margin > 0 ? 'ok' : 'crit', fmt(R.flange.rating, 1) + ' bar', `Brida Cl. 600 A105 a ${S.T_max} °C vs diseño ${R.Pdes} bar (valor NV)`)}
+    ${kpi(R.eros.level === 'crit' ? 'crit' : 'ok', fmt(Math.max(R.eros.fl, R.eros.mp), 2), 'Máx. v / Ve (API RP 14E, NV) · FL ' + fmt(R.eros.fl) + ' · MP ' + fmt(R.eros.mp))}
+    ${kpi(R.vMPlow ? 'crit' : 'ok', fmt(R.hMP.v) + ' m/s', `Velocidad en cabezal con ${R.hMP.n} pozo(s)`)}
+    ${kpi(nf ? 'crit' : na ? 'apl' : 'ok', nf + ' / ' + na, 'Fallas / puntos abiertos del escenario')}
+  </div>
+  <h3>Cómo usar el simulador</h3>
+  <div class="grid g3">
+    <div class="card"><b>1 · Escenario.</b> Elija horizonte (Hoy / Año 10), inhibición y pozos activos en la barra superior.</div>
+    <div class="card"><b>2 · Supuestos.</b> En <i>Simulación conjunta</i> acepte o rechace cada supuesto; los cálculos y los avisos se recalculan al instante.</div>
+    <div class="card"><b>3 · Informe.</b> En <i>Informes</i> descargue el informe técnico (PDF imprimible, Excel, CSV y Markdown) con el escenario actual.</div>
+  </div>
+  <div class="warn"><b>Regla de honestidad.</b> Solo se marcan como verificadas las cláusulas leídas en los PDF adjuntos (ISO 15156-1/-2/-3, ISO 21457, ISO 3183, EN 10204, EN 13480-2, ISO 9227). Lo demás (ASME B31.3/B16.5, API RP 14E, EN 13480-1, ISO 23936-2, ISO 9223, ISO 15589-1, Anexo H de ISO 3183…) aparece como <b>${NV}</b> y se atribuye al informe o al acta.</div>`;
+  $('#scope').onchange = e => { S.scope = e.target.value; update(); };
+}
+
+/* ---------- SIMULACIÓN CONJUNTA ---------- */
+const FIELDS = [
+  ['Proceso (base de diseño)', [['P_head', 'Presión cabezal (A1)', 'bar'], ['P_arr', 'Presión llegada al múltiple', 'bar'], ['T_in', 'Temperatura entrada', '°C'], ['T_out', 'Temperatura llegada', '°C'], ['T_max', 'Temperatura máxima', '°C'], ['co2', 'CO₂ en gas', '% mol'], ['h2s_hoy', 'H₂S hoy', '% mol'], ['h2s_y10', 'H₂S año 10 (propuesto A3)', '% mol'], ['pH', 'pH calculado', '—'], ['wc', 'Corte de agua', '%'], ['sand', 'Sólidos', 'lb/1000 bbl']]],
+  ['Corrosión', [['crU', 'Tasa sin inhibir (cliente)', 'mm/año'], ['crI', 'Tasa inhibida de diseño', 'mm/año'], ['availAlt', 'Disponibilidad alterna', '%'], ['life', 'Vida de diseño', 'años'], ['fpH', 'F(pH) De Waard', '—'], ['cuScale', 'Factor sobre tasa sin inhibir', '×']]],
+  ['Geometría e hidráulica', [['sch_fl', 'Schedule FL (4 in)', 'sel:40,80,160'], ['L_fl', 'Longitud de cada FL', 'm'], ['v_fl', 'Velocidad en FL (ficha)', 'm/s'], ['sch_mp', 'Schedule cabezal DN 250', 'sel:40,XS,80,120'], ['rho', 'Densidad de mezcla (supuesto)', 'kg/m³'], ['mu', 'Viscosidad efectiva (supuesto)', 'cP'], ['rough', 'Rugosidad', 'mm'], ['Ccoef', 'Constante C API RP 14E', '—'], ['vmin', 'Velocidad mínima cabezal (supuesto)', 'm/s']]],
+  ['Mecánica (ASME B31.3 · NV)', [['S_allow', 'Esfuerzo admisible S', 'MPa'], ['E', 'Factor de calidad E', '—'], ['W', 'Factor de soldadura W', '—'], ['Y', 'Coeficiente Y', '—'], ['tol', 'Tolerancia de fabricación', '%']]]
+];
+const ASSUME = [
+  ['avail90', 'Disponibilidad de inhibidor 90 %', 'Acta A2↔A3 (≥90 %) · si se rechaza: disponibilidad alterna del panel de Corrosión.'],
+  ['base031', 'Tasa base del cliente 0,31 mm/año', 'Ficha E1-03 · si se rechaza: se usa De Waard–Milliams del informe (7,66–13,25 mm/año a 68–85 °C).'],
+  ['pdes50', 'Presión de diseño 50 bar', 'Ficha E1-03 / Tabla 7 · si se rechaza: 55 bar (acta A1↔A2).'],
+  ['tmp52', 'Temperatura en múltiple 52 °C', 'Tabla 7 / ficha · si se rechaza: 68 °C (Tabla 9 / base de diseño).'],
+  ['selA2', 'Selección SSC de A2 con 38 bar', 'Acta A1↔A2 (A2 selecciona a 38 bar) · si se rechaza: rige el punto de entrada a 45 bar (criterio A1).'],
+  ['h2s030', 'H₂S año 10 = 0,30 % molar', 'Propuesta de A3 sin firma · si se rechaza: el año 10 conserva 0,15 %.'],
+  ['tol125', 'Tolerancia de fabricación 12,5 % (NV)', 'Valor supuesto; ISO 3183 adjunta no muestra la tabla de tolerancias · si se rechaza: 15 %.'],
+  ['inhTLC', 'Inhibidor líquido controla TLC', 'Contradice ISO 21457 8.1 (verificado) · aceptarlo es solo para ver el efecto.']
+];
+function tSim() {
+  const el = $('#tab-sim');
+  if (!$('#simIn')) {
+    el.innerHTML = `<div class="sim"><div id="simIn"></div><div id="simOut"></div></div>`;
+    let h = `<div class="card printable"><h3>Supuestos aceptados</h3><p class="note">Marque o desmarque: los cálculos, avisos y reportes se actualizan al instante.</p>`;
+    ASSUME.forEach(([k, t, s]) => h += `<div class="asm"><input type="checkbox" id="as-${k}" data-as="${k}"><label for="as-${k}" class="t">${t}</label><div class="s">${s}</div></div>`);
+    h += `</div><div class="card" style="margin-top:12px"><h3>Parámetros de entrada</h3>`;
+    FIELDS.forEach(([g, fs]) => {
+      h += `<fieldset><legend>${g}</legend>`;
+      fs.forEach(([k, l, u]) => h += u.startsWith('sel:')
+        ? `<div class="fld"><label for="f-${k}">${l}</label><select id="f-${k}" data-k="${k}">${u.slice(4).split(',').map(o => `<option>${o}</option>`).join('')}</select><span class="u">Sch</span></div>`
+        : `<div class="fld"><label for="f-${k}">${l}</label><input id="f-${k}" data-k="${k}" type="number" step="any"><span class="u">${u}</span></div>`);
+      h += `</fieldset>`;
+    });
+    h += `<button class="btn alt" id="rst">Restablecer valores de los documentos</button></div>`;
+    $('#simIn').innerHTML = h;
+    $('#simIn').addEventListener('input', e => {
+      const t = e.target;
+      if (t.dataset.k) { const v = t.tagName === 'SELECT' ? t.value : parseFloat(t.value); if (t.tagName === 'SELECT' || isFinite(v)) { S[t.dataset.k] = v; R = compute(S); syncChrome(); simOut(); } }
+      if (t.dataset.as) { S.a[t.dataset.as] = t.checked; R = compute(S); syncChrome(); simOut(); }
+    });
+    $('#rst').onclick = () => { S = defaultState(); syncInputs(); update(); };
+  }
+  syncInputs(); simOut();
+}
+function syncInputs() {
+  $$('[data-k]').forEach(i => { if (document.activeElement !== i) i.value = S[i.dataset.k]; });
+  $$('[data-as]').forEach(i => i.checked = !!S.a[i.dataset.as]);
+}
+function simOut() {
+  const H = R.hFL, M = R.hMP, p = R.pts, act = Array.from({ length: 8 }, (_, i) => i < R.hMP.n);
+  const prof = (key, name) => R.profile.map(q => [q.x, q[key]]);
+  const flows = act.map((a, i) => `<tr><td>FL-0${i + 1}</td><td>${a ? badge('ok', 'activa') : badge('nv', 'cerrada')}</td><td class="n">${a ? fmt(H.Qh, 1) : '0,0'}</td><td class="n">${a ? fmt(H.bpd, 0) : '0'}</td><td class="n">${a ? fmt(S.P_arr, 1) : '—'}</td><td class="n">${a ? fmt(S.T_out, 0) : '—'}</td></tr>`).join('');
+  $('#simOut').innerHTML = `
+  <div class="card printable"><h3>Transferencia de datos FL → MP-01 → A3</h3>
+   <div class="tw"><table><tr><th>Nodo</th><th class="n">P (bar)</th><th class="n">T (°C)</th><th class="n">pCO₂ (bar)</th><th class="n">pH₂S (kPa)</th><th>Región SSC</th></tr>
+    <tr><td>Brida de salida del árbol (A1→A2)</td><td class="n">${fmt(p.entry.P, 1)}</td><td class="n">${fmt(p.entry.T, 0)}</td><td class="n">${fmt(p.entry.pCO2, 3)}</td><td class="n">${fmt(p.entry.pH2S_kPa)}</td><td>${badge(REGCLS(R.ssc.entry.reg), REGN(R.ssc.entry.reg))}</td></tr>
+    <tr><td>Llegada de las FL al cabezal MP-01</td><td class="n">${fmt(p.arr.P, 1)}</td><td class="n">${fmt(p.arr.T, 0)}</td><td class="n">${fmt(p.arr.pCO2, 3)}</td><td class="n">${fmt(p.arr.pH2S_kPa)}</td><td>${badge(REGCLS(R.ssc.arr.reg), REGN(R.ssc.arr.reg))}</td></tr>
+    <tr><td>Cabezal MP-01 (T según supuesto)</td><td class="n">${fmt(p.mp.P, 1)}</td><td class="n">${fmt(p.mp.T, 0)}</td><td class="n">${fmt(p.mp.pCO2, 3)}</td><td class="n">${fmt(p.mp.pH2S_kPa)}</td><td>${badge(REGCLS(R.ssc.arr.reg), REGN(R.ssc.arr.reg))}</td></tr>
+    <tr><td>Brida de entrada del separador V-301 (A3)</td><td class="n">${fmt(p.mp.P, 1)}</td><td class="n">${fmt(p.mp.T, 0)}</td><td class="n">${fmt(p.mp.pCO2, 3)}</td><td class="n">${fmt(p.mp.pH2S_kPa)}</td><td>${badge(REGCLS(R.ssc.arr.reg), REGN(R.ssc.arr.reg))}</td></tr></table></div>
+   <p class="note">La composición (CO₂, H₂S, Cl⁻, pH, sólidos, corte de agua) no cambia dentro de las tuberías; solo cambian las presiones parciales. En el múltiple se mezclan las líneas activas con el mismo caudal por pozo (supuesto del informe: no hay datos por pozo).</p></div>
+  <div class="grid g2" style="margin-top:12px">
+   <div class="card printable"><h3>Hidráulica de una línea FL</h3><div class="tw"><table>
+    <tr><td>Diámetro interior (4 in Sch ${S.sch_fl}: pared ${fmt(R.wFL)} mm)</td><td class="n">${fmt(H.Dm * 1000, 1)} mm</td></tr>
+    <tr><td>Caudal por pozo (derivado de 1,8 m/s)</td><td class="n">${fmt(H.Qh, 1)} m³/h · ${fmt(H.bpd, 0)} bpd</td></tr>
+    <tr><td>Reynolds (ρ ${S.rho} kg/m³, μ ${S.mu} cP)</td><td class="n">${fmt(H.Re, 0)}</td></tr>
+    <tr><td>Factor de fricción (Swamee–Jain)</td><td class="n">${fmt(H.f, 4)}</td></tr>
+    <tr><td>Caída de presión por fricción, ${fmt(S.L_fl, 0)} m</td><td class="n">${fmt(H.dP)} bar</td></tr>
+    <tr><td>P calculada a la llegada (45 − ΔP)</td><td class="n">${fmt(R.Pcalc)} bar ${Math.abs(R.Pcalc - S.P_arr) < 1 ? badge('ok', 'coherente con 38') : badge('open', 'difiere de 38')}</td></tr>
+    <tr><td>Velocidad erosional Ve = C/√ρ (API RP 14E, NV)</td><td class="n">${fmt(H.ve)} m/s</td></tr>
+    <tr><td>v / Ve</td><td class="n">${fmt(H.ratio)} ${H.ratio > 1 ? badge('crit', 'excede') : badge('ok', 'bajo Ve')}</td></tr>
+    <tr><td>Arena por línea</td><td class="n">${fmt(R.sand.kgd, 1)} kg/día</td></tr></table></div>
+    <p class="note">El ΔP sale de supuestos de mezcla (ρ, μ) que ningún documento entrega: la ficha reconoce que falta el cálculo hidráulico completo. Sirve como verificación de orden de magnitud.</p></div>
+   <div class="card printable"><h3>Hidráulica del cabezal MP-01 (DN 250)</h3><div class="tw"><table>
+    <tr><td>Pozos activos</td><td class="n">${M.n}</td></tr>
+    <tr><td>Diámetro interior (Sch ${S.sch_mp}: pared ${fmt(R.wMP)} mm)</td><td class="n">${fmt(M.Dm * 1000, 1)} mm</td></tr>
+    <tr><td>Caudal total</td><td class="n">${fmt(M.Qh, 1)} m³/h · ${fmt(M.bpd, 0)} bpd</td></tr>
+    <tr><td>Velocidad</td><td class="n">${fmt(M.v)} m/s ${R.vMPlow ? badge('crit', '< ' + S.vmin + ' m/s') : badge('ok')}</td></tr>
+    <tr><td>Reynolds</td><td class="n">${fmt(M.Re, 0)}</td></tr>
+    <tr><td>Velocidad erosional Ve</td><td class="n">${fmt(M.ve)} m/s</td></tr>
+    <tr><td>v / Ve</td><td class="n">${fmt(M.ratio)}</td></tr>
+    <tr><td>Arena que llega al cabezal</td><td class="n">${fmt(R.sand.lbdMP * 0.4536, 1)} kg/día</td></tr></table></div>
+    <p class="note">Con pocos pozos la velocidad cae: el agua y la arena se asientan y alimentan corrosión bajo depósito y MIC (ISO 21457 6.2.2.3, verificado). El umbral de velocidad mínima es un supuesto editable.</p></div></div>
+  <div class="grid g2" style="margin-top:12px">
+   <div class="card printable"><h3>Presión a lo largo de la línea</h3>${lineChart({ title: 'Presión', series: [{ name: 'P (bar), perfil lineal 45→38', c: 'var(--accent)', pts: prof('P') }], xl: 'distancia (m)', yl: 'bar', ymin: 30, ymax: 50, hl: [{ y: R.Pdes, label: 'Presión de diseño ' + R.Pdes + ' bar', c: 'var(--crit)' }] })}</div>
+   <div class="card printable"><h3>Temperatura a lo largo de la línea</h3>${lineChart({ title: 'Temperatura', series: [{ name: 'T (°C), perfil lineal 68→52', c: 'var(--hot)', pts: prof('T') }], xl: 'distancia (m)', yl: '°C', ymin: 40, ymax: 90, hl: [{ y: S.T_max, label: 'Máxima ' + S.T_max + ' °C', c: 'var(--apl)' }] })}</div></div>
+  <div class="card printable" style="margin-top:12px"><h3>Estado por línea</h3><div class="tw"><table><tr><th>Línea</th><th>Estado</th><th class="n">Q (m³/h)</th><th class="n">Q (bpd)</th><th class="n">P llegada (bar)</th><th class="n">T llegada (°C)</th></tr>${flows}</table></div></div>`;
+}
+
+/* ---------- ESQUEMA ANIMADO ---------- */
+function riskList() {
+  const f = fmt, e = R.ssc.entry, a = R.ssc.arr;
+  const caTxt = `CA ${f(R.cFL.ca)} mm · ${R.caStatus(R.cFL.ca)}`;
+  return [
+    { id: 1, name: 'SSC y HIC en tubo, soldaduras y brida de entrada', lv: 'crit', where: 'Entrada de cada línea (frontera A1/A2)', d: `pH₂S ${f(e.kPa)} kPa a ${S.P_head} bar (${REGN(e.reg)}) y ${f(a.kPa)} kPa a ${S.P_arr} bar (${REGN(a.reg)}); ${f(e.times, 0)} veces el umbral de 0,3 kPa. Dureza de soldadura ≤ ${R.hardness.weld} HV (${R.hardness.route}). El inhibidor no previene SSC/HIC: por eso el tubo se compra con prueba HIC.`, src: 'ISO 15156-2 7.1.2, 7.2.1.4 (verificado); Anexo H e HIC: informe (NV)' },
+    { id: 2, name: 'Corrosión uniforme por CO₂ (fondo mojado)', lv: (!S.inhib || R.model === 'dewaard') ? 'crit' : 'apl', where: 'Pared inferior, máximo en la entrada', d: `pCO₂ ${f(R.pts.entry.pCO2, 3)} bar, ${S.T_in} °C, pH ${S.pH}. ${caTxt}. De Waard (informe): ${f(R.dw.in68)}–${f(R.dw.in85)} mm/año sin inhibir; modelo cliente: ${f(S.crU)} mm/año.`, src: 'Ficha E1-03; Informe §11.1; ISO 21457 8.2' },
+    { id: 3, name: 'Corrosión en la parte alta (TLC)', lv: R.tlc.level, where: 'Tramos estratificados de baja pendiente', d: `Régimen estratificado y enfriamiento de ${R.tlc.dT} °C (68→52): el agua condensa arriba. El inhibidor soluble en agua no es eficaz contra TLC; se evalúa tratamiento batch/pig o inhibidor de fase vapor y aislamiento.`, src: 'ISO 21457 8.1 (verificado); Ficha E1-03' },
+    { id: 4, name: 'MIC en puntos bajos y cruce de quebrada', lv: 'apl', where: 'Depresiones del trazado', d: 'Agua libre y arena se asientan donde no hay flujo y alimentan bacterias sulfato-reductoras. Se mitiga con marraneo, biocida en lotes y monitoreo.', src: 'ISO 21457 6.2.2.3 (verificado)' },
+    { id: 5, name: 'Corrosión atmosférica C4 en tramos aéreos', lv: 'apl', where: 'Dos tramos aéreos y soportes', d: 'Ambiente tropical húmedo no marino; sistema C4.11 (zinc rico epóxico + epoxi + poliuretano, 260 µm NDFT). El C4 viene de la ficha E1-04 y su auditoría reporta que no se descartaron C3/C5 con argumento.', src: `Informe §4.2 y tabla 2063+; ISO 9223 ${NV}` },
+    { id: 6, name: 'Corrosión externa del tramo enterrado (3LPE + PC)', lv: 'cond', where: 'Tramos enterrados a 1,2 m', d: 'Fluido a 68–85 °C degrada el 3LPE; un defecto deja el acero expuesto. Ánodos de Mg; potencial adoptado −950 mV CSE (base −850 mV; T > 60 °C). Condicional a corrientes parásitas.', src: `Informe §11.4; ISO 15589-1 / ISO 21809-1 ${NV}` },
+    { id: 7, name: 'Erosión-corrosión en tes y codos del cabezal', lv: R.eros.level, where: 'Uniones de las 8 líneas al cabezal', d: `v/Ve = ${f(R.eros.mp)} en cabezal y ${f(R.eros.fl)} en línea; arena ${f(R.sand.kgd, 1)} kg/día por pozo. La ISO 21457 6.5 exige modelo de erosión por arena; falta el caudal real por pozo.`, src: 'API RP 14E (NV); ISO 21457 6.5, 8.1' },
+    { id: 8, name: 'Corrosión bajo depósito y MIC en zonas muertas', lv: R.mic.level, where: 'Extremos del cabezal, drenajes, tomas de muestra', d: `Velocidad del cabezal ${f(R.hMP.v)} m/s con ${R.hMP.n} pozo(s). Zonas quietas: drenaje en puntos bajos y limpieza.`, src: 'ISO 21457 6.2.2.3 (verificado)' },
+    { id: 9, name: 'Corrosión y SSC del trim 410 de VB-P y VR', lv: 'crit', where: 'Obturador y asiento de las válvulas', d: 'AISI 410 solo es aceptable en servicio amargo con dureza ≤ 22 HRC; cuerpo WCB; asiento metálico con recubrimiento duro por la arena.', src: 'ISO 15156-3 (S41000, 22 HRC; verificado)' },
+    { id: 10, name: 'Descompresión explosiva de elastómeros', lv: 'cond', where: 'Sellos de válvulas y bridas', d: 'Elastómeros calificados contra descompresión rápida de gas; se elige con ficha técnica y presión de operación.', src: `ISO 23936-2 7.3.2 ${NV}` },
+    { id: 11, name: 'Bridas A105 y espárragos B7M/2HM', lv: 'apl', where: 'Bridas Clase 600 del múltiple y de frontera', d: `A105 normalizado ≤ 187 HBW; pernos B7M con tuercas 2HM (puede requerir reducir la presión de la brida). Margen de la brida a ${S.T_max} °C: ${f(R.flange.margin, 1)} bar.`, src: 'ISO 15156-2 A.2.1.3, Tabla A.4 (verificado); B16.5 (NV)' }
+  ];
+}
+const LVCOL = { crit: 'var(--crit)', apl: 'var(--apl)', cond: 'var(--cond)', ok: 'var(--ok)', nv: 'var(--nv)' };
+function schematic() {
+  const n = R.hMP.n, v = S.v_fl, ys = Array.from({ length: 8 }, (_, i) => 70 + i * 60), L = riskList(), dur = (1.5 * 1.8 / Math.max(.3, v)).toFixed(2);
+  let s = `<svg id="svg" class="${PLAY ? '' : 'paused'}" style="--dur:${dur}s" viewBox="0 0 1240 560" role="img" aria-label="Esquema del sistema A2: árboles A1, ocho líneas de flujo, cruce de quebrada, múltiple MP-01 y separador V-301">
+  <defs><linearGradient id="gT" gradientUnits="userSpaceOnUse" x1="130" x2="800" y1="0" y2="0"><stop offset="0" stop-color="#d2482a"/><stop offset="1" stop-color="#e2a13b"/></linearGradient></defs>
+  <rect x="0" y="0" width="150" height="560" fill="var(--soft)"/><rect x="1040" y="0" width="200" height="560" fill="var(--soft)"/>
+  <text x="75" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">A1 · árboles</text>
+  <text x="595" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">A2 · líneas de flujo y múltiple</text>
+  <text x="1140" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">A3</text>
+  <g fill="var(--soil)" opacity=".22"><rect x="130" y="40" width="60" height="500"/><rect x="280" y="40" width="65" height="500"/><rect x="405" y="40" width="115" height="500"/><rect x="610" y="40" width="85" height="500"/></g>
+  <g><rect x="345" y="40" width="60" height="500" fill="var(--water)" opacity=".28"/>
+   <path d="M345 90 q15 -10 30 0 t30 0 M345 250 q15 -10 30 0 t30 0 M345 410 q15 -10 30 0 t30 0 M345 520 q15 -10 30 0 t30 0" fill="none" stroke="var(--water)" stroke-width="2"/></g>
+  <g fill="var(--ink2)" opacity=".55">${[190, 215, 240, 265].concat([520, 545, 570, 595]).map(x => `<rect x="${x - 2}" y="38" width="4" height="8"/><rect x="${x - 2}" y="534" width="4" height="8"/>`).join('')}</g>`;
+  ys.forEach((y, i) => {
+    const act = i < n;
+    s += `<text x="108" y="${y - 12}" text-anchor="middle" font-size="11" fill="var(--ink2)">FL-0${i + 1}</text>
+    <circle cx="70" cy="${y}" r="11" fill="${act ? 'var(--ink)' : 'var(--nv)'}"/><rect x="62" y="${y - 3}" width="16" height="6" fill="var(--card)"/>
+    <line x1="80" x2="125" y1="${y}" y2="${y}" stroke="var(--ink2)" stroke-width="6"/><rect x="124" y="${y - 9}" width="6" height="18" fill="var(--ink)"/>
+    <line x1="130" x2="800" y1="${y}" y2="${y}" stroke="${act ? 'url(#gT)' : 'var(--nv)'}" stroke-width="${act ? 7 : 5}" stroke-linecap="butt"/>
+    <line x1="190" x2="280" y1="${y - 7}" y2="${y - 7}" stroke="var(--ink2)" stroke-width="1.5"/><line x1="520" x2="610" y1="${y - 7}" y2="${y - 7}" stroke="var(--ink2)" stroke-width="1.5"/>
+    ${act ? `<line class="flow" x1="130" x2="800" y1="${y}" y2="${y}" stroke="#fff" stroke-width="2.2" opacity=".85"/>` : ''}
+    <g transform="translate(700 ${y})"><polygon points="-8,-8 8,8 8,-8 -8,8" fill="var(--card)" stroke="var(--ink)" stroke-width="1.6"/></g>
+    <g transform="translate(742 ${y})"><polygon points="-7,-8 -7,8 8,0" fill="var(--card)" stroke="var(--ink)" stroke-width="1.6"/><line x1="8" x2="8" y1="-8" y2="8" stroke="var(--ink)" stroke-width="2"/></g>
+    <rect x="793" y="${y - 6}" width="14" height="12" fill="var(--ink)" opacity=".8"/>`;
+  });
+  s += `<line x1="800" x2="800" y1="70" y2="490" stroke="var(--ink)" stroke-width="20"/><line x1="800" x2="800" y1="70" y2="490" stroke="${n > 0 ? 'url(#gT)' : 'var(--nv)'}" stroke-width="13"/>
+  <line x1="800" x2="1062" y1="280" y2="280" stroke="var(--ink)" stroke-width="20"/><line x1="800" x2="1062" y1="280" y2="280" stroke="${n > 0 ? '#e2a13b' : 'var(--nv)'}" stroke-width="13"/>
+  ${n > 0 ? `<line class="flow" x1="800" x2="800" y1="70" y2="280" stroke="#fff" stroke-width="2.4" opacity=".9"/><line class="flow" x1="800" x2="800" y1="490" y2="280" stroke="#fff" stroke-width="2.4" opacity=".9"/><line class="flow" x1="800" x2="1062" y1="280" y2="280" stroke="#fff" stroke-width="2.4" opacity=".9"/>` : ''}
+  <g transform="translate(885 280)"><polygon points="-9,-12 9,12 9,-12 -9,12" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/></g>
+  <g transform="translate(940 280)"><polygon points="-9,-12 -9,12 11,0" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/></g>
+  <rect x="1062" y="228" width="150" height="104" rx="46" fill="var(--card)" stroke="var(--ink)" stroke-width="3"/><text x="1137" y="285" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">V-301</text>
+  <g stroke="var(--ink)" stroke-width="3"><line x1="810" x2="846" y1="420" y2="420"/><line x1="810" x2="846" y1="150" y2="150"/><line x1="800" x2="800" y1="490" y2="522"/></g><g fill="var(--card)" stroke="var(--ink)" stroke-width="2.5"><circle cx="852" cy="420" r="6"/><circle cx="852" cy="150" r="6"/><circle cx="800" cy="528" r="6"/></g>`;
+  const gap = k => 100 + 60 * k;
+  const pos = { 1: [150, gap(0)], 2: [250, gap(1)], 3: [450, gap(2)], 4: [375, gap(3)], 5: [565, gap(4)], 6: [650, gap(5)], 7: [850, 205], 8: [880, 420], 9: [721, gap(6)], 10: [770, gap(1)], 11: [870, 520] };
+  L.forEach(r => { const [x, y] = pos[r.id]; s += `<g class="mk ${SELRISK === r.id ? 'sel' : ''}" data-r="${r.id}" tabindex="0" role="button" aria-label="Riesgo ${r.id}: ${esc(r.name)}"><circle cx="${x}" cy="${y}" r="12" fill="${LVCOL[r.lv]}"/><text x="${x}" y="${y + 4}" text-anchor="middle">${r.id}</text></g>`; });
+  return s + `</svg>`;
+}
+function tVis() {
+  const el = $('#tab-vis'), L = riskList(), sel = L.find(r => r.id === SELRISK);
+  el.innerHTML = `<h1>Esquema animado del sistema A2</h1>
+  <p class="note">Planta esquemática: A1 → 8 líneas (enterradas, dos tramos aéreos y cruce de quebrada) → válvulas VB-P y VR → cabezal DN 250 de MP-01 → V-301. Los números sobre el esquema son zonas de riesgo; su detalle está en el panel de la derecha. El color del flujo va de 68 °C (rojo) a 52 °C (ámbar); la velocidad de la animación sigue la velocidad de la línea; las líneas cerradas se ven en gris.</p>
+  <div class="btnrow noprint"><button class="btn alt" id="pp">${PLAY ? 'Pausar animación' : 'Reanudar animación'}</button></div>
+  <div class="vis"><div><div class="visbox">${schematic()}</div>
+   <div class="legend"><span><i style="background:var(--soil);height:10px;opacity:.5"></i>tramo enterrado</span><span><i style="background:var(--water);height:10px;opacity:.5"></i>quebrada</span><span><i style="background:var(--ink2)"></i>tramo aéreo (con soportes)</span><span>⧖ válvula de bloqueo VB-P · ▷| válvula de retención VR</span><span>▮ tes del cabezal · ○ drenajes y tomas de muestra</span></div>
+   <div class="legend"><span><i style="background:var(--crit);height:10px"></i>Crítico</span><span><i style="background:var(--apl);height:10px"></i>Aplica</span><span><i style="background:var(--cond);height:10px"></i>Condicional</span></div></div>
+   <div><div class="card printable"><h3>Condiciones en los nodos</h3><div class="tw"><table>
+     <tr><th>Nodo</th><th class="n">P (bar)</th><th class="n">T (°C)</th><th class="n">pH₂S (kPa)</th></tr>
+     <tr><td>Brida A1/A2</td><td class="n">${fmt(S.P_head, 0)}</td><td class="n">${fmt(S.T_in, 0)}</td><td class="n">${fmt(R.pts.entry.pH2S_kPa)}</td></tr>
+     <tr><td>Llegada a MP-01</td><td class="n">${fmt(S.P_arr, 0)}</td><td class="n">${R.T_mp}</td><td class="n">${fmt(R.pts.mp.pH2S_kPa)}</td></tr></table></div></div>
+    <h3>Zonas de riesgo</h3><div class="risklist">${L.map(r => `<div class="ri ${SELRISK === r.id ? 'sel' : ''}" data-r="${r.id}"><span class="dot ${r.lv}">${r.id}</span><span>${esc(r.name)} <br>${badge(r.lv)}</span></div>`).join('')}</div>
+    <div class="card printable" style="margin-top:10px">${sel ? `<h3>${sel.id}. ${esc(sel.name)}</h3><p><b>Dónde:</b> ${esc(sel.where)}</p><p>${sel.d}</p><p class="note"><b>Fuente:</b> ${esc(sel.src)}</p>` : '<p class="note">Seleccione un número del esquema o de la lista para ver su detalle.</p>'}</div></div></div>`;
+  $('#pp').onclick = () => { PLAY = !PLAY; $('#svg').classList.toggle('paused', !PLAY); $('#pp').textContent = PLAY ? 'Pausar animación' : 'Reanudar animación'; };
+  const pick = e => { const t = e.target.closest('[data-r]'); if (t) { SELRISK = +t.dataset.r; tVis(); } };
+  el.onclick = pick; el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { pick(e); } };
+}
+
+/* ---------- CORROSIÓN Y MECANISMOS ---------- */
+function tCor() {
+  const el = $('#tab-cor'), sc = S.scope, showFL = sc !== 'mp', showMP = sc !== 'fl', c = R.cFL, m = R.cMP, f = fmt;
+  const rowc = (nm, T, P, p, cc) => `<tr><td>${nm}</td><td class="n">${T}</td><td class="n">${P}</td><td class="n">${f(p, 3)}</td><td class="n">${f(R.cClient.cu)}</td><td class="n">${f(cc.dw)}</td><td class="n">${f(cc.ci)}</td><td class="n">${f(cc.effInh, 3)}</td><td class="n">${f(cc.informe, 3)}</td><td class="n"><b>${f(cc.ca)}</b></td></tr>`;
+  const ex = R.cFL.ca > 10 ? 'crit' : '';
+  const cpOK = S.cp <= -950, cpBase = S.cp <= -850;
+  el.innerHTML = `<h1>Corrosión y mecanismos de daño</h1>
+  <div class="card printable"><h3>1 · Corrosión interna por CO₂: modelo del cliente frente a De Waard–Milliams</h3>
+   <p>Modelo activo: <b>${R.model === 'cliente' ? 'cliente (ficha E1-03)' : 'De Waard–Milliams (informe §11.1.2)'}</b> · inhibidor ${S.inhib ? 'activo' : 'inactivo'} · disponibilidad ${f(R.avail * 100, 0)} %.</p>
+   <div class="tw"><table><tr><th>Punto</th><th class="n">T (°C)</th><th class="n">P (bar)</th><th class="n">pCO₂ (bar)</th><th class="n">Cliente sin inhibir</th><th class="n">De Waard sin inhibir</th><th class="n">Inhibida</th><th class="n">Efectiva ficha</th><th class="n">Efectiva informe Vu·(1−E)</th><th class="n">CA activo (mm)</th></tr>
+    ${showFL ? rowc('Entrada FL (A1)', S.T_in, S.P_head, R.pts.entry.pCO2, c) : ''}
+    ${showFL ? rowc('Llegada FL (38 bar, 52 °C)', S.T_out, S.P_arr, R.pts.arr.pCO2, corrAt(R.pts.arr)) : ''}
+    ${showMP ? rowc('Cabezal MP-01', R.T_mp, S.P_arr, R.pts.mp.pCO2, m) : ''}</table></div>
+   <p class="note">Tasas en mm/año. Ficha: CR_ef = CR_sin·(1−D) + CR_inh·D = ${f(R.cClient.cu)}·${f(1 - R.avail, 2)} + ${f(S.crI)}·${f(R.avail, 2)} = ${f(R.cClient.effInh, 3)} mm/año → CA = ${f(R.cClient.effInh * S.life)} mm. Informe: V_inh = V_sin·(1−E).</p>
+   ${R.ratioDW > 3 ? `<div class="warn ${ex}"><b>Contradicción abierta (D4).</b> De Waard del informe da ${f(R.dw.in68)} mm/año a 68 °C y ${f(R.dw.in85)} a 85 °C (reproducidos aquí con F(pH) = ${S.fpH}), unas ${f(R.ratioDW, 0)} veces la tasa del cliente. Con De Waard el CA de las líneas sería ${f(corrWith('dewaard').cFL.ca)} mm, por encima del límite de 8–10 mm de ISO 21457 8.2. ${R.model === 'cliente' ? 'El CA de 2,42 mm solo se sostiene si el cliente confirma 0,31 mm/año.' : ''} El término F(pH) no está definido en los documentos: ${NV}.</div>` : ''}
+   ${lineChart({ title: 'Tasa de corrosión a lo largo de la línea', series: [{ name: 'De Waard–Milliams sin inhibir (T y P del perfil)', c: 'var(--crit)', pts: R.profile.map(q => [q.x, q.dw]) }, { name: 'Cliente sin inhibir', c: 'var(--accent)', pts: R.profile.map(q => [q.x, q.cl]), dash: true }, { name: 'Efectiva con inhibidor (ficha)', c: 'var(--ok)', pts: R.profile.map(q => [q.x, R.cClient.effInh]), dash: true }], xl: 'distancia desde la brida A1 (m)', yl: 'mm/año', ymin: 0 })}</div>
+  <div class="grid g2" style="margin-top:12px"><div class="card printable"><h3>2 · Servicio amargo: pH₂S frente a pH (ISO 15156-2)</h3>${sscChart()}
+    <div class="tw"><table><tr><th>#</th><th>H₂S</th><th class="n">P (bar)</th><th class="n">pH₂S (kPa)</th><th>Región</th></tr>${R.sscGrid.map((g, i) => `<tr><td>${i + 1}</td><td>${fmt(g.y)} % ${g.y === R.y ? '(escenario)' : ''}</td><td class="n">${g.P}</td><td class="n">${fmt(g.kPa)}</td><td>${badge(REGCLS(g.reg), REGN(g.reg))}</td></tr>`).join('')}</table></div>
+    <p class="note">Solo el borde de ${S.R3} kPa a pH 4,6 viene del acta A1↔A2; la Figura 1 de ISO 15156-2 es gráfica y no se digitalizó, así que su forma completa es ${NV}. El umbral de 0,3 kPa y la regla de selección por región (A.2/A.3) sí están verificados (7.1.2, 7.2.1.4). pCO₂/pH₂S = ${fmt(R.ssc.entry.ratio, 1)} en la entrada (el informe lo califica de régimen mixto, en el límite).</p></div>
+   <div class="card printable"><h3>3 · Qué cambia entre Hoy y Año 10</h3>
+    <div class="tw"><table><tr><th>Punto</th><th class="n">Hoy 0,15 %</th><th class="n">Año 10 0,30 %</th><th>Región año 10</th></tr>
+     <tr><td>Entrada a 45 bar</td><td class="n">${fmt(0.15 / 100 * 4500)} kPa</td><td class="n">${fmt(0.30 / 100 * 4500)} kPa</td><td>${badge('crit', 'Región 3')}</td></tr>
+     <tr><td>Llegada a 38 bar</td><td class="n">${fmt(0.15 / 100 * 3800)} kPa</td><td class="n">${fmt(0.30 / 100 * 3800)} kPa</td><td>${badge('apl', 'Región 2, al borde')}</td></tr></table></div>
+    <p>A1 selecciona con 0,30 % (línea no reemplazable); A2 con 0,15 % a 38 bar por ser su línea reemplazable a los 10 años. Con Región 3 solo vale la vía A.2 de ISO 15156-2 (7.2.1.4) y la dureza de soldadura se limita a 250 HV; la ficha cita ≈280 HV (A.3.3, «típicamente»), que no aplica en Región 3. El veredicto del informe es Crítico con cualquiera de los dos valores. Ambos quedan sujetos a lo que A3 confirme por escrito.</p></div></div>
+  <div class="grid g2" style="margin-top:12px"><div class="card printable"><h3>4 · Corrosión en la parte alta (TLC)</h3>
+    <p>${badge(R.tlc.level, LV[R.tlc.level])} Régimen estratificado en tramos de baja pendiente; enfriamiento ${R.tlc.dT} °C (${S.T_in}→${S.T_out}). El vapor de agua condensa en la pared superior, absorbe CO₂ y H₂S y baja el pH. <b>ISO 21457 8.1 (verificado):</b> la inhibición contra CO₂/H₂S no es eficaz contra TLC; evaluar tratamientos periódicos (batch entre pigs, spray pigging). Medidas citadas por la ficha: inhibidor volátil y aislamiento térmico. No hay modelo de velocidad de TLC en los documentos: ${NV}.</p></div>
+   <div class="card printable"><h3>5 · MIC y corrosión bajo depósito</h3>
+    <p>${badge(R.mic.level, LV[R.mic.level])} Velocidad del cabezal ${f(R.hMP.v)} m/s con ${R.hMP.n} pozo(s); umbral supuesto ${S.vmin} m/s. <b>ISO 21457 6.2.2.3 (verificado):</b> la MIC por sulfato-reductoras es probable en zonas muertas y en lugares de asentamiento; las velocidades bajas la favorecen. Zonas del sistema: puntos bajos de las líneas y cruce de quebrada, extremos del cabezal, drenajes y tomas de muestra. Mitigación del informe: drenaje en puntos bajos, marraneo y biocida en lotes de A3.</p></div></div>
+  <div class="grid g2" style="margin-top:12px"><div class="card printable"><h3>6 · Erosión y arena (API RP 14E)</h3>
+   ${barChart({ title: 'Velocidad frente a erosional', cats: ['Línea FL', 'Cabezal MP-01'], series: [{ name: 'Velocidad de operación (m/s)', c: 'var(--accent)', vals: [R.hFL.v, R.hMP.v] }, { name: 'Velocidad erosional Ve (m/s)', c: 'var(--apl)', vals: [R.hFL.ve, R.hMP.ve] }], yl: 'm/s', h: 220 })}
+   <p class="note">Ve = C/√ρ con C = ${S.Ccoef} y ρ = ${S.rho} kg/m³ (${NV}: API RP 14E no está adjunta). Con arena (${S.sand} lb/1000 bbl) el criterio de 14E no es concluyente; ISO 21457 6.5 pide un modelo de erosión por arena y 8.1 advierte que los sólidos reducen la eficacia del inhibidor.</p></div>
+   <div class="card printable"><h3>7 · Corrosión externa: C4, 3LPE y protección catódica</h3>
+    <div class="fld" style="grid-template-columns:1fr 100px 60px"><label for="cp">Potencial polarizado medido (supuesto de prueba)</label><input id="cp" type="number" value="${S.cp}" step="10"><span class="u">mV CSE</span></div>
+    <p>${cpOK ? badge('ok', 'Cumple −950 mV (adoptado)') : cpBase ? badge('apl', 'Cumple −850 mV, no −950 mV') : badge('crit', 'No protegido')} Criterio base −850 mV CSE; el informe adopta −950 mV por temperatura de piel de 68–85 °C (> 60 °C) y riesgo de BSR. Suelo: 1 800 Ω·cm, pH 6,2 a 1,2 m. ${NV} (ISO 15589-1 y AMPP SP0169 no están adjuntas; los números salen del informe).</p>
+    <p><b>Tramos aéreos:</b> categoría C4 según E1-04, sistema C4.11. ${NV} (ISO 9223 no está adjunta; la ISO 9227 adjunta es un ensayo de niebla salina, no una clasificación). El informe señala que E1-04 no justificó el descarte de C3 y C5.</p></div></div>`;
+  const cp = $('#cp'); if (cp) cp.onchange = e => { S.cp = parseFloat(e.target.value) || 0; tCor(); };
+}
+function corrAt(p) {
+  const dw = dewaard(p.T, p.pCO2, S.fpH) * S.cuScale, cu = R.model === 'cliente' ? S.crU * S.cuScale : dw, ci = S.crI;
+  const effInh = cu * (1 - R.avail) + ci * R.avail;
+  return { dw, cu, ci, effInh, informe: cu * (1 - R.avail), ca: (S.inhib ? effInh : cu) * S.life };
+}
+function corrWith(model) { const S2 = clone(S); S2.a.base031 = model === 'cliente'; return compute(S2); }
+
+/* ---------- INTEGRIDAD MECÁNICA ---------- */
+function stackBar(m, label) {
+  const tp = m.t, ca = Math.max(0, m.tm - m.t), tolr = m.wall - m.wmin, tot = Math.max(m.wall, m.tm + tolr) * 1.02, W = 600, X = v => v / tot * (W - 20) + 10;
+  const parts = [[tp, 'var(--accent)', 'Presión (t)'], [ca, 'var(--apl)', 'CA'], [Math.max(0, m.margin), 'var(--ok)', 'Margen'], [tolr, 'var(--nv)', 'Tolerancia de fabricación']];
+  let x = 10, s = `<svg viewBox="0 0 ${W} 74" role="img" aria-label="Desglose de pared ${esc(label)}">`;
+  parts.forEach(([v, c]) => { if (v > 0) { s += `<rect x="${x}" y="14" width="${X(v) - 10}" height="28" fill="${c}"/>`; x += X(v) - 10; } });
+  if (m.margin < 0) s += `<rect x="${x}" y="14" width="${X(-m.margin) - 10}" height="28" fill="var(--crit)" opacity=".55" stroke="var(--crit)" stroke-dasharray="4 3"/>`;
+  s += `<line x1="${X(m.wall)}" x2="${X(m.wall)}" y1="6" y2="50" stroke="var(--ink)" stroke-width="2"/><text x="${X(m.wall)}" y="64" text-anchor="end" font-size="11" fill="var(--ink)">pared nominal ${fmt(m.wall)} mm</text></svg>`;
+  return s + legendHtml(parts.map(p => [p[1], p[2]]).concat(m.margin < 0 ? [['var(--crit)', 'Déficit']] : []));
+}
+function mechCard(nm, m, OD, tab, sch, caSrc) {
+  const f = fmt;
+  return `<div class="card printable"><h3>${nm}</h3>
+  <div class="tw"><table>
+   <tr><td>Diámetro exterior / pared nominal</td><td class="n">${f(OD, 1)} mm / ${f(m.wall)} mm (Sch ${sch})</td></tr>
+   <tr><td>Presión de diseño P</td><td class="n">${R.Pdes} bar = ${f(R.Pdes / 10, 1)} MPa</td></tr>
+   <tr><td>S·E·W / Y</td><td class="n">${f(S.S_allow * S.E * S.W, 1)} MPa / ${S.Y}</td></tr>
+   <tr><td>t = P·D / [2(S·E·W + P·Y)]</td><td class="n">${f(m.t)} mm</td></tr>
+   <tr><td>Sobreespesor de corrosión CA (${caSrc})</td><td class="n">${f(m.tm - m.t)} mm</td></tr>
+   <tr><td><b>Espesor mínimo requerido t_m = t + CA</b></td><td class="n"><b>${f(m.tm)} mm</b></td></tr>
+   <tr><td>Tolerancia de fabricación</td><td class="n">${f(R.tol, 1)} %</td></tr>
+   <tr><td>Pared nominal mínima exigible t_m / (1 − tol)</td><td class="n">${f(m.tnomReq)} mm</td></tr>
+   <tr><td>Pared mínima disponible con tolerancia</td><td class="n">${f(m.wmin)} mm</td></tr>
+   <tr><td><b>Margen</b></td><td class="n"><b>${m.margin >= 0 ? '+' : ''}${f(m.margin)} mm</b> ${m.ok ? badge('ok', 'cumple') : badge('crit', 'no cumple')}</td></tr>
+   <tr><td>Schedule mínimo de la tabla que cumple</td><td class="n">${m.minSch ? 'Sch ' + m.minSch : 'ninguno de la tabla'}</td></tr>
+   <tr><td>Pared remanente al final de la vida</td><td class="n">${f(m.trem)} mm</td></tr>
+   <tr><td>MAWP nueva / al final de la vida</td><td class="n">${f(m.mawpNew, 1)} / ${f(m.mawpEol, 1)} bar ${m.mawpEol >= R.Pdes ? badge('ok', '≥ diseño') : badge('crit', '< diseño')}</td></tr></table></div>
+  ${stackBar(m, nm)}</div>`;
+}
+function tMec() {
+  const el = $('#tab-mec'), sc = S.scope, f = fmt;
+  const caSrc = `${R.model === 'cliente' ? 'cliente' : 'De Waard'}, ${S.inhib ? 'inhibido ' + f(R.avail * 100, 0) + ' %' : 'sin inhibir'}`;
+  const cas = [['Cliente · inhibido (ficha)', R.cClient.effInh * S.life], ['Cliente · sin inhibir', R.cClient.cu * S.life], ['De Waard · inhibido (ficha)', (R.dw.in68 * (1 - R.avail) + S.crI * R.avail) * S.life], ['De Waard · inhibido (informe Vu·(1−E))', R.dw.in68 * (1 - R.avail) * S.life], ['De Waard · sin inhibir', R.dw.in68 * S.life]];
+  const rows = cas.map(([n, ca]) => { const m = mech(S.OD_fl, R.wFL, ca, R.Pdes, S, R.tol); m.minSch = minSch(WALL_FL, m.tnomReq); return `<tr><td>${n}</td><td class="n">${f(ca)}</td><td class="n">${f(m.tm)}</td><td class="n">${f(m.tnomReq)}</td><td class="n">${m.margin >= 0 ? '+' : ''}${f(m.margin)}</td><td>${m.minSch ? 'Sch ' + m.minSch : 'ninguno'}</td><td>${badge(m.ok ? 'ok' : 'crit', m.ok ? 'cumple' : 'falla')} ${badge(ca <= 10 ? 'ok' : 'crit', ca <= 10 ? '≤ 10 mm' : '> 10 mm')}</td></tr>`; }).join('');
+  const ftab = [38, 50, 100, 150, 200].map(T => [T, interp(FLANGE600, T)]);
+  el.innerHTML = `<h1>Integridad mecánica</h1>
+  <p class="note">Espesor por presión con la ecuación de ASME B31.3 (${NV}: la norma no está adjunta; S, E, W, Y y la tolerancia son supuestos editables). El CA proviene del modelo de corrosión activo. Diseño a ${R.Pdes} bar y ${S.life} años.</p>
+  <div class="grid g2">${sc !== 'mp' ? mechCard('Líneas de flujo FL-01…08 · 4 in', R.mFL, S.OD_fl, 'fl', S.sch_fl, caSrc) : ''}${sc !== 'fl' ? mechCard('Cabezal MP-01 · DN 250 (10 in)', R.mMP, S.OD_mp, 'mp', S.sch_mp, caSrc) : ''}</div>
+  <div class="card printable" style="margin-top:12px"><h3>Sobreespesor: ¿qué pasa con 4 in Sch ${S.sch_fl} según la tasa que se acepte?</h3>
+   <div class="tw"><table><tr><th>Caso de CA</th><th class="n">CA (mm)</th><th class="n">t_m (mm)</th><th class="n">Pared nominal mín. (mm)</th><th class="n">Margen (mm)</th><th>Sch mínimo</th><th>Veredicto</th></tr>${rows}</table></div>
+   <p class="note">ISO 21457 8.2 (verificado): CA típico de 1–1,5 mm (no corrosivo), 3 mm (ligeramente) y 6 mm (severo); límite general de 8 a 10 mm en ductos de acero al carbono. Con el CA de 2,42 mm de la ficha el tubo cumple con holgura; con 6,2 mm (sin inhibir) ya no cumple con tolerancia de ${f(R.tol, 1)} %; con De Waard no hay schedule de la tabla que cierre.</p></div>
+  <div class="grid g2" style="margin-top:12px"><div class="card printable"><h3>Bridas ASME B16.5 Clase 600 · A105 normalizado</h3>
+   ${lineChart({ title: 'Rating de brida', series: [{ name: 'Presión admisible Cl. 600 grupo 1.1 (NV)', c: 'var(--accent)', pts: ftab.map(p => [p[0], p[1]]) }], xl: 'temperatura (°C)', yl: 'bar', ymin: 40, ymax: 110, xmin: 30, xmax: 210, hl: [{ y: R.Pdes, label: 'Diseño ' + R.Pdes + ' bar', c: 'var(--crit)' }] })}
+   <p>A ${S.T_max} °C el rating tabulado es ${f(R.flange.rating, 1)} bar frente a ${R.Pdes} bar de diseño: margen ${f(R.flange.margin, 1)} bar. Los valores de la tabla son ${NV} (ASME B16.5 no está adjunta) y se pueden contrastar con la norma. <b>ISO 15156-2 A.2.2 (verificado):</b> con pernería resistente a SSC (B7M/2HM) puede ser necesario reducir el rating de la brida.</p></div>
+   <div class="card printable"><h3>Equipo a presión: PS·DN y categoría</h3><div class="tw"><table>
+    <tr><td>PS·DN aplicado (${R.Pdes} bar)</td><td class="n">${f(R.ped.psdn, 0)}</td></tr><tr><td>PS·DN con 50 bar</td><td class="n">${f(R.ped.psdn50, 0)}</td></tr><tr><td>PS·DN con 55 bar</td><td class="n">${f(R.ped.psdn55, 0)}</td></tr></table></div>
+    <p>El encargo indica PS·DN = 13 750 y categoría III: eso corresponde a 55 bar (acta A1↔A2); con 50 bar, PS·DN = 12 500. La tabla de categorías de EN 13480-1 no está adjunta (solo la parte 2): <b>${NV}</b>. Hay que confirmar si la categoría se mantiene con 50 bar.</p>
+    <p class="note">EN 13480-2 (adjunta) cubre materiales; no contiene la fórmula de espesor, que está en la parte 3.</p></div></div>`;
+}
+
+/* ---------- MATERIALES Y CUMPLIMIENTO ---------- */
+const MATERIALS = [
+  ['Tubo FL-01…08 y cabezal MP-01', 'API 5L / ISO 3183 PSL 2 L360NS (X52NS) con Anexo H (ensayo HIC, NACE TM0284); 4 in Sch 80 y DN 250', 'SMYS 360 MPa (≤ 450 MPa); dureza de soldadura ≤ 250 HV10 o 22 HRC; probeta HIC', 'ok', 'SMYS/dureza: ISO 15156-2 (A.2, A.3.3) verificado · Anexo H y «NS»: no están en el extracto de ISO 3183 · ficha E1-03 propone L360NE'],
+  ['Codos, tes y reducciones', 'MSS SP-75 WPHY-52', 'Dureza de accesorios soldables según ISO 15156-2', 'nv', 'MSS SP-75 no adjunta (informe)'],
+  ['Bridas', 'ASME B16.5 Clase 600, ASTM A105 normalizado', 'Dureza ≤ 187 HBW', 'ok', 'ISO 15156-2 A.2.1.3 a) verificado; B16.5 NV'],
+  ['Pernos y tuercas', 'ASTM A193 B7M / A194 2HM', 'Pernería para servicio amargo', 'ok', 'ISO 15156-2 Tabla A.4 verificado'],
+  ['Válvulas de bloqueo VB-P (×8) y retención VR (×8)', 'API 6D Clase 600; cuerpo ASTM A216 WCB; trim AISI 410 ≤ 22 HRC; asiento metálico con recubrimiento duro', 'Trim 410 templado y revenido, 22 HRC máx.', 'ok', 'ISO 15156-3 (UNS S41000, 22 HRC) verificado; API 6D / 6FA NV'],
+  ['Elastómeros de válvulas', 'Calificados según ISO 23936-2', 'Resistencia a descompresión explosiva (RGD)', 'nv', 'ISO 23936-2 7.3.2 no adjunta'],
+  ['Tomas de muestra y drenajes', 'Sonda retráctil en aleación 625, doble bloqueo y purga (informe)', 'Compatibilidad con el trim; sin par galvánico', 'nv', 'Informe tabla 7.2; la aleación 625 no se verificó contra ISO 15156-3'],
+  ['Revestimiento externo enterrado', '3LPE (ISO 21809-1), juntas de campo ISO 21809-3', 'Temperatura de piel 68–85 °C', 'nv', 'ISO 21809 no adjunta (informe)'],
+  ['Protección catódica', 'Ánodos de Mg; −950 mV CSE adoptado (base −850 mV)', 'ISO 15589-1 / AMPP SP0169', 'nv', 'Normas no adjuntas (informe §11.4)'],
+  ['Tramos aéreos y soportes', 'Sistema C4.11: zinc rico epóxico + epoxi + poliuretano, 260 µm NDFT; galvanizado + pintura', 'Categoría C4', 'nv', 'ISO 9223 no adjunta; ISO 12944 NV'],
+  ['Certificados de materiales', 'EN 10204: tipo 3.1 mínimo para tubo, accesorios, bridas y pernería; 3.2 si el cliente lo exige', 'Trazabilidad de dureza y HIC', 'spec', 'Tipos 3.1 y 3.2 (cláusulas 4.1 y 4.2) verificados; el nivel exigido es recomendación del simulador']
+];
+function matrixRows() {
+  const e = R.ssc.entry, a = R.ssc.arr, f = fmt;
+  return [
+    ['ISO 15156-2:2020', '7.1.2, Figura 1', 'pH₂S ≥ 0,3 kPa ⇒ acero resistente a SSC', `pH₂S ${f(e.kPa)} / ${f(a.kPa)} kPa (${f(e.times, 0)}× el umbral)`, 'spec', 'Verificado'],
+    ['ISO 15156-2:2020', '7.2.1.4', 'Región 2: A.2 o A.3; Región 3: solo A.2', `Peor caso: ${REGN(R.ssc.worst)}`, R.ssc.worst === 3 ? 'open' : 'ok', 'Verificado'],
+    ['ISO 15156-2:2020', 'A.2.1.3 a)', 'Forjados A105 con dureza ≤ 187 HBW', 'Bridas A105N ≤ 187 HBW', 'spec', 'Verificado'],
+    ['ISO 15156-2:2020', 'A.2.2, Tabla A.4', 'Pernos B7M con tuercas 2HM (puede reducir el rating)', 'B7M / 2HM', 'spec', 'Verificado'],
+    ['ISO 15156-2:2020', 'A.2.1.5 / Tabla de dureza', 'Dureza de soldadura ≤ 250 HV o 22 HRC', `Límite aplicado ${R.hardness.weld} HV (ficha dice 280 HV por A.3.3)`, R.ssc.worst === 3 ? 'open' : 'spec', 'Verificado'],
+    ['ISO 15156-2:2020', 'A.3.3', 'Acero de ducto: SMYS típico ≤ 450 MPa; dureza de soldadura típica ≤ 280 HV', 'L360: SMYS 360 MPa', R.ssc.worst === 3 ? 'open' : 'ok', 'Verificado'],
+    ['ISO 15156-3:2020', 'UNS S41000 (410)', 'Dureza ≤ 22 HRC, templado y revenido', 'Trim 410 ≤ 22 HRC', 'spec', 'Verificado'],
+    ['ISO 15156-1:2020', '8.3.4 (citado en 15156-2, Anexo C)', 'Fugacidad de H₂S a alta presión (> 350 bar)', 'P ≤ 45 bar: no aplica', 'ok', 'Verificado (cita en 15156-2)'],
+    ['ISO 21457:2010', '8.2', 'CA 1–6 mm típico; límite en ductos 8–10 mm', `CA FL ${f(R.cFL.ca)} mm · ${R.caStatus(R.cFL.ca)}`, R.cFL.ca > 10 ? 'fail' : R.cFL.ca > 6 ? 'open' : 'ok', 'Verificado'],
+    ['ISO 21457:2010', '8.1, Nota 1', 'Considerar disponibilidad del inhibidor (≈ 0,1 mm/año inhibido)', `Disponibilidad ${f(R.avail * 100, 0)} %; tasa inhibida ${S.crI} mm/año`, (R.avail >= 0.9 && S.crI <= 0.1) ? 'ok' : 'fail', 'Verificado'],
+    ['ISO 21457:2010', '8.1', 'Inhibición sin eficacia contra TLC; tratamientos periódicos', `ΔT ${R.tlc.dT} °C; estratificado`, S.a.inhTLC ? 'fail' : 'open', 'Verificado'],
+    ['ISO 21457:2010', '6.2.2.3', 'MIC probable en zonas muertas y velocidades bajas', `v cabezal ${f(R.hMP.v)} m/s`, R.vMPlow ? 'fail' : 'open', 'Verificado'],
+    ['ISO 21457:2010', '6.5, 8.1', 'Erosión por arena; sólidos reducen la eficacia del inhibidor', `Arena ${f(R.sand.kgd, 1)} kg/día/línea`, 'open', 'Verificado'],
+    ['ISO 3183:2020', 'Tabla A.2 (L360NE)', 'Grado L360 con SMYS 360 MPa', 'L360NE presente; L360NS/Anexo H no está en el extracto', 'nv', 'Parcial'],
+    ['ISO 3183:2020 / API 5L', 'Anexo H (NACE TM0284, HIC)', 'Prueba HIC para tubo en servicio amargo', 'L360NS con Anexo H', 'nv', NV],
+    ['EN 10204:2004', '4.1 y 4.2', 'Certificados de inspección 3.1 y 3.2', '3.1 mínimo recomendado', 'spec', 'Verificado'],
+    ['EN 13480-2', 'Materiales', 'Materiales admitidos para tubería metálica industrial', 'Aceros ISO 3183/A105/WCB: no están en las tablas del extracto', 'nv', 'Parcial'],
+    ['EN 13480-1', 'Categoría (PS·DN)', 'Categoría III con PS·DN 13 750', `PS·DN = ${f(R.ped.psdn, 0)}`, 'nv', NV],
+    ['ASME B31.3', '304.1.2', 'Espesor por presión', `t_m ${f(R.mFL.tm)} mm (FL) / ${f(R.mMP.tm)} mm (MP)`, (R.mFL.ok && R.mMP.ok) ? 'ok' : 'fail', NV],
+    ['ASME B16.5', 'Tabla 2-1.1', 'Rating Clase 600 grupo 1.1', `${f(R.flange.rating, 1)} bar a ${S.T_max} °C`, R.flange.margin > 0 ? 'ok' : 'fail', NV],
+    ['API RP 14E', '—', 'Velocidad erosional Ve = C/√ρ', `v/Ve ${f(Math.max(R.eros.fl, R.eros.mp))}`, R.eros.level === 'crit' ? 'fail' : 'open', NV],
+    ['EN ISO 23936-2', '7.3.2', 'Elastómeros: descompresión explosiva', 'Elastómeros por especificar', 'nv', NV],
+    ['ISO 9223 / ISO 9227', '—', 'Categoría de corrosividad atmosférica C4', 'C4 según ficha E1-04', 'nv', NV + ' (9223 no adjunta; 9227 es ensayo)'],
+    ['ISO 15589-1 / AMPP SP0169', '6.2.1.3, 6.2.1.5.2 (según informe)', '−850 mV CSE base; −950 mV con T > 60 °C', `Potencial de prueba ${S.cp} mV`, S.cp <= -950 ? 'ok' : 'open', NV],
+    ['ISO 21809-1 / -3', '—', 'Recubrimiento 3LPE y juntas de campo', '3LPE', 'nv', NV],
+    ['MSS SP-75 / API 6D / API 6FA', '—', 'Accesorios WPHY-52; válvulas y ensayo de fuego', 'WPHY-52; API 6D Cl. 600', 'nv', NV]
+  ];
+}
+let MATF = 'all';
+function tMat() {
+  const el = $('#tab-mat'), rows = matrixRows().filter(r => MATF === 'all' || r[4] === MATF);
+  const grp = k => R.issues.filter(i => i.sev === k);
+  const li = i => `<div class="issue"><div>${badge(i.sev === 'falla' ? 'fail' : i.sev === 'abierto' ? 'open' : 'nv', i.id)}</div><div>${esc(i.text)}<div class="m">Responsable: ${esc(i.owner)} · Fuente: ${esc(i.src)}</div></div></div>`;
+  el.innerHTML = `<h1>Materiales y matriz de cumplimiento</h1>
+  <div class="card printable"><h3>Selección de materiales</h3><div class="tw"><table><tr><th>Componente</th><th>Material y norma</th><th>Requisito clave</th><th>Estado</th><th>Verificación</th></tr>
+  ${MATERIALS.map(m => `<tr><td>${m[0]}</td><td>${m[1]}</td><td>${m[2]}</td><td>${badge(m[3] === 'ok' ? 'ok' : m[3], m[3] === 'ok' ? 'parcial/verificado' : LV[m[3]])}</td><td>${m[4]}</td></tr>`).join('')}</table></div></div>
+  <div class="card printable" style="margin-top:12px"><h3>Qué falla o queda abierto en este escenario</h3>
+   <p class="note">Se recalcula con el escenario y los supuestos actuales.</p>
+   ${grp('falla').length ? `<h3>Fallas (${grp('falla').length})</h3>${grp('falla').map(li).join('')}` : `<p>${badge('ok', 'Sin fallas')} con los supuestos actuales.</p>`}
+   <h3>Abiertos (${grp('abierto').length})</h3>${grp('abierto').map(li).join('')}
+   <h3>No verificados (${grp('nv').length})</h3>${grp('nv').map(li).join('')}</div>
+  <div class="card printable" style="margin-top:12px"><h3>Matriz normativo-cumplimiento</h3>
+   <label class="noprint">Filtrar por estado <select class="sel" id="matf" style="width:auto"><option value="all">Todos</option>${['ok', 'spec', 'open', 'fail', 'nv'].map(k => `<option value="${k}" ${MATF === k ? 'selected' : ''}>${LV[k]}</option>`).join('')}</select></label>
+   <div class="tw"><table><tr><th>Norma</th><th>Cláusula</th><th>Requisito</th><th>Aplicado en el simulador</th><th>Estado</th><th>Verificación contra texto</th></tr>
+   ${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${badge(r[4])}</td><td>${r[5]}</td></tr>`).join('')}</table></div></div>`;
+  $('#matf').onchange = e => { MATF = e.target.value; tMat(); };
+}
+
+/* ---------- ESCENARIOS Y SENSIBILIDAD ---------- */
+function metricsOf(r) {
+  const f = fmt;
+  return [
+    ['pH₂S entrada (kPa)', f(r.pts.entry.pH2S_kPa), r.pts.entry.pH2S_kPa], ['pH₂S llegada (kPa)', f(r.pts.arr.pH2S_kPa), r.pts.arr.pH2S_kPa],
+    ['Región SSC (peor)', 'Región ' + r.ssc.worst, r.ssc.worst], ['Tasa efectiva (mm/año)', f(r.cFL.eff, 3), r.cFL.eff], ['CA línea (mm)', f(r.cFL.ca), r.cFL.ca],
+    ['Margen de pared FL (mm)', f(r.mFL.margin), r.mFL.margin], ['Margen de pared MP (mm)', f(r.mMP.margin), r.mMP.margin],
+    ['Velocidad en cabezal (m/s)', f(r.hMP.v), r.hMP.v], ['v/Ve en cabezal', f(r.eros.mp), r.eros.mp], ['Fallas / abiertos', r.issues.filter(i => i.sev === 'falla').length + ' / ' + r.issues.filter(i => i.sev === 'abierto').length, r.issues.filter(i => i.sev === 'falla').length]
+  ];
+}
+function pairTable(title, ovA, ovB, lA, lB) {
+  const A = metricsOf(scen(S, ovA)), B = metricsOf(scen(S, ovB));
+  return `<div class="card printable"><h3>${title}</h3><div class="tw"><table><tr><th></th><th class="n">${lA}</th><th class="n">${lB}</th></tr>${A.map((m, i) => { const d = Math.abs(m[2] - B[i][2]) > 1e-9; return `<tr><td>${m[0]}</td><td class="n" ${d ? 'style="font-weight:700"' : ''}>${m[1]}</td><td class="n" ${d ? 'style="font-weight:700"' : ''}>${B[i][1]}</td></tr>`; }).join('')}</table></div><p class="note">En negrita, lo que cambia entre los dos casos.</p></div>`;
+}
+function scenRows() {
+  const out = [];
+  [['hoy', 'Hoy'], ['y10', 'Año 10']].forEach(([c, cn]) => [true, false].forEach(inh => [8, 2].forEach(w => { const r = scen(S, { caso: c, inhib: inh, nWells: w }); out.push({ code: String.fromCharCode(65 + out.length), name: `${cn} · ${inh ? 'con' : 'sin'} inhibidor · ${w} pozos`, r }); })));
+  return out;
+}
+function tEsc() {
+  const el = $('#tab-esc'), rows = scenRows(), sn = sensitivity(S, S.sensMetric), unit = S.sensMetric === 'ca' ? 'mm de CA' : 'mm de margen';
+  const nm = { ca: 'CA de la línea (mm)', marginFL: 'Margen de pared de la línea FL (mm)', marginMP: 'Margen de pared del cabezal MP (mm)' }[S.sensMetric];
+  el.innerHTML = `<h1>Escenarios y sensibilidad</h1>
+  <div class="grid g3">${pairTable('Hoy frente a Año 10', { caso: 'hoy' }, { caso: 'y10' }, 'Hoy (0,15 %)', 'Año 10 (0,30 %)')}
+   ${pairTable('Con inhibidor frente a sin inhibidor', { inhib: true }, { inhib: false }, 'Con inhibidor', 'Sin inhibidor')}
+   ${pairTable('8 pozos frente a 2 pozos activos', { nWells: 8 }, { nWells: 2 }, '8 pozos', '2 pozos')}</div>
+  <p class="note">Cada comparación cambia solo la variable indicada y conserva el resto del escenario y de los supuestos actuales.</p>
+  <div class="card printable" style="margin-top:12px"><h3>Matriz de los 8 escenarios combinados</h3><div class="tw"><table><tr><th>#</th><th>Escenario</th><th class="n">pH₂S entrada (kPa)</th><th>Región</th><th class="n">CA (mm)</th><th class="n">Margen FL (mm)</th><th class="n">Margen MP (mm)</th><th class="n">v cabezal (m/s)</th><th class="n">Fallas</th></tr>
+   ${rows.map(x => `<tr><td>${x.code}</td><td>${x.name}</td><td class="n">${fmt(x.r.pts.entry.pH2S_kPa)}</td><td>${badge(REGCLS(x.r.ssc.worst), 'R' + x.r.ssc.worst)}</td><td class="n">${fmt(x.r.cFL.ca)}</td><td class="n">${fmt(x.r.mFL.margin)}</td><td class="n">${fmt(x.r.mMP.margin)}</td><td class="n">${fmt(x.r.hMP.v)}</td><td class="n">${x.r.issues.filter(i => i.sev === 'falla').length}</td></tr>`).join('')}</table></div></div>
+  <div class="grid g2" style="margin-top:12px"><div class="card printable"><h3>Sobreespesor por escenario</h3>${barChart({ title: 'CA por escenario', cats: rows.map(x => x.code), series: [{ name: 'CA de la línea (mm)', c: 'var(--apl)', vals: rows.map(x => x.r.cFL.ca) }], yl: 'mm', hl: { y: 10, label: 'Límite 10 mm (ISO 21457 8.2)', c: 'var(--crit)' }, h: 230 })}</div>
+   <div class="card printable"><h3>Margen de pared de la línea por escenario</h3>${barChart({ title: 'Margen de pared por escenario', cats: rows.map(x => x.code), series: [{ name: 'Margen FL (mm)', c: 'var(--ok)', vals: rows.map(x => x.r.mFL.margin) }], yl: 'mm', negc: true, h: 230 })}</div></div>
+  <div class="card printable" style="margin-top:12px"><h3>Sensibilidad de variables clave</h3>
+   <label class="noprint">Resultado analizado <select class="sel" id="sm" style="width:auto"><option value="marginFL">Margen de pared FL</option><option value="marginMP">Margen de pared MP</option><option value="ca">CA de la línea</option></select></label>
+   <p class="note">Se varía cada parámetro entre dos valores y se mide ${nm}. Los parámetros que no actúan en el modelo activo (por ejemplo, temperatura en el modelo cliente) salen sin efecto.</p>
+   ${tornado(sn.rows, sn.base, unit)}
+   <div class="tw"><table><tr><th>Parámetro (primer / segundo valor)</th><th class="n">Resultado 1</th><th class="n">Resultado 2</th><th class="n">Δ máx.</th></tr>${sn.rows.map(r => `<tr><td>${r.n}</td><td class="n">${fmt(r.lo)}</td><td class="n">${fmt(r.hi)}</td><td class="n">${fmt(Math.max(Math.abs(r.lo - sn.base), Math.abs(r.hi - sn.base)))}</td></tr>`).join('')}</table></div></div>`;
+  $('#sm').value = S.sensMetric; $('#sm').onchange = e => { S.sensMetric = e.target.value; tEsc(); };
+}
+
+/* ---------- INFORMES ---------- */
+const DISCREP = [
+  ['D1', 'Presión de diseño', '50 bar (ficha E1-03; Tabla 7 del informe)', '55 bar (acta A1↔A2: presión interna de diseño en superficie)', () => `Se aplica ${R.Pdes} bar (${S.a.pdes50 ? 'supuesto aceptado' : 'supuesto rechazado'}); ambos valores quedan calculados (PS·DN 12 500 / 13 750). A3 debe confirmar por escrito.`, 'A3 / A1'],
+  ['D2', 'Temperatura en el múltiple', '52 °C (Tabla 7 / ficha E1-03)', '68 °C (Tabla 9 / base de diseño; máx. 85 °C)', () => `Se aplica ${R.T_mp} °C; para brida y 3LPE se verifica a ${S.T_max} °C. Con 68 °C De Waard da ${fmt(R.dw.in68)} mm/año a 45 bar.`, 'A2 / Cliente'],
+  ['D3', 'H₂S al año 10', '0,15 % hoy (Región 2, 5,7 kPa a 38 bar)', '0,30 % año 10 (11,4 kPa a 38 bar, al borde de la Región 3; 13,5 kPa a 45 bar, Región 3)', () => `Escenario actual: ${fmt(R.y)} % → ${fmt(R.ssc.entry.kPa)} / ${fmt(R.ssc.arr.kPa)} kPa. Veredicto Crítico con cualquiera de los dos; Región 3 en entrada exige A.2 y 250 HV.`, 'A3 (valor firmado)'],
+  ['D4', 'Tasa de corrosión sin inhibir', '0,31 mm/año (ficha E1-03, modelo del cliente)', '7,66–13,25 mm/año (De Waard–Milliams, informe §11.1.2); ≈3,9 mm/año a 38 bar y 52 °C', () => `Reproducidos 7,66 y 13,25 con F(pH) = ${S.fpH}. Se usa ${R.model === 'cliente' ? '0,31' : 'De Waard'}; con De Waard el CA de línea sería ${fmt(corrWith('dewaard').cFL.ca)} mm (> 10 mm).`, 'Cliente / A2'],
+  ['D5', 'Fórmula de inhibición', 'CR_ef = CR_sin·(1−D) + CR_inh·D = 0,121 mm/año (ficha)', 'V_inh = V_sin·(1−E) (informe §11.1.3)', () => `La fórmula de la ficha reproduce 2,42 mm. La del informe da ${fmt(R.cFL.caInforme)} mm con el modelo activo: trata la disponibilidad como eficiencia. Se usa la de la ficha.`, 'A2'],
+  ['D6', 'Grado del tubo', 'L360NE (X52NE), Anexo A (ficha E1-03)', 'L360NS (X52NS) con Anexo H (informe, acta)', () => 'Se adopta L360NS por el informe y el acta; el Anexo H y el sufijo NS no aparecen en el extracto adjunto de ISO 3183: ' + NV + '.', 'A2'],
+  ['D7', 'Dureza de soldadura', '280 HV (ficha; ISO 15156-2 A.3.3 «típicamente»)', '250 HV10 (informe; ISO 15156-2 A.2)', () => `Se aplica ${R.hardness.weld} HV (${R.hardness.route}). En Región 3 solo vale A.2.`, 'A2'],
+  ['D8', 'Categoría atmosférica', 'C4 (ficha E1-04)', 'Auditoría: no se justificó el descarte de C3 y C5', () => 'Se conserva C4 con la nota ' + NV + ': ISO 9223 no está adjunta (la ISO 9227 es un ensayo).', 'A2 (E1-04)'],
+  ['D9', 'Categoría de equipo a presión', 'PS·DN 13 750, categoría III (solicitud)', 'PS·DN 12 500 con 50 bar', () => 'Se calculan ambos; la tabla de categorías de EN 13480-1 no está adjunta: ' + NV + '.', 'A2']
+];
+const GAPS = [
+  ['Caudal por pozo y relación gas-líquido', 'A1', 'Sin él el cálculo hidráulico y la erosión son supuestos (ρ, μ, 1,8 m/s)'],
+  ['H₂S del año 10 firmado', 'A3 (confirmar por escrito)', 'Define Región 2 o 3 en la entrada y la vía A.2/A.3'],
+  ['Presión de diseño confirmada (50 o 55 bar)', 'A3', 'Espesor, rating de brida y categoría PED'],
+  ['Ubicación del choque 45→38 bar', 'A1 y A2', 'Define quién selecciona el material por erosión y la presión aguas abajo'],
+  ['Producto, solvente y compatibilidad del inhibidor; disponibilidad ≥ 90 % por escrito', 'A3', 'Valida el CA de 2,42 mm'],
+  ['Inhibidor de fase vapor y aislamiento contra TLC', 'A3 (acta A2↔A3)', 'La inhibición líquida no es eficaz contra TLC (ISO 21457 8.1)'],
+  ['Tasa de corrosión acordada con el operador: 0,31 mm/año o De Waard con F(pH)', 'Cliente y A2', 'Cambia el CA de 2,4 mm a más de 10 mm (D4)'],
+  ['Presión de burbuja de A3', 'A3', 'Severidad del SSC'],
+  ['Par galvánico en la brida de A1 (metalurgia noble)', 'A1', 'Kit aislante y espárragos B7M/2HM'],
+  ['Valores de S, E, W, Y, tolerancias y espesores B36.10', 'A2', 'Marcados como ' + NV],
+  ['Adquirir textos: ISO 9223, ISO 23936-2, EN 13480-1/-3, API RP 14E, ASME B31.3/B16.5, ISO 15589-1, ISO 21809, Anexo H de ISO 3183 completo', 'A2', 'Cerrar los ítems NO VERIFICADO'],
+  ['Ubicación de sondas y cupones de monitoreo', 'A2 y A3', 'Verificación del CA en servicio']
+];
+function mdTable(h, rows) { const c = x => String(x ?? '').replace(/\|/g, '/').replace(/\n/g, ' '); return '| ' + h.map(c).join(' | ') + ' |\n|' + h.map(() => '---').join('|') + '|\n' + rows.map(r => '| ' + r.map(c).join(' | ') + ' |').join('\n') + '\n'; }
+function facts() {
+  const r = R, f = x => Math.round(x * 10000) / 10000, F = [];
+  const add = (s, n, v, u, src) => F.push([s, n, typeof v === 'number' ? f(v) : v, u || '', src || '']);
+  add('Entradas', 'Horizonte', S.caso === 'hoy' ? 'Hoy' : 'Año 10', '', 'Escenario');
+  add('Entradas', 'Inhibición', S.inhib ? 'Con' : 'Sin', '', 'Escenario'); add('Entradas', 'Pozos activos', r.hMP.n, '', 'Escenario');
+  [['P cabezal', S.P_head, 'bar', 'Acta A1↔A2'], ['P llegada', S.P_arr, 'bar', 'Ficha E1-03 (supuesto)'], ['T entrada', S.T_in, '°C', 'Ficha E1-03'], ['T llegada línea', S.T_out, '°C', 'Ficha E1-03'], ['T múltiple aplicada', r.T_mp, '°C', 'Tabla 7 / Tabla 9'], ['T máxima', S.T_max, '°C', 'Acta A1↔A2'], ['P diseño aplicada', r.Pdes, 'bar', 'Ficha E1-03 / acta'], ['CO₂', S.co2, '% mol', 'Base de diseño'], ['H₂S aplicado', r.y, '% mol', 'Base de diseño / A3'], ['pH', S.pH, '', 'Base de diseño'], ['Cloruros', S.cl, 'mg/l', 'Base de diseño'], ['Corte de agua', S.wc, '%', 'Base de diseño'], ['Sólidos', S.sand, 'lb/1000 bbl', 'Base de diseño'], ['Vida de diseño', S.life, 'años', 'Base de diseño'], ['Tasa sin inhibir (cliente)', S.crU, 'mm/año', 'Ficha E1-03'], ['Tasa inhibida de diseño', S.crI, 'mm/año', 'Ficha E1-03'], ['Disponibilidad aplicada', r.avail * 100, '%', 'Acta A2↔A3'], ['Modelo de corrosión', r.model, '', 'Supuesto'], ['S admisible', S.S_allow, 'MPa', NV], ['Tolerancia aplicada', r.tol, '%', NV]].forEach(a => add('Entradas', ...a));
+  [['pCO₂ entrada', r.pts.entry.pCO2, 'bar'], ['pCO₂ llegada', r.pts.arr.pCO2, 'bar'], ['pH₂S entrada', r.pts.entry.pH2S_kPa, 'kPa'], ['pH₂S llegada', r.pts.arr.pH2S_kPa, 'kPa'], ['Diámetro interior FL', r.hFL.Dm * 1000, 'mm'], ['Caudal por pozo', r.hFL.Qh, 'm³/h'], ['Caudal por pozo', r.hFL.bpd, 'bpd'], ['Reynolds FL', r.hFL.Re, ''], ['ΔP fricción FL', r.hFL.dP, 'bar'], ['P llegada calculada', r.Pcalc, 'bar'], ['Velocidad erosional FL', r.hFL.ve, 'm/s'], ['v/Ve FL', r.eros.fl, ''], ['Caudal total al múltiple', r.hMP.Qh, 'm³/h'], ['Diámetro interior cabezal', r.hMP.Dm * 1000, 'mm'], ['Velocidad cabezal', r.hMP.v, 'm/s'], ['v/Ve cabezal', r.eros.mp, ''], ['Arena por línea', r.sand.kgd, 'kg/día']].forEach(a => add('Simulación', a[0], a[1], a[2], 'Cálculo; ρ, μ, C son supuestos'));
+  [['De Waard 68 °C, 45 bar', r.dw.in68, 'mm/año'], ['De Waard 85 °C, 45 bar', r.dw.in85, 'mm/año'], ['De Waard 52 °C, 38 bar', r.dw.arr52, 'mm/año'], ['Efectiva inhibida (ficha, cliente)', r.cClient.effInh, 'mm/año'], ['CA FL con inhibidor (modelo activo)', r.cFL.caInh, 'mm'], ['CA FL sin inhibidor (modelo activo)', r.cFL.caNo, 'mm'], ['CA FL aplicado', r.cFL.ca, 'mm'], ['CA MP aplicado', r.cMP.ca, 'mm'], ['CA FL con fórmula del informe', r.cFL.caInforme, 'mm'], ['Región SSC entrada', r.ssc.entry.reg, ''], ['Región SSC llegada', r.ssc.arr.reg, ''], ['pCO₂/pH₂S entrada', r.ssc.entry.ratio, '']].forEach(a => add('Corrosión', a[0], a[1], a[2], 'Ficha E1-03 / Informe §11 / ISO 15156-2'));
+  [['FL: t por presión', r.mFL.t, 'mm'], ['FL: t_m', r.mFL.tm, 'mm'], ['FL: pared nominal exigible', r.mFL.tnomReq, 'mm'], ['FL: pared mínima disponible', r.mFL.wmin, 'mm'], ['FL: margen', r.mFL.margin, 'mm'], ['FL: MAWP nueva', r.mFL.mawpNew, 'bar'], ['FL: MAWP al final de vida', r.mFL.mawpEol, 'bar'], ['MP: t por presión', r.mMP.t, 'mm'], ['MP: t_m', r.mMP.tm, 'mm'], ['MP: pared nominal exigible', r.mMP.tnomReq, 'mm'], ['MP: pared mínima disponible', r.mMP.wmin, 'mm'], ['MP: margen', r.mMP.margin, 'mm'], ['MP: MAWP nueva', r.mMP.mawpNew, 'bar'], ['MP: MAWP al final de vida', r.mMP.mawpEol, 'bar'], ['Brida Cl. 600 a T máxima', r.flange.rating, 'bar'], ['PS·DN', r.ped.psdn, '']].forEach(a => add('Integridad', a[0], a[1], a[2], 'ASME B31.3 ' + NV));
+  return F;
+}
+function buildMD() {
+  const r = R, f = fmt, sc = S.scope, now = new Date().toLocaleString('es-CO'), nf = r.issues.filter(i => i.sev === 'falla').length;
+  const rows = scenRows();
+  let m = `# Informe técnico de integridad y selección de materiales\n## Sistema A2 · Líneas de flujo FL-01…FL-08 y múltiple de producción MP-01\n\n`;
+  m += `> Proyecto A (campo de crudo pesado, Magdalena Medio) · Equipo A2 (UIS) · generado ${now} por el simulador A2.\n> Escenario: **${S.caso === 'hoy' ? 'Hoy (0,15 % H₂S)' : 'Año 10 (' + f(r.y) + ' % H₂S)'}**, **${S.inhib ? 'con' : 'sin'} inhibidor**, **${r.hMP.n} pozos activos**, alcance: ${sc === 'both' ? 'FL y MP' : sc === 'fl' ? 'solo FL' : 'solo MP'}.\n\n`;
+  m += `## 1. Resumen ejecutivo\n\n- Servicio amargo confirmado: pH₂S ${f(r.ssc.entry.kPa)} kPa a ${S.P_head} bar (${REGN(r.ssc.entry.reg)}) y ${f(r.ssc.arr.kPa)} kPa a ${S.P_arr} bar (${REGN(r.ssc.arr.reg)}), ${f(r.ssc.entry.times, 0)} veces el umbral de 0,3 kPa.\n`;
+  m += `- CA de línea: **${f(r.cFL.ca)} mm** (${r.caStatus(r.cFL.ca)}); con inhibidor y 90 % de disponibilidad la ficha da 2,42 mm y sin inhibidor 6,20 mm.\n- Pared de línea (4 in Sch ${S.sch_fl}): margen ${f(r.mFL.margin)} mm → ${r.mFL.ok ? 'cumple' : 'NO cumple'}. Cabezal (DN 250 Sch ${S.sch_mp}): margen ${f(r.mMP.margin)} mm → ${r.mMP.ok ? 'cumple' : 'NO cumple'}.\n`;
+  m += `- **Hallazgo principal:** el modelo De Waard–Milliams del propio informe da ${f(r.dw.in68)}–${f(r.dw.in85)} mm/año sin inhibir (reproducido), unas ${f(r.ratioDW, 0)} veces el 0,31 mm/año de la ficha. Con De Waard el CA sería ${f(corrWith('dewaard').cFL.ca)} mm, fuera del límite de 8–10 mm de ISO 21457 8.2. El CA de 2,42 mm solo vale si el cliente confirma 0,31 mm/año.\n- Fallas del escenario: ${nf}; puntos abiertos: ${r.issues.filter(i => i.sev === 'abierto').length}.\n\n`;
+  m += `## 2. Base documental y reglas de honestidad\n\nSe leyeron: actas de interfaz, ficha E1-03, informes de entregable 2 y 3, enunciado de la evaluación 2 y las normas adjuntas. Verificadas contra texto: ISO 15156-1/-2/-3, ISO 21457, ISO 3183 (extracto), EN 10204, EN 13480-2. Lo no incluido en los PDF se marca **${NV}** y se atribuye al informe o al acta.\n\n`;
+  m += `## 3. Condiciones y transferencia de datos FL → MP-01\n\n` + mdTable(['Nodo', 'P (bar)', 'T (°C)', 'pCO₂ (bar)', 'pH₂S (kPa)', 'Región'], [['Brida A1/A2', S.P_head, S.T_in, f(r.pts.entry.pCO2, 3), f(r.pts.entry.pH2S_kPa), REGN(r.ssc.entry.reg)], ['Llegada FL', S.P_arr, S.T_out, f(r.pts.arr.pCO2, 3), f(r.pts.arr.pH2S_kPa), REGN(r.ssc.arr.reg)], ['Cabezal MP-01', S.P_arr, r.T_mp, f(r.pts.mp.pCO2, 3), f(r.pts.mp.pH2S_kPa), REGN(r.ssc.arr.reg)]]);
+  m += `\nHidráulica (ρ ${S.rho} kg/m³, μ ${S.mu} cP: supuestos): caudal por pozo ${f(r.hFL.Qh, 1)} m³/h (${f(r.hFL.bpd, 0)} bpd), Re ${f(r.hFL.Re, 0)}, ΔP ${f(r.hFL.dP)} bar (P calculada a la llegada ${f(r.Pcalc)} bar); cabezal ${f(r.hMP.v)} m/s con ${r.hMP.n} pozo(s); v/Ve ${f(r.eros.fl)} (FL) y ${f(r.eros.mp)} (MP), API RP 14E ${NV}.\n\n`;
+  m += `## 4. Corrosión y mecanismos\n\n` + mdTable(['Punto', 'T (°C)', 'pCO₂ (bar)', 'Cliente (mm/año)', 'De Waard (mm/año)', 'Efectiva ficha (mm/año)', 'CA activo (mm)'], [['Entrada FL', S.T_in, f(r.pts.entry.pCO2, 3), f(r.cClient.cu), f(r.cFL.dw), f(r.cFL.effInh, 3), f(r.cFL.ca)], ['Cabezal MP', r.T_mp, f(r.pts.mp.pCO2, 3), f(r.cClient.cu), f(r.cMP.dw), f(r.cMP.effInh, 3), f(r.cMP.ca)]]);
+  m += `\n- **SSC/HIC:** crítico. Región 3 solo con A.2 (ISO 15156-2 7.2.1.4); dureza de soldadura ≤ ${r.hardness.weld} HV.\n- **TLC:** estratificado, ΔT ${r.tlc.dT} °C; ISO 21457 8.1: el inhibidor líquido no es eficaz.\n- **MIC / depósito:** velocidad del cabezal ${f(r.hMP.v)} m/s${r.vMPlow ? ' (bajo el umbral supuesto)' : ''}; ISO 21457 6.2.2.3.\n- **Erosión:** arena ${f(r.sand.kgd, 1)} kg/día por línea; ISO 21457 6.5.\n- **Corrosión externa:** C4 en tramos aéreos, 3LPE y ánodos de Mg, −950 mV CSE (informe; ${NV}).\n\n`;
+  m += `## 5. Integridad mecánica (ASME B31.3, ${NV})\n\n` + mdTable(['Magnitud', 'FL 4 in Sch ' + S.sch_fl, 'MP DN 250 Sch ' + S.sch_mp], [['Presión de diseño (bar)', r.Pdes, r.Pdes], ['t por presión (mm)', f(r.mFL.t), f(r.mMP.t)], ['CA (mm)', f(r.cFL.ca), f(r.cMP.ca)], ['t_m = t + CA (mm)', f(r.mFL.tm), f(r.mMP.tm)], ['Pared nominal exigible (mm)', f(r.mFL.tnomReq), f(r.mMP.tnomReq)], ['Pared mínima disponible (mm)', f(r.mFL.wmin), f(r.mMP.wmin)], ['Margen (mm)', f(r.mFL.margin), f(r.mMP.margin)], ['MAWP nueva / final de vida (bar)', f(r.mFL.mawpNew, 1) + ' / ' + f(r.mFL.mawpEol, 1), f(r.mMP.mawpNew, 1) + ' / ' + f(r.mMP.mawpEol, 1)], ['Veredicto', r.mFL.ok ? 'Cumple' : 'No cumple', r.mMP.ok ? 'Cumple' : 'No cumple']]);
+  m += `\nBridas Clase 600 A105N: rating a ${S.T_max} °C = ${f(r.flange.rating, 1)} bar (${NV}). PS·DN = ${f(r.ped.psdn, 0)} (50 bar: 12 500; 55 bar: 13 750); categoría III: ${NV}.\n\n`;
+  const rc = corrWith('cliente'), rd = corrWith('dewaard');
+  m += `\n### Efecto del modelo de corrosión sobre el espesor (misma presión, mismo inhibidor)\n\n` + mdTable(['Modelo', 'CA línea (mm)', 'Margen FL (mm)', 'Sch mínimo FL', 'CA cabezal (mm)', 'Margen MP (mm)', 'Sch mínimo MP', 'CA ≤ 10 mm'], [['Cliente 0,31 mm/año (ficha E1-03)', f(rc.cFL.ca), f(rc.mFL.margin), rc.mFL.minSch || 'ninguno', f(rc.cMP.ca), f(rc.mMP.margin), rc.mMP.minSch || 'ninguno', rc.cFL.ca <= 10 ? 'Sí' : 'No'], ['De Waard–Milliams (informe §11.1.2)', f(rd.cFL.ca), f(rd.mFL.margin), rd.mFL.minSch || 'ninguno', f(rd.cMP.ca), f(rd.mMP.margin), rd.mMP.minSch || 'ninguno', rd.cFL.ca <= 10 ? 'Sí' : 'No']]) + '\n';
+  m += `## 6. Selección de materiales\n\n` + mdTable(['Componente', 'Material y norma', 'Requisito', 'Verificación'], MATERIALS.map(x => [x[0], x[1], x[2], x[4]])) + '\n';
+  m += `## 7. Discrepancias documentales y resolución\n\n` + mdTable(['ID', 'Tema', 'Fuente A', 'Fuente B', 'Resolución en el simulador', 'Cierra'], DISCREP.map(d => [d[0], d[1], d[2], d[3], d[4](), d[5]])) + '\n';
+  m += `## 8. Supuestos aplicados\n\n` + mdTable(['Supuesto', 'Aceptado', 'Fuente / alterno'], ASSUME.map(([k, t, s]) => [t, S.a[k] ? 'Sí' : 'No', s])) + '\n';
+  m += `## 9. Escenarios y sensibilidad\n\n` + mdTable(['#', 'Escenario', 'pH₂S entrada (kPa)', 'Región', 'CA (mm)', 'Margen FL (mm)', 'Margen MP (mm)', 'v cabezal (m/s)', 'Fallas'], rows.map(x => [x.code, x.name, f(x.r.pts.entry.pH2S_kPa), 'R' + x.r.ssc.worst, f(x.r.cFL.ca), f(x.r.mFL.margin), f(x.r.mMP.margin), f(x.r.hMP.v), x.r.issues.filter(i => i.sev === 'falla').length]));
+  const sn = sensitivity(S, 'marginFL'); m += `\nSensibilidad (margen de pared FL, base ${f(sn.base)} mm):\n\n` + mdTable(['Parámetro', 'Resultado 1', 'Resultado 2'], sn.rows.map(x => [x.n, f(x.lo), f(x.hi)])) + '\n';
+  m += `## 10. Fallas y puntos abiertos del escenario\n\n` + mdTable(['Tipo', 'ID', 'Descripción', 'Responsable', 'Fuente'], r.issues.map(i => [i.sev, i.id, i.text, i.owner, i.src])) + '\n';
+  m += `## 11. Matriz normativo-cumplimiento\n\n` + mdTable(['Norma', 'Cláusula', 'Requisito', 'Aplicado', 'Estado', 'Verificación'], matrixRows().map(x => [x[0], x[1], x[2], x[3], LV[x[4]], x[5]])) + '\n';
+  m += `## 12. Vacíos de información y responsable\n\n` + mdTable(['Vacío', 'Responsable', 'Impacto'], GAPS) + `\n---\n*Los números son salida del simulador con los supuestos listados; no sustituyen la verificación contra las normas completas.*\n`;
+  return m;
+}
+function mdToHtml(md) {
+  const L = md.split('\n'), inl = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>').replace(/`(.+?)`/g, '<code>$1</code>');
+  let o = '', i = 0, ul = false;
+  const cells = l => l.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim());
+  while (i < L.length) {
+    const l = L[i];
+    if (l.startsWith('|')) {
+      const h = cells(l); i += 2; let b = '';
+      while (i < L.length && L[i].startsWith('|')) { b += '<tr>' + cells(L[i]).map(c => `<td>${inl(c)}</td>`).join('') + '</tr>'; i++; }
+      o += `<div class="tw"><table><tr>${h.map(c => `<th>${inl(c)}</th>`).join('')}</tr>${b}</table></div>`; continue;
+    }
+    if (/^- /.test(l)) { if (!ul) { o += '<ul>'; ul = true; } o += `<li>${inl(l.slice(2))}</li>`; i++; continue; }
+    if (ul) { o += '</ul>'; ul = false; }
+    if (/^### /.test(l)) o += `<h3>${inl(l.slice(4))}</h3>`; else if (/^## /.test(l)) o += `<h2>${inl(l.slice(3))}</h2>`; else if (/^# /.test(l)) o += `<h1>${inl(l.slice(2))}</h1>`;
+    else if (/^> /.test(l)) o += `<blockquote>${inl(l.slice(2))}</blockquote>`; else if (/^---/.test(l)) o += '<hr>'; else if (l.trim()) o += `<p>${inl(l)}</p>`;
+    i++;
+  }
+  return o + (ul ? '</ul>' : '');
+}
+/* ---------- Exportación ---------- */
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800); }
+const stamp = () => new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+function csvCell(v) { const s = String(v ?? ''); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function buildCSV() {
+  const rows = [['Seccion', 'Concepto', 'Valor', 'Unidad', 'Fuente_o_estado']];
+  facts().forEach(x => rows.push(x));
+  R.issues.forEach(i => rows.push(['Abiertos_y_fallas', i.id + ' (' + i.sev + ')', i.text, '', i.owner + ' · ' + i.src]));
+  matrixRows().forEach(x => rows.push(['Cumplimiento', x[0] + ' ' + x[1], x[3], LV[x[4]], x[2] + ' · ' + x[5]]));
+  scenRows().forEach(x => rows.push(['Escenarios', x.code + ' ' + x.name, Math.round(x.r.cFL.ca * 1e4) / 1e4, 'mm CA', 'margen FL ' + fmt(x.r.mFL.margin) + ' mm; margen MP ' + fmt(x.r.mMP.margin) + ' mm; fallas ' + x.r.issues.filter(i => i.sev === 'falla').length]));
+  DISCREP.forEach(d => rows.push(['Discrepancias', d[0] + ' ' + d[1], d[4](), '', d[2] + ' vs ' + d[3]]));
+  ASSUME.forEach(([k, t, s]) => rows.push(['Supuestos', t, S.a[k] ? 'aceptado' : 'no aceptado', '', s]));
+  GAPS.forEach(g => rows.push(['Vacios', g[0], '', '', g[1] + ' · ' + g[2]]));
+  return '\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+}
+const CRC = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files, mime) {
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  files.forEach(f => {
+    const nm = enc.encode(f.name), d = enc.encode(f.data), crc = crc32(d);
+    const lh = new DataView(new ArrayBuffer(30)); lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true); lh.setUint32(18, d.length, true); lh.setUint32(22, d.length, true); lh.setUint16(26, nm.length, true);
+    parts.push(new Uint8Array(lh.buffer), nm, d);
+    const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true); ch.setUint32(20, d.length, true); ch.setUint32(24, d.length, true); ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+    cen.push(new Uint8Array(ch.buffer), nm); off += 30 + nm.length + d.length;
+  });
+  const cs = cen.reduce((s, c) => s + c.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], { type: mime });
+}
+const xe = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
+const colL = i => { let s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
+function sheetXml(rows) {
+  let x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="6" width="40" customWidth="1"/></cols><sheetData>';
+  rows.forEach((r, ri) => { x += `<row r="${ri + 1}">`; r.forEach((v, ci) => { const ref = colL(ci) + (ri + 1), st = ri === 0 ? ' s="1"' : ''; x += (typeof v === 'number' && isFinite(v)) ? `<c r="${ref}"${st}><v>${v}</v></c>` : `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xe(v ?? '')}</t></is></c>`; }); x += '</row>'; });
+  return x + '</sheetData></worksheet>';
+}
+function buildXLSX() {
+  const F = facts(), by = s => [['Concepto', 'Valor', 'Unidad', 'Fuente / estado']].concat(F.filter(x => x[0] === s).map(x => x.slice(1)));
+  const sn = sensitivity(S, 'marginFL'), sheets = [
+    ['Resumen', [['Informe técnico A2', ''], ['Generado', new Date().toLocaleString('es-CO')], ['Horizonte', S.caso === 'hoy' ? 'Hoy' : 'Año 10'], ['Inhibición', S.inhib ? 'Con' : 'Sin'], ['Pozos activos', R.hMP.n], ['CA línea (mm)', Math.round(R.cFL.ca * 1e3) / 1e3], ['Margen FL (mm)', Math.round(R.mFL.margin * 1e3) / 1e3], ['Margen MP (mm)', Math.round(R.mMP.margin * 1e3) / 1e3], ['Región SSC (peor)', R.ssc.worst], ['Fallas', R.issues.filter(i => i.sev === 'falla').length], ['Abiertos', R.issues.filter(i => i.sev === 'abierto').length], ['Nota', 'Lo no verificado contra los PDF adjuntos está marcado ' + NV]]],
+    ['Entradas', by('Entradas')], ['Simulación', by('Simulación')], ['Corrosión', by('Corrosión')], ['Integridad', by('Integridad')],
+    ['Materiales', [['Componente', 'Material y norma', 'Requisito', 'Estado', 'Verificación']].concat(MATERIALS.map(m => [m[0], m[1], m[2], LV[m[3]] || 'verificado/parcial', m[4]]))],
+    ['Cumplimiento', [['Norma', 'Cláusula', 'Requisito', 'Aplicado', 'Estado', 'Verificación']].concat(matrixRows().map(x => [x[0], x[1], x[2], x[3], LV[x[4]], x[5]]))],
+    ['Escenarios', [['#', 'Escenario', 'pH2S entrada (kPa)', 'Región', 'CA (mm)', 'Margen FL (mm)', 'Margen MP (mm)', 'v cabezal (m/s)', 'Fallas']].concat(scenRows().map(x => [x.code, x.name, Math.round(x.r.pts.entry.pH2S_kPa * 100) / 100, x.r.ssc.worst, Math.round(x.r.cFL.ca * 1e3) / 1e3, Math.round(x.r.mFL.margin * 1e3) / 1e3, Math.round(x.r.mMP.margin * 1e3) / 1e3, Math.round(x.r.hMP.v * 1e3) / 1e3, x.r.issues.filter(i => i.sev === 'falla').length]))],
+    ['Sensibilidad', [['Parámetro', 'Resultado 1 (mm)', 'Resultado 2 (mm)', 'Base (mm)']].concat(sn.rows.map(r => [r.n, Math.round(r.lo * 1e3) / 1e3, Math.round(r.hi * 1e3) / 1e3, Math.round(sn.base * 1e3) / 1e3]))],
+    ['Discrepancias', [['ID', 'Tema', 'Fuente A', 'Fuente B', 'Resolución', 'Cierra']].concat(DISCREP.map(d => [d[0], d[1], d[2], d[3], d[4](), d[5]]))],
+    ['Supuestos', [['Supuesto', 'Aceptado', 'Fuente / alterno']].concat(ASSUME.map(([k, t, s]) => [t, S.a[k] ? 'Sí' : 'No', s]))],
+    ['Fallas y abiertos', [['Tipo', 'ID', 'Descripción', 'Responsable', 'Fuente']].concat(R.issues.map(i => [i.sev, i.id, i.text, i.owner, i.src]))],
+    ['Vacíos', [['Vacío', 'Responsable', 'Impacto']].concat(GAPS)]
+  ];
+  const files = [
+    { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>' },
+    { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+    { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((s, i) => `<sheet name="${xe(s[0])}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>' },
+    { name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>' }
+  ].concat(sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s[1]) })));
+  return makeZip(files, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+function tInf() {
+  const el = $('#tab-inf');
+  if (!REPORT_TS) REPORT_TS = new Date();
+  const md = buildMD();
+  el.innerHTML = `<h1>Informes</h1>
+  <p class="note noprint">El informe usa el escenario y los supuestos actuales. Cambie el escenario y pulse <i>Actualizar vista previa</i>, o descargue en el formato que necesite. Para PDF use <i>Imprimir / guardar como PDF</i> y elija «Guardar como PDF» en el diálogo del navegador.</p>
+  <div class="btnrow">
+   <button class="btn" id="b-pdf">Imprimir / guardar como PDF</button><button class="btn" id="b-xls">Descargar Excel (.xlsx, 13 pestañas)</button>
+   <button class="btn" id="b-csv">Descargar CSV</button><button class="btn" id="b-md">Descargar Markdown</button><button class="btn alt" id="b-ref">Actualizar vista previa</button></div>
+  <div class="card printable"><div class="reportbox md" id="rep">${mdToHtml(md)}</div></div>`;
+  $('#b-pdf').onclick = () => window.print();
+  $('#b-xls').onclick = () => download(buildXLSX(), `A2_informe_${stamp()}.xlsx`);
+  $('#b-csv').onclick = () => download(new Blob([buildCSV()], { type: 'text/csv;charset=utf-8' }), `A2_informe_${stamp()}.csv`);
+  $('#b-md').onclick = () => download(new Blob([md], { type: 'text/markdown;charset=utf-8' }), `A2_informe_${stamp()}.md`);
+  $('#b-ref').onclick = () => { REPORT_TS = new Date(); tInf(); };
+}
+/* ---------- Arranque ---------- */
+buildChrome(); go('inicio');
+
+
+</script>
+</body>
+</html>

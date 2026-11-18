@@ -65,6 +65,17 @@ pre{font:12px/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.documentElement.classList.add('embedded');
 }
+window.addEventListener('keydown', event => {
+  if (parent === window || event.repeat || event.ctrlKey || event.altKey || event.metaKey ||
+      event.key.toLowerCase() !== 'n' || event.target.closest('input,textarea,select,[contenteditable]')) return;
+  event.preventDefault();
+  parent.postMessage({projectAKey:'n'}, '*');
+});
+window.addEventListener('message', event => {
+  if (parent === window || event.data?.projectAKey !== 'n') return;
+  if ([...document.querySelectorAll('iframe')].some(frame => frame.contentWindow === event.source))
+    parent.postMessage({projectAKey:'n'}, '*');
+});
 </script><script>
 const incomingWellStream = (() => {
   try { return JSON.parse(new URLSearchParams(location.search).get('estado')) || {}; }
@@ -386,6 +397,13 @@ function getISO15156Region(pH2S_kPa, pH) {
   if (pH >= boundary1_2) return 1;
   if (pH >= boundary2_3) return 2;
   return 3;
+}
+function isoPressureLimit(pH, region) {
+  const cap = region === 1 ? 6.5 : 5.5;
+  const slope = region === 1 ? 4.5 : 3.5;
+  if (pH >= cap) return 1000;
+  if (region === 2 && pH < 3.5) return 0.3;
+  return Math.max(0.3, Math.pow(10, pH - slope));
 }
 
 // 5. Elegibilidad Metalúrgica de Grados (ISO 15156-2 / -3)

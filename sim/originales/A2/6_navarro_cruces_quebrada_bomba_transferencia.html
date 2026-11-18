@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><script>
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embedded');
+}
+window.addEventListener('keydown', event => {
+  if (parent === window || event.repeat || event.ctrlKey || event.altKey || event.metaKey ||
+      event.key.toLowerCase() !== 'n' || event.target.closest('input,textarea,select,[contenteditable]')) return;
+  event.preventDefault();
+  parent.postMessage({projectAKey:'n'}, '*');
+});
+window.addEventListener('message', event => {
+  if (parent === window || event.data?.projectAKey !== 'n') return;
+  if ([...document.querySelectorAll('iframe')].some(frame => frame.contentWindow === event.source))
+    parent.postMessage({projectAKey:'n'}, '*');
+});
+</script><script>function getISO15156Region(pH2S_kPa, pH) {
+  if (pH2S_kPa < 0.3) return 0;
+  if (pH2S_kPa > 1000) return 3; // Extensión conservadora fuera de la gráfica.
+  const logP = Math.log10(pH2S_kPa);
+  const boundary1_2 = Math.min(6.5, 4.5 + logP);
+  const boundary2_3 = Math.max(3.5, Math.min(5.5, 3.5 + logP));
+  if (pH >= boundary1_2) return 1;
+  if (pH >= boundary2_3) return 2;
+  return 3;
+}
+function isoPressureLimit(pH, region) {
+  const cap = region === 1 ? 6.5 : 5.5;
+  const slope = region === 1 ? 4.5 : 3.5;
+  if (pH >= cap) return 1000;
+  if (region === 2 && pH < 3.5) return 0.3;
+  return Math.max(0.3, Math.pow(10, pH - slope));
+}</script>
+      <style>.embedded body{margin-inline:0;max-width:100%}
+      .embedded *{box-sizing:border-box}.embedded main,.embedded .app>*{min-width:0}
+      .embedded svg,.embedded canvas,.embedded img{max-width:100%}
+      .embedded .tw,.embedded .scrolltable{overflow:auto}
+      </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="artifact-type" content="tool">
+<meta name="design-style" content="vitals">
+<title>Simulador Par 6 · Sistema A2 — Cruces de Quebrada (5.3) y Bomba de Transferencia (6.1)</title>
+
+
+<style>
+:root {
+  color-scheme: light;
+
+  /* 1. Vitals style palette */
+  --background: #ffffff;
+  --surface-container-low: #f1f7f8;
+  --surface-container: #e3f1f3;
+  --surface-container-high: #d5e9ec;
+
+  --on-surface: #1b2b33;
+  --on-surface-variant: #46585f;
+
+  --outline: #7b9198;
+  --outline-variant: #d5e3e5;
+
+  --primary: #0f7c8a;
+  --primary-hover: #0b626e;
+  --on-primary: #ffffff;
+  --primary-container: #e3f1f3;
+  --on-primary-container: #0a5560;
+  --secondary: #1d5e3a;
+  --tertiary: #2e7d4f;
+  --error: #b3261e;
+  --on-error: #ffffff;
+
+  /* Data series */
+  --data-1: #0f7c8a;
+  --data-2: #2e7d4f;
+  --data-3: #b86e00;
+  --data-4: #5c5fb0;
+  --data-context: #b8c7ca;
+
+  /* Fonts */
+  --font-headline: 'Figtree', sans-serif;
+  --font-body: 'Atkinson Hyperlegible', sans-serif;
+  --font-label: 'Figtree', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Shape */
+  --rounded: 0.625rem;
+  --rounded-lg: 0.875rem;
+  --rounded-full: 9999px;
+
+  /* Style effects */
+  --top-bar: 6px solid var(--primary);
+  --status-bar-width: 4px;
+  --card-border: 1px solid var(--outline-variant);
+  --card-lift: 0 1px 2px rgb(27 43 51 / 0.05), 0 6px 16px rgb(27 43 51 / 0.05);
+
+  /* 2. Accessible Traffic Light & Semantic Tokens */
+  --positive: #2e7d4f;
+  --positive-bg: #eaf5ee;
+  --positive-text: #164e2e;
+  --warning: #d98200;
+  --warning-bg: #fef6e6;
+  --warning-text: #7a4500;
+  --error-bg: #fdeceb;
+  --error-text: #8c1d18;
+  --neutral-status: #64748b;
+  --neutral-bg: #f1f5f9;
+  --neutral-text: #334155;
+  --traffic-housing: #1e293b;
+  --traffic-off: #334155;
+  --creek-water: #cce9f2;
+  --creek-wave: #0f7c8a;
+  --soil-fill: #ebe6df;
+  --pipe-metal: #4a5b63;
+  --alloy-metal: #5c5fb0;
+
+  --focus: #0f7c8a;
+
+  /* Type scale */
+  --display-size: clamp(1.65rem, 1.3rem + 1.2vw, 2.25rem);
+  --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.55rem);
+  --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.2rem);
+  --body-size: clamp(1rem, 0.95rem + 0.2vw, 1.0625rem);
+  --label-size: 0.8125rem;
+
+  /* Spacing scale (4pt base) */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+}
+
+body.large-text {
+  --display-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.6rem);
+  --headline-size: clamp(1.4rem, 1.2rem + 0.6vw, 1.75rem);
+  --subhead-size: 1.3rem;
+  --body-size: 1.1875rem;
+  --label-size: 0.9375rem;
+}
+
+/* Base reset */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  overflow-x: clip;
+  margin: 0;
+  padding: 0;
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: 1.6;
+}
+header { position: static !important; }
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Main shell */
+.app-shell {
+  border-top: var(--top-bar);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: var(--background);
+  border-bottom: var(--card-border);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+}
+
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.title-block {
+  max-width: 72ch;
+}
+
+.kicker {
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--label-size);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--on-primary-container);
+  background: var(--primary-container);
+  display: inline-block;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--rounded-full);
+  margin-bottom: var(--space-sm);
+}
+
+.title {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: var(--display-size);
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--on-surface);
+}
+
+.lede {
+  font-size: 1.05em;
+  line-height: 1.55;
+  color: var(--on-surface-variant);
+  max-width: 65ch;
+  margin: var(--space-xs) 0 0;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+/* Live Status Ribbon */
+.live-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.ribbon-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--surface-container-low);
+  border: var(--card-border);
+  border-left: var(--status-bar-width) solid var(--primary);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.ribbon-pill[data-status="green"] { border-left-color: var(--positive); background: var(--positive-bg); }
+.ribbon-pill[data-status="yellow"] { border-left-color: var(--warning); background: var(--warning-bg); }
+.ribbon-pill[data-status="red"] { border-left-color: var(--error); background: var(--error-bg); }
+.ribbon-pill[data-status="gray"] { border-left-color: var(--neutral-status); background: var(--neutral-bg); }
+
+.ribbon-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--rounded-full);
+  flex-shrink: 0;
+  border: 2px solid var(--background);
+  box-shadow: 0 0 0 1px var(--outline);
+}
+.ribbon-dot[data-status="green"] { background: var(--positive); }
+.ribbon-dot[data-status="yellow"] { background: var(--warning); }
+.ribbon-dot[data-status="red"] { background: var(--error); }
+.ribbon-dot[data-status="gray"] { background: var(--neutral-status); }
+
+.ribbon-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ribbon-label {
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.ribbon-value {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--on-surface);
+}
+
+/* Navigation Tabs */
+.nav-bar-wrap {
+  background: var(--background);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.nav-bar {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 46px;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
+  border-radius: var(--rounded) var(--rounded) 0 0;
+}
+
+.tab-btn:hover {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.tab-btn[aria-selected="true"] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--surface-container-low);
+  font-weight: 700;
+}
+
+.tab-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Main Workspace */
+.page-grid {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+}
+.page-grid * { min-width: 0; }
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-lg);
+  animation: fadeSlide var(--dur-short) var(--ease-out);
+}
+.tab-panel.active {
+  display: flex;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards & Vitals Treatments */
+.card {
+  background: var(--background);
+  border: var(--card-border);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--card-lift);
+}
+
+.status-card {
+  background: var(--background);
+  border: var(--card-border);
+  border-left: var(--status-bar-width) solid var(--primary);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--card-lift);
+}
+
+.status-card[data-status="green"] { border-left-color: var(--positive); }
+.status-card[data-status="yellow"] { border-left-color: var(--warning); }
+.status-card[data-status="red"] { border-left-color: var(--error); }
+.status-card[data-status="gray"] { border-left-color: var(--neutral-status); }
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.section-title {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: var(--headline-size);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--on-surface);
+}
+
+.section-sub {
+  margin: var(--space-xs) 0 0;
+  color: var(--on-surface-variant);
+  max-width: 65ch;
+}
+
+.card-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: var(--subhead-size);
+  margin: 0 0 var(--space-xs);
+  color: var(--on-surface);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--space-lg);
+}
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.side-by-side {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: var(--space-md);
+}
+
+/* Giant Traffic Light Component (Semáforo Gigante) */
+.semaforo-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  border-radius: var(--rounded-lg);
+  border: var(--card-border);
+  background: var(--surface-container-low);
+}
+
+.semaforo-box[data-status="green"] { background: var(--positive-bg); border-color: var(--positive); }
+.semaforo-box[data-status="yellow"] { background: var(--warning-bg); border-color: var(--warning); }
+.semaforo-box[data-status="red"] { background: var(--error-bg); border-color: var(--error); }
+.semaforo-box[data-status="gray"] { background: var(--neutral-bg); border-color: var(--neutral-status); }
+
+.semaforo-housing {
+  background: var(--traffic-housing);
+  border-radius: var(--rounded-lg);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.35);
+}
+
+.semaforo-housing.horizontal {
+  flex-direction: row;
+  padding: 6px 10px;
+}
+
+.semaforo-bulb {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--rounded-full);
+  background: var(--traffic-off);
+  opacity: 0.35;
+  transition: opacity var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
+}
+
+.semaforo-housing.large .semaforo-bulb {
+  width: 30px;
+  height: 30px;
+}
+
+.semaforo-bulb.active {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--background);
+}
+
+.semaforo-bulb.bulb-red.active { background: var(--error); }
+.semaforo-bulb.bulb-yellow.active { background: var(--warning); }
+.semaforo-bulb.bulb-green.active { background: var(--positive); }
+.semaforo-bulb.bulb-gray.active { background: var(--neutral-status); }
+
+.semaforo-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.semaforo-headline {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.semaforo-headline[data-status="green"] { color: var(--positive-text); }
+.semaforo-headline[data-status="yellow"] { color: var(--warning-text); }
+.semaforo-headline[data-status="red"] { color: var(--error-text); }
+.semaforo-headline[data-status="gray"] { color: var(--neutral-text); }
+
+.semaforo-explain {
+  font-size: 0.96rem;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+/* Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--label-size);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--rounded-full);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  white-space: nowrap;
+}
+.chip[data-status="green"] { background: var(--positive-bg); color: var(--positive-text); }
+.chip[data-status="yellow"] { background: var(--warning-bg); color: var(--warning-text); }
+.chip[data-status="red"] { background: var(--error-bg); color: var(--error-text); }
+.chip[data-status="gray"] { background: var(--neutral-bg); color: var(--neutral-text); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--rounded);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-secondary {
+  background: var(--background);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.btn-secondary:hover { background: var(--surface-container-low); }
+
+.btn-soft {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+  border-color: var(--outline-variant);
+}
+.btn-soft:hover { background: var(--surface-container); }
+
+.btn-soft[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.btn-sm {
+  min-height: 38px;
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.875rem;
+}
+
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* Callout & Friendly Box */
+.friendly-callout {
+  background: var(--primary-container);
+  border-left: var(--status-bar-width) solid var(--primary);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--on-primary-container);
+}
+
+.friendly-note {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface-container-low);
+  border-radius: var(--rounded);
+  font-size: 0.94rem;
+  color: var(--on-surface);
+}
+
+/* Key Figures */
+.figure-val {
+  font-family: var(--font-headline);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 1.25rem + 0.8vw, 2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--on-surface);
+}
+
+.figure-label {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--label-size);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--on-surface-variant);
+  margin-bottom: var(--space-xs);
+}
+
+/* Inputs & Sliders */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.control-label {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--on-surface);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.control-hint {
+  font-size: 0.85rem;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: var(--space-sm);
+  align-items: end;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 44px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+input[type="number"], input[type="text"], select {
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--rounded);
+  background: var(--background);
+  color: var(--on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+select {
+  padding-right: var(--space-xl);
+}
+
+/* Checkboxes (Supuestos aceptados) */
+.assumption-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: var(--card-border);
+  border-radius: var(--rounded);
+  background: var(--surface-container-low);
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+.assumption-item:hover {
+  background: var(--surface-container);
+}
+.assumption-item.unchecked {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+}
+.assumption-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Segmented choice buttons */
+.choice-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-sm);
+}
+
+/* Tables */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--background);
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--outline-variant);
+  vertical-align: top;
+}
+
+th {
+  background: var(--surface-container-low);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: var(--label-size);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on-surface-variant);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Quick Guide Cards */
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: var(--background);
+  border: var(--card-border);
+  border-top: 4px solid var(--primary);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--card-lift);
+}
+
+.guide-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--rounded);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* SVG Visualization containers */
+.svg-frame {
+  background: var(--background);
+  border: var(--card-border);
+  border-radius: var(--rounded-lg);
+  padding: var(--space-md);
+  min-height: 360px;
+}
+
+.svg-frame svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hotspot-btn {
+  cursor: pointer;
+}
+.hotspot-btn circle.hotspot-ring {
+  transition: transform var(--dur-micro) var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.hotspot-btn:hover circle.hotspot-ring,
+.hotspot-btn.selected circle.hotspot-ring {
+  transform: scale(1.18);
+}
+
+@keyframes flowDash {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.anim-flow {
+  stroke-dasharray: 10 10;
+  animation: flowDash 1.4s linear infinite;
+}
+.anim-impeller {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spinSlow 2.4s linear infinite;
+}
+.paused-anim .anim-flow,
+.paused-anim .anim-impeller {
+  animation-play-state: paused;
+}
+
+/* Print / PDF Styles */
+@media print {
+  .nav-bar-wrap, .header-actions, .no-print { display: none !important; }
+  body { background: var(--background); }
+  .tab-panel { display: none !important; }
+  #tab-informes { display: flex !important; }
+  .card, .status-card { box-shadow: none; break-inside: avoid; }
+}
+
+@media (max-width: 860px) {
+  .two-col-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .page-grid { padding: var(--space-md); }
+  .app-header { padding: var(--space-md); }
+  .nav-bar { padding: 0 var(--space-sm); }
+  .semaforo-box { flex-direction: column; align-items: flex-start; }
+  .semaforo-housing { flex-direction: row; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top-row">
+        <div class="title-block">
+          <span class="kicker">Sistema A2 · Campo Magdalena Medio · Par 6</span>
+          <h1 class="title">Simulador de Integridad y Materiales: Cruces de Quebrada (5.3) y Bomba de Transferencia (6.1)</h1>
+          <p class="lede">Herramienta visual y transparente para revisar si los tubos que cruzan ríos y la bomba que empuja el crudo a refinería están seguros hoy, qué falla si cambian las condiciones y qué datos faltan todavía.</p>
+        </div>
+        <div class="header-actions no-print">
+          <button type="button" class="btn btn-soft btn-sm" id="btn-large-text" aria-pressed="false" onclick="toggleLargeText()">
+            <i data-lucide="type" aria-hidden="true"></i>
+            <span>Texto grande</span>
+          </button>
+          <button type="button" class="btn btn-soft btn-sm" id="btn-reset-all" onclick="handleResetDefaults(this)">
+            <i data-lucide="rotate-ccw" aria-hidden="true"></i>
+            <span>Restaurar base</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Persistent Live Semáforo Ribbon -->
+      <div class="live-ribbon" aria-live="polite">
+        <div class="ribbon-pill" id="ribbon-53" data-status="yellow">
+          <span class="ribbon-dot" id="ribbon-dot-53" data-status="yellow" aria-hidden="true"></span>
+          <div class="ribbon-meta">
+            <span class="ribbon-label">5.3 Cruces de Quebrada</span>
+            <span class="ribbon-value" id="ribbon-text-53">Calculando…</span>
+          </div>
+        </div>
+        <div class="ribbon-pill" id="ribbon-61" data-status="yellow">
+          <span class="ribbon-dot" id="ribbon-dot-61" data-status="yellow" aria-hidden="true"></span>
+          <div class="ribbon-meta">
+            <span class="ribbon-label">6.1 Bomba de Transferencia</span>
+            <span class="ribbon-value" id="ribbon-text-61">Calculando…</span>
+          </div>
+        </div>
+        <div class="ribbon-pill" id="ribbon-compliance" data-status="yellow">
+          <span class="ribbon-dot" id="ribbon-dot-compliance" data-status="yellow" aria-hidden="true"></span>
+          <div class="ribbon-meta">
+            <span class="ribbon-label">Cumplimiento Honesto</span>
+            <span class="ribbon-value" id="ribbon-text-compliance">Parcial · Ver detalles</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav-bar-wrap no-print" aria-label="Secciones del simulador">
+    <div class="nav-bar" role="tablist">
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-inicio" aria-selected="true" aria-controls="tab-inicio" onclick="switchTab('inicio')">
+        <i data-lucide="compass" aria-hidden="true"></i><span>Inicio</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-simulacion" aria-selected="false" aria-controls="tab-simulacion" onclick="switchTab('simulacion')">
+        <i data-lucide="sliders-horizontal" aria-hidden="true"></i><span>Simulación</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-visualizacion" aria-selected="false" aria-controls="tab-visualizacion" onclick="switchTab('visualizacion')">
+        <i data-lucide="eye" aria-hidden="true"></i><span>Visualización</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-corrosion" aria-selected="false" aria-controls="tab-corrosion" onclick="switchTab('corrosion')">
+        <i data-lucide="flame" aria-hidden="true"></i><span>Corrosión</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-integridad" aria-selected="false" aria-controls="tab-integridad" onclick="switchTab('integridad')">
+        <i data-lucide="shield-check" aria-hidden="true"></i><span>Integridad Mecánica</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-material" aria-selected="false" aria-controls="tab-material" onclick="switchTab('material')">
+        <i data-lucide="layers" aria-hidden="true"></i><span>Material</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-normas" aria-selected="false" aria-controls="tab-normas" onclick="switchTab('normas')">
+        <i data-lucide="book-open" aria-hidden="true"></i><span>Normas y Referencias</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-cumplimiento" aria-selected="false" aria-controls="tab-cumplimiento" onclick="switchTab('cumplimiento')">
+        <i data-lucide="clipboard-check" aria-hidden="true"></i><span>Cumplimiento</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" id="tabbtn-escenarios" aria-selected="false" aria-controls="tab-escenarios" onclick="switchTab('escenarios')">
+        <i data-lucide="git-compare" aria-hidden="true"></i><span>Escenarios</span>
+      </button>
+      <button type="button" class="tab-btn" id="tabbtn-bomba" role="tab" aria-selected="false" aria-controls="tab-bomba" onclick="switchTab('bomba')">Bomba P-301</button><button type="button" class="tab-btn" role="tab" id="tabbtn-informes" aria-selected="false" aria-controls="tab-informes" onclick="switchTab('informes')">
+        <i data-lucide="file-down" aria-hidden="true"></i><span>Informes</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="page-grid">
+
+    <!-- ==================== 1. INICIO ==================== -->
+    <section id="tab-inicio" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-inicio">
+      <div class="friendly-callout">
+        <h2 class="section-title" style="font-size: var(--headline-size); margin-bottom: var(--space-xs);">¿Qué quieres revisar hoy?</h2>
+        <p style="margin: 0; max-width: 72ch;">Elige una pregunta sencilla para ir directo al grano. No necesitas ser especialista: cada número tiene su semáforo y su explicación en palabras claras.</p>
+      </div>
+
+      <div class="card-grid">
+        <article class="guide-card">
+          <div>
+            <div class="guide-icon-badge" aria-hidden="true"><i data-lucide="sliders-horizontal"></i></div>
+            <h3 class="card-title" style="margin-top: var(--space-md);">1. Probar escenarios y supuestos</h3>
+            <p class="section-sub">Cambia la cantidad de agua, la presión o el gas tóxico H₂S y desmarca promesas del proyecto para ver qué pasa al instante.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="switchTab('simulacion')">Ir a Simulación</button>
+        </article>
+
+        <article class="guide-card">
+          <div>
+            <div class="guide-icon-badge" aria-hidden="true"><i data-lucide="eye"></i></div>
+            <h3 class="card-title" style="margin-top: var(--space-md);">2. Ver el dibujo animado del equipo</h3>
+            <p class="section-sub">Mira por dónde pasa el tubo sobre la quebrada, dónde va la pintura especial y cómo trabaja la bomba de transferencia.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="switchTab('visualizacion')">Ver Esquema Animado</button>
+        </article>
+
+        <article class="guide-card">
+          <div>
+            <div class="guide-icon-badge" aria-hidden="true"><i data-lucide="flame"></i></div>
+            <h3 class="card-title" style="margin-top: var(--space-md);">3. Revisar por qué se oxida o agrieta</h3>
+            <p class="section-sub">Explora los 5 ataques químicos y de bacterias uno por uno con su semáforo gigante y el mapa de zonas seguras.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="switchTab('corrosion')">Revisar Corrosión</button>
+        </article>
+
+        <article class="guide-card">
+          <div>
+            <div class="guide-icon-badge" aria-hidden="true"><i data-lucide="clipboard-check"></i></div>
+            <h3 class="card-title" style="margin-top: var(--space-md);">4. Saber qué falta por confirmar</h3>
+            <p class="section-sub">Revisa con total honestidad qué requisitos ya están cubiertos y qué datos faltan de los otros equipos (A1 y A3).</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="switchTab('cumplimiento')">Ver Cumplimiento</button>
+        </article>
+      </div>
+
+      <!-- Giant Traffic Lights Summary for Par 6 -->
+      <div class="section-head" style="margin-top: var(--space-sm);">
+        <div>
+          <h2 class="section-title">Estado actual del Par 6 en un vistazo</h2>
+          <p class="section-sub">Estos semáforos cambian en tiempo real según tus ajustes en la pestaña de Simulación.</p>
+        </div>
+      </div>
+
+      <div class="side-by-side">
+        <div class="card" id="home-summary-53"></div>
+        <div class="card" id="home-summary-61"></div>
+      </div>
+
+      <!-- Plain-language Legend -->
+      <div class="card">
+        <h3 class="card-title">¿Cómo leer los semáforos de este simulador?</h3>
+        <div class="card-grid" style="margin-top: var(--space-md);">
+          <div class="status-card" data-status="green">
+            <span class="chip" data-status="green">Verde · Cumple / Seguro</span>
+            <p class="friendly-note">El material, espesor o pintura elegida resiste bien durante los 20 años de vida del proyecto.</p>
+          </div>
+          <div class="status-card" data-status="yellow">
+            <span class="chip" data-status="yellow">Amarillo · Atención / Condicional</span>
+            <p class="friendly-note">Funciona solo si se cumple un cuidado especial (por ejemplo, inyectar químico o pasar el raspador).</p>
+          </div>
+          <div class="status-card" data-status="red">
+            <span class="chip" data-status="red">Rojo · No cumple / Peligro</span>
+            <p class="friendly-note">El acero podría perforarse, agrietarse o fallar antes de tiempo. Requiere cambiar diseño o material.</p>
+          </div>
+          <div class="status-card" data-status="gray">
+            <span class="chip" data-status="gray">Gris · No evaluable / Falta dato</span>
+            <p class="friendly-note">No inventamos respuestas: falta un dato real de otro equipo (como la presión de burbuja o diseño).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. SIMULACIÓN ==================== -->
+    <section id="tab-simulacion" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-simulacion">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Simulador en vivo y evaluación lado a lado</h2>
+          <p class="section-sub">Mueve los controles o desmarca supuestos del informe para ver cómo reaccionan los Cruces de Quebrada (5.3) y la Bomba (6.1).</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm);">
+          <button type="button" class="btn btn-soft btn-sm" onclick="applyPreset('normal')">Caso base tratado (1% BSW)</button>
+          <button type="button" class="btn btn-soft btn-sm" onclick="applyPreset('tabla9')">Caso Tabla 9 (78% BSW · 45 bar)</button>
+          <button type="button" class="btn btn-soft btn-sm" onclick="applyPreset('year10')">Año 10 (H₂S 0,30%)</button>
+          <button type="button" class="btn btn-soft btn-sm" onclick="applyPreset('noinh')">Falla de inhibidor</button>
+        </div>
+      </div>
+
+      <div class="two-col-grid">
+        <!-- Left: Controls + Supuestos Aceptados -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-lg);">
+          <div class="card">
+            <h3 class="card-title">Condiciones del fluido y operación</h3>
+
+            <div class="control-group">
+              <span class="control-label">Tipo de cruce en 5.3 (Quebrada)</span>
+              <div class="choice-pair">
+                <button type="button" class="btn btn-soft btn-sm" id="btn-cross-aerial" aria-pressed="true" onclick="setCrossingType('aerial')">Vano aéreo sobre agua (500 µm)</button>
+                <button type="button" class="btn btn-soft btn-sm" id="btn-cross-buried" aria-pressed="false" onclick="setCrossingType('buried')">Enterrado bajo cauce (3LPE + PC)</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-bsw">
+                <span>Corte de agua BSW (%) — Variante 5.3</span>
+                <span class="chip" id="badge-bsw">0,5 %</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-bsw" min="0.1" max="85" step="0.1" value="0.5" oninput="syncBswFromSlider(this.value)">
+                <input type="number" id="input-bsw" min="0.1" max="85" step="0.1" value="0.5" oninput="syncBswFromNumber(this.value)">
+              </div>
+              <p class="control-hint">0,5% es crudo tratado (Corriente 3); 78% es mezcla crudo-agua sin separar (Tabla 9 / falla en A3).</p>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-p53">
+                <span>Presión en línea / cruce 5.3 (bar)</span>
+                <span class="chip" id="badge-p53">45 bar</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-p53" min="1" max="60" step="0.5" value="45" oninput="syncP53FromSlider(this.value)">
+                <input type="number" id="input-p53" min="1" max="60" step="0.5" value="45" oninput="syncP53FromNumber(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-p61">
+                <span>Presión succión bomba 6.1 (bar)</span>
+                <span class="chip" id="badge-p61">3 bar</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-p61" min="1" max="50" step="0.5" value="3" oninput="syncP61FromSlider(this.value)">
+                <input type="number" id="input-p61" min="1" max="50" step="0.5" value="3" oninput="syncP61FromNumber(this.value)">
+              </div>
+              <p class="control-hint">En Tabla 14 la succión es 2–4 bar desde tanques; en Tabla 9 aparece 45 bar.</p>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-temp">
+                <span>Temperatura del fluido (°C)</span>
+                <span class="chip" id="badge-temp">75 °C</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-temp" min="35" max="95" step="1" value="75" oninput="syncTempFromSlider(this.value)">
+                <input type="number" id="input-temp" min="35" max="95" step="1" value="75" oninput="syncTempFromNumber(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-co2">
+                <span>Gas CO₂ (% molar)</span>
+                <span class="chip" id="badge-co2">3,10 %</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-co2" min="0.2" max="6" step="0.05" value="3.1" oninput="syncCo2FromSlider(this.value)">
+                <input type="number" id="input-co2" min="0.2" max="6" step="0.05" value="3.1" oninput="syncCo2FromNumber(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-h2s">
+                <span>Gas amargo H₂S (% molar)</span>
+                <span class="chip" id="badge-h2s">0,15 %</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-h2s" min="0.01" max="0.5" step="0.01" value="0.15" oninput="syncH2sFromSlider(this.value)">
+                <input type="number" id="input-h2s" min="0.01" max="0.5" step="0.01" value="0.15" oninput="syncH2sFromNumber(this.value)">
+              </div>
+              <p class="control-hint">Hoy: 0,15% molar. Proyección Año 10 por reinyección de agua: 0,30% molar.</p>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-ph">
+                <span>Acidez del agua (pH)</span>
+                <span class="chip" id="badge-ph">4,6</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-ph" min="3.5" max="6.5" step="0.1" value="4.6" oninput="syncPhFromSlider(this.value)">
+                <input type="number" id="input-ph" min="3.5" max="6.5" step="0.1" value="4.6" oninput="syncPhFromNumber(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="control-label" for="input-solids">
+                <span>Arena / sólidos (lb/1000 bbl)</span>
+                <span class="chip" id="badge-solids">5</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-solids" min="0" max="25" step="1" value="5" oninput="syncSolidsFromSlider(this.value)">
+                <input type="number" id="input-solids" min="0" max="25" step="1" value="5" oninput="syncSolidsFromNumber(this.value)">
+              </div>
+            </div>
+
+            <div class="control-group" style="margin-bottom:0;">
+              <label class="control-label" for="input-vel">
+                <span>Velocidad del flujo (m/s)</span>
+                <span class="chip" id="badge-vel">1,8 m/s</span>
+              </label>
+              <div class="slider-row">
+                <input type="range" id="slider-vel" min="0.3" max="5.0" step="0.1" value="1.8" oninput="syncVelFromSlider(this.value)">
+                <input type="number" id="input-vel" min="0.3" max="5.0" step="0.1" value="1.8" oninput="syncVelFromNumber(this.value)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel de Supuestos Aceptados -->
+          <div class="card">
+            <h3 class="card-title">Supuestos aceptados (casillas desmarcables)</h3>
+            <p class="section-sub" style="margin-bottom: var(--space-md);">Desmarca cualquier compromiso para simular qué falla si no se cumple en campo.</p>
+            <div style="display:flex; flex-direction:column; gap:var(--space-sm);" id="assumptions-list"></div>
+          </div>
+        </div>
+
+        <!-- Right: Side-by-side Variant Comparisons -->
+        <div style="display:flex; flex-direction:column; gap:var(--space-lg);">
+          <div class="card">
+            <h3 class="card-title">Comparación lado a lado · Ítem 5.3 (Cruces de Quebrada)</h3>
+            <p class="section-sub" style="margin-bottom: var(--space-md);">El informe reporta dos escenarios distintos para 5.3: agua tratada estable (BSW ≤ 0,5%) vs mezcla multifásica de pozo (BSW 78%, Tabla 9).</p>
+            <div class="side-by-side" id="compare-53-container"></div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">Comparación lado a lado · Ítem 6.1 (Bomba de Transferencia)</h3>
+            <p class="section-sub" style="margin-bottom: var(--space-md);">Contrasta la operación desde tanque atmosférico (succión 2–4 bar, Tabla 14) frente al registro de alta presión (45 bar, Tabla 9).</p>
+            <div class="side-by-side" id="compare-61-container"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. VISUALIZACIÓN ==================== -->
+    <section id="tab-visualizacion" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-visualizacion">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Esquema animado del Par 6 sin etiquetas encimadas</h2>
+          <p class="section-sub">Toca cualquier círculo numerado (1 al 7) para ver qué ocurre en esa zona, cuál es su semáforo actual y qué material la protege.</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm);">
+          <button type="button" class="btn btn-soft btn-sm" id="btn-toggle-anim" aria-pressed="false" onclick="toggleSchematicAnim()">
+            <i data-lucide="pause" aria-hidden="true"></i><span>Pausar animación</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="svg-frame" id="schematic-wrap">
+        <svg viewBox="0 0 960 410" role="img" aria-label="Esquema animado de los Cruces de Quebrada 5.3 y la Bomba de Transferencia 6.1">
+          <!-- Left background zone: 5.3 -->
+          <rect x="12" y="12" width="462" height="386" rx="14" fill="var(--surface-container-low)" stroke="var(--outline-variant)" stroke-width="1.5"/>
+          <text x="30" y="42" font-family="Figtree, sans-serif" font-weight="800" font-size="16" fill="var(--on-surface)">5.3 Cruce de Quebrada y Tramos Especiales (6 in)</text>
+
+          <!-- Soil banks -->
+          <path d="M 22 250 L 145 250 L 185 335 L 300 335 L 340 250 L 464 250 L 464 388 L 22 388 Z" fill="var(--soil-fill)" stroke="var(--outline-variant)" stroke-width="1"/>
+          <!-- Creek water -->
+          <path d="M 160 278 Q 200 270 242 278 T 325 278 L 300 335 L 185 335 Z" fill="var(--creek-water)"/>
+          <path d="M 166 284 Q 204 277 242 284 T 318 284" fill="none" stroke="var(--creek-wave)" stroke-width="2" class="anim-flow"/>
+
+          <!-- Dielectric Pipe Supports (5.4) -->
+          <rect x="128" y="218" width="16" height="40" rx="2" fill="var(--on-surface-variant)"/>
+          <rect x="124" y="212" width="24" height="7" rx="2" fill="var(--data-3)"/>
+          <rect x="342" y="218" width="16" height="40" rx="2" fill="var(--on-surface-variant)"/>
+          <rect x="338" y="212" width="24" height="7" rx="2" fill="var(--data-3)"/>
+
+          <!-- Pipeline geometry (Aerial vs Buried highlight) -->
+          <path id="svg-pipe-53-buried-l" d="M 28 292 L 96 292 L 122 204" fill="none" stroke="var(--pipe-metal)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+          <path id="svg-pipe-53-aerial" d="M 122 204 L 364 204" fill="none" stroke="var(--primary)" stroke-width="22" stroke-linecap="round"/>
+          <path id="svg-pipe-53-buried-r" d="M 364 204 L 390 292 L 458 292" fill="none" stroke="var(--pipe-metal)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Under-creek dashed option -->
+          <path id="svg-pipe-53-undercreek" d="M 96 292 L 168 355 L 318 355 L 390 292" fill="none" stroke="var(--outline)" stroke-width="10" stroke-dasharray="6 5" opacity="0.45"/>
+
+          <!-- Animated Flow inside 5.3 -->
+          <path id="svg-flow-53" d="M 30 292 L 96 292 L 122 204 L 364 204 L 390 292 L 456 292" fill="none" stroke="var(--background)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="anim-flow"/>
+
+          <!-- Magnesium Anode & CP -->
+          <rect x="52" y="330" width="26" height="34" rx="4" fill="var(--positive)" stroke="var(--background)" stroke-width="1.5"/>
+          <line x1="65" y1="330" x2="65" y2="303" stroke="var(--positive)" stroke-width="2.5" stroke-dasharray="3 3"/>
+
+          <!-- Right background zone: 6.1 -->
+          <rect x="486" y="12" width="462" height="386" rx="14" fill="var(--surface-container-low)" stroke="var(--outline-variant)" stroke-width="1.5"/>
+          <text x="504" y="42" font-family="Figtree, sans-serif" font-weight="800" font-size="16" fill="var(--on-surface)">6.1 Bomba de Transferencia de Crudo (API 610)</text>
+
+          <!-- Storage Tank A3 hint -->
+          <rect x="504" y="182" width="66" height="106" rx="6" fill="var(--surface-container-high)" stroke="var(--outline)" stroke-width="1.5"/>
+          <text x="537" y="240" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--on-surface)">Tanque A3</text>
+
+          <!-- Suction pipe -->
+          <line x1="570" y1="252" x2="676" y2="252" stroke="var(--pipe-metal)" stroke-width="22"/>
+          <line x1="572" y1="252" x2="674" y2="252" stroke="var(--background)" stroke-width="5" class="anim-flow"/>
+
+          <!-- Retractable Probe 7.2 -->
+          <line x1="622" y1="242" x2="622" y2="198" stroke="var(--alloy-metal)" stroke-width="8" stroke-linecap="round"/>
+          <rect x="612" y="186" width="20" height="14" rx="3" fill="var(--alloy-metal)"/>
+
+          <!-- Pump Casing 6.1 -->
+          <circle id="svg-pump-casing" cx="722" cy="242" r="52" fill="var(--background)" stroke="var(--primary)" stroke-width="8"/>
+          <circle cx="722" cy="242" r="34" fill="var(--surface-container)"/>
+          <!-- Rotating Impeller -->
+          <g class="anim-impeller">
+            <path d="M 722 214 L 729 236 L 750 242 L 729 248 L 722 270 L 715 248 L 694 242 L 715 236 Z" fill="var(--primary)"/>
+            <circle cx="722" cy="242" r="7" fill="var(--on-surface)"/>
+          </g>
+          <!-- Mechanical Seal API 682 -->
+          <rect x="768" y="226" width="24" height="32" rx="4" fill="var(--data-3)" stroke="var(--background)" stroke-width="1.5"/>
+
+          <!-- Discharge pipe -->
+          <path d="M 722 190 L 722 132 L 926 132" fill="none" stroke="var(--pipe-metal)" stroke-width="22" stroke-linejoin="round"/>
+          <path d="M 722 190 L 722 132 L 926 132" fill="none" stroke="var(--background)" stroke-width="5" stroke-linejoin="round" class="anim-flow"/>
+          <text x="860" y="110" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--on-surface-variant)">14 km a Refinería</text>
+
+          <!-- Clean Numbered Hotspots (zero overlapping text) -->
+          <g class="hotspot-btn selected" id="hs-btn-1" tabindex="0" role="button" aria-label="Punto 1: Tramo enterrado 3LPE y Protección Catódica" onclick="selectHotspot(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(1);}">
+            <circle class="hotspot-ring" cx="65" cy="292" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="65" y="297" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">1</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-2" tabindex="0" role="button" aria-label="Punto 2: Soportes con pad dieléctrico" onclick="selectHotspot(2)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(2);}">
+            <circle class="hotspot-ring" cx="136" cy="224" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="136" y="229" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">2</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-3" tabindex="0" role="button" aria-label="Punto 3: Vano aéreo sobre quebrada Im1" onclick="selectHotspot(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(3);}">
+            <circle class="hotspot-ring" cx="242" cy="170" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="242" y="175" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">3</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-4" tabindex="0" role="button" aria-label="Punto 4: Cruce bajo el cauce y depresión" onclick="selectHotspot(4)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(4);}">
+            <circle class="hotspot-ring" cx="242" cy="355" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="242" y="360" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">4</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-5" tabindex="0" role="button" aria-label="Punto 5: Succión frontera A2/A3 y sonda Aleación 625" onclick="selectHotspot(5)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(5);}">
+            <circle class="hotspot-ring" cx="622" cy="164" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="622" y="169" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">5</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-6" tabindex="0" role="button" aria-label="Punto 6: Carcasa e impulsor Bomba API 610" onclick="selectHotspot(6)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(6);}">
+            <circle class="hotspot-ring" cx="722" cy="316" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="722" y="321" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">6</text>
+          </g>
+
+          <g class="hotspot-btn" id="hs-btn-7" tabindex="0" role="button" aria-label="Punto 7: Sello mecánico API 682" onclick="selectHotspot(7)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectHotspot(7);}">
+            <circle class="hotspot-ring" cx="812" cy="242" r="17" fill="var(--primary)" stroke="var(--background)" stroke-width="3"/>
+            <text x="812" y="247" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="800" font-size="14" fill="var(--on-primary)">7</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Quick Selector Bar + Hotspot Detail Card -->
+      <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm);" id="hotspot-buttons-bar"></div>
+      <div class="card" id="hotspot-detail-card"></div>
+    </section>
+
+    <!-- ==================== 4. CORROSIÓN ==================== -->
+    <section id="tab-corrosion" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-corrosion">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Módulos individuales de corrosión</h2>
+          <p class="section-sub">Evaluación en tiempo real de los 5 mecanismos críticos del Par 6, con fórmulas del proyecto y explicación en palabras sencillas.</p>
+        </div>
+      </div>
+
+      <div class="card-grid" id="corrosion-modules-grid"></div>
+
+      <!-- ISO 15156-2 Fig. 1 Diagram -->
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <h3 class="card-title">Mapa de severidad amarga (ISO 15156-2:2020, Figura 1)</h3>
+            <p class="section-sub">Ubicación de la presión parcial de H₂S frente al pH actual. El punto se mueve en vivo cuando cambias presión, % H₂S o pH.</p>
+          </div>
+          <span class="chip" id="iso-diagram-chip">Región 2</span>
+        </div>
+        <div class="svg-frame" style="min-height: 320px;" id="iso15156-svg-container"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 5. INTEGRIDAD MECÁNICA ==================== -->
+    <section id="tab-integridad" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-integridad">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Integridad mecánica: espesores y presión máxima (MAWP)</h2>
+          <p class="section-sub">Verifica si la tubería de 6 pulgadas del cruce (5.3) y la bomba (6.1) soportan la presión, el desgaste de 20 años y el peso del vano aéreo.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-grid">
+          <div class="control-group" style="margin-bottom:0;">
+            <label class="control-label" for="select-design-code">Código de diseño para 5.3 (Tubo 6 in L360NS)</label>
+            <select id="select-design-code" onchange="setDesignCode(this.value)">
+              <option value="B31.4">ASME B31.4 — Oleoductos de transporte (F = 0,72)</option>
+              <option value="B31.3">ASME B31.3 — Tubería de proceso (S = 153 MPa)</option>
+              <option value="VIII">ASME VIII Div. 1 — Recipiente / Carcasa equivalente</option>
+            </select>
+          </div>
+
+          <div class="control-group" style="margin-bottom:0;">
+            <label class="control-label" for="select-pipe-schedule">Cédula (Schedule) del tubo de 6 in (OD 168,3 mm)</label>
+            <select id="select-pipe-schedule" onchange="setPipeSchedule(this.value)">
+              <option value="7.11">Sch 40 (7,11 mm espesor nominal)</option>
+              <option value="10.97" selected>Sch 80 (10,97 mm espesor nominal)</option>
+              <option value="14.27">Sch 120 (14,27 mm espesor nominal)</option>
+            </select>
+          </div>
+
+          <div class="control-group" style="margin-bottom:0;">
+            <label class="control-label" for="input-span">
+              <span>Longitud del vano aéreo sobre quebrada (m)</span>
+              <span class="chip" id="badge-span">18 m</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="slider-span" min="6" max="32" step="1" value="18" oninput="syncSpanFromSlider(this.value)">
+              <input type="number" id="input-span" min="6" max="32" step="1" value="18" oninput="syncSpanFromNumber(this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid" id="mechanical-cards-grid"></div>
+    </section>
+
+    <!-- ==================== 6. MATERIAL ==================== -->
+    <section id="tab-material" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-material">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Selección de materiales completos y puntos abiertos</h2>
+          <p class="section-sub">Nombres completos sin abreviaturas ocultas, costos relativos del Anexo 5 y advertencias honestas de lo que falla o queda abierto.</p>
+        </div>
+      </div>
+
+      <div class="status-card" data-status="red" id="what-fails-panel"></div>
+
+      <div class="card-grid" id="materials-cards-grid"></div>
+
+      <div class="card">
+        <h3 class="card-title">Economía y cronograma de compras (Anexo 5 — Parada en Mes 14)</h3>
+        <div class="table-wrap" style="margin-top: var(--space-md);">
+          <table>
+            <thead>
+              <tr>
+                <th>Equipo / Solución</th>
+                <th>Material completo</th>
+                <th>Índice de costo</th>
+                <th>Plazo entrega</th>
+                <th>Margen antes Mes 14</th>
+              </tr>
+            </thead>
+            <tbody id="economy-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 7. NORMAS Y REFERENCIAS ==================== -->
+    <section id="tab-normas" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-normas">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Normas técnicas y referencias del proyecto</h2>
+          <p class="section-sub">Cada estándar utilizado para el Par 6 explicado en lenguaje sencillo, incluyendo reglas de calidad APA 7 del informe.</p>
+        </div>
+        <div style="min-width: 240px;">
+          <label class="control-label" for="normas-search" style="font-size: var(--label-size);">Filtrar norma o tema</label>
+          <input type="text" id="normas-search" placeholder="Ej. ISO 15156, bomba, pintura…" oninput="renderNormas(this.value)" style="width:100%;">
+        </div>
+      </div>
+      <div class="card-grid" id="normas-grid"></div>
+    </section>
+
+    <!-- ==================== 8. CUMPLIMIENTO ==================== -->
+    <section id="tab-cumplimiento" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-cumplimiento">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Matriz de cumplimiento (siempre parcial y honesta)</h2>
+          <p class="section-sub">Muestra la verdad técnica: incluso con los mejores supuestos, hay requisitos pendientes de confirmación por A1 y A3 que impiden declarar 100% cumplido.</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm);">
+          <button type="button" class="btn btn-soft btn-sm" id="filter-comp-all" aria-pressed="true" onclick="setComplianceFilter('all')">Todos</button>
+          <button type="button" class="btn btn-soft btn-sm" id="filter-comp-open" aria-pressed="false" onclick="setComplianceFilter('open')">Faltantes / Rojos</button>
+          <button type="button" class="btn btn-soft btn-sm" id="filter-comp-ok" aria-pressed="false" onclick="setComplianceFilter('ok')">Cumplidos</button>
+        </div>
+      </div>
+
+      <div class="card" id="compliance-summary-banner"></div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Requisito Par 6</th>
+                <th>Equipo</th>
+                <th>Estado</th>
+                <th>Explicación sencilla y acción requerida</th>
+              </tr>
+            </thead>
+            <tbody id="compliance-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 9. ESCENARIOS ==================== -->
+    <section id="tab-escenarios" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-escenarios">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Guardar, comparar y barrido de sensibilidad</h2>
+          <p class="section-sub">Guarda tu configuración actual, compara dos escenarios lado a lado y observa cómo cambian los riesgos al variar un parámetro.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Guardar escenario actual</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:var(--space-md); align-items:end; margin-top:var(--space-sm);">
+          <div style="flex:1 1 260px;">
+            <label class="control-label" for="scenario-name-input">Nombre del escenario</label>
+            <input type="text" id="scenario-name-input" placeholder="Ej. Quebrada invierno sin inhibidor" style="width:100%;">
+          </div>
+          <button type="button" class="btn btn-primary" onclick="saveCurrentScenario()">
+            <i data-lucide="bookmark-plus" aria-hidden="true"></i><span>Guardar escenario</span>
+          </button>
+        </div>
+        <p id="scenario-save-msg" class="control-hint" style="margin-top:var(--space-sm);"></p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Comparar dos escenarios lado a lado</h3>
+        <div class="side-by-side" style="margin-top: var(--space-sm); margin-bottom: var(--space-md);">
+          <div>
+            <label class="control-label" for="select-scen-a">Escenario A</label>
+            <select id="select-scen-a" style="width:100%;" onchange="renderScenarioComparison()"></select>
+          </div>
+          <div>
+            <label class="control-label" for="select-scen-b">Escenario B</label>
+            <select id="select-scen-b" style="width:100%;" onchange="renderScenarioComparison()"></select>
+          </div>
+        </div>
+        <div class="table-wrap" id="scenario-compare-table"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <div>
+            <h3 class="card-title">Barrido de sensibilidad</h3>
+            <p class="section-sub">Observa cómo evoluciona la velocidad de corrosión por CO₂ y la presión parcial de H₂S al barrer una variable.</p>
+          </div>
+          <div>
+            <label class="control-label" for="select-sweep-var">Variable a barrer</label>
+            <select id="select-sweep-var" onchange="renderSensitivitySweep()">
+              <option value="h2s">% Molar de H₂S (0,02% a 0,50%)</option>
+              <option value="pressure">Presión de operación (1 a 60 bar)</option>
+              <option value="temp">Temperatura (35 a 95 °C)</option>
+              <option value="bsw">Corte de agua BSW (0,1% a 85%)</option>
+            </select>
+          </div>
+        </div>
+        <div class="svg-frame" style="min-height: 300px;" id="sensitivity-svg-container"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 10. INFORMES ==================== -->
+    <section id="tab-bomba" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-bomba">
+        <h2>P-301 · Bombas de transferencia A/B</h2>
+        <p>Succión de referencia de la simulación: 3 bar(a). Ficha de descarga C5: 40 bar(g) en operación,
+        50 bar(g) de diseño, 68 °C en operación y 85 °C de diseño.</p>
+        <iframe title="Evaluación de P-301" loading="lazy" src="../../A2_navarro.html?embed=1&amp;equipo=P-301"
+          style="width:100%;height:65vh;border:0"></iframe></section><section id="tab-informes" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-informes">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Informes y descargas</h2>
+          <p class="section-sub">Exporta los resultados de tu simulación actual en formato PDF (impresión limpia), hoja de cálculo Excel o CSV de datos.</p>
+        </div>
+      </div>
+
+      <div class="card no-print">
+        <div style="display:flex; flex-wrap:wrap; gap:var(--space-md);">
+          <button type="button" class="btn btn-primary" onclick="exportReportPDF()">
+            <i data-lucide="printer" aria-hidden="true"></i><span>Descargar PDF (Imprimir)</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="exportReportExcel()">
+            <i data-lucide="file-spreadsheet" aria-hidden="true"></i><span>Descargar Excel (.csv BOM)</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="exportReportCSV()">
+            <i data-lucide="table" aria-hidden="true"></i><span>Descargar CSV</span>
+          </button>
+          <button type="button" class="btn btn-soft" onclick="exportReportTXT()">
+            <i data-lucide="file-text" aria-hidden="true"></i><span>Descargar Resumen (.txt)</span>
+          </button>
+        </div>
+        <p id="export-feedback" class="friendly-note" style="display:none;"></p>
+      </div>
+
+      <div class="card" id="report-preview-card"></div>
+    </section>
+
+  </main>
+</div>
+
+<api-shim></api-shim>
+<script>
+// ==================== 1. STATE & CONSTANTS ====================
+const DEFAULT_STATE = {
+  activeTab: 'inicio',
+  largeText: false,
+  animPaused: false,
+  selectedHotspot: 1,
+  crossingType: 'aerial', // 'aerial' | 'buried'
+  bsw: 1,
+  p53: 40,
+  p61: 3,
+  temp: 68,
+  co2: 3.1,
+  h2s: 0.15,
+  ph: 4.6,
+  solids: 5,
+  velocity: 1.8,
+  designCode: 'B31.4',
+  pipeThickness: 10.97,
+  spanLength: 18,
+  complianceFilter: 'all',
+  assumptions: {
+    inh90: true,
+    dryCrudeA3: true,
+    biocidePig: true,
+    tlcVapor: true,
+    c4Justified: true,
+    a3PvtClosed: false // Honest default: open information gap in report!
+  },
+  savedScenarios: [
+    {
+      id: 'preset-base',
+      name: `Caso Base Crudo Tratado (BSW 1% · Succión 3 bar(a))`,
+      params: { crossingType: 'aerial', bsw: 1, p53: 40, p61: 3, temp: 68, co2: 3.1, h2s: 0.15, ph: 4.6, solids: 5, velocity: 1.8, designCode: 'B31.4', pipeThickness: 10.97, spanLength: 18 },
+      assumptions: { inh90: true, dryCrudeA3: true, biocidePig: true, tlcVapor: true, c4Justified: true, a3PvtClosed: false }
+    },
+    {
+      id: 'preset-t9',
+      name: `Escenario Tabla 9 Multifásico (BSW 78% · 45 bar)`,
+      params: { crossingType: 'aerial', bsw: 78, p53: 45, p61: 45, temp: 75, co2: 3.1, h2s: 0.15, ph: 4.6, solids: 12, velocity: 1.8, designCode: 'B31.4', pipeThickness: 10.97, spanLength: 18 },
+      assumptions: { inh90: true, dryCrudeA3: false, biocidePig: true, tlcVapor: true, c4Justified: true, a3PvtClosed: false }
+    },
+    {
+      id: 'preset-y10',
+      name: `Año 10 Acidificación (H₂S 0,30% · 45 bar)`,
+      params: { crossingType: 'buried', bsw: 78, p53: 45, p61: 45, temp: 85, co2: 3.1, h2s: 0.30, ph: 4.6, solids: 12, velocity: 1.4, designCode: 'B31.4', pipeThickness: 10.97, spanLength: 18 },
+      assumptions: { inh90: true, dryCrudeA3: false, biocidePig: true, tlcVapor: false, c4Justified: true, a3PvtClosed: false }
+    }
+  ]
+};
+
+let appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+const ASSUMPTIONS_META = [
+  {
+    key: 'inh90',
+    title: `Disponibilidad de inhibidor filmógeno ≥ 90% (Acta A2↔A3)`,
+    desc: `Imidazolina soluble en agua (25–50 ppm) inyectada de forma continua. Si falta, la corrosión por CO₂ vuelve a 7,66–13,25 mm/año.`
+  },
+  {
+    key: 'dryCrudeA3',
+    title: `A3 entrega crudo tratado estable (BSW ≤ 0,5% y sólidos < 5)`,
+    desc: `Permite usar bomba 6.1 Clase S-6 (carcasa de acero al carbono). Si llega agua libre, obliga a cambiar a Clase C-6 (todo en 12Cr CA6NM).`
+  },
+  {
+    key: 'biocidePig',
+    title: `Biocida en lotes sin nitrato + corrida periódica de raspadores`,
+    desc: `Evita corrosión microbiológica (MIC) y bajo depósito en valles de cruces de quebrada y succión de bomba.`
+  },
+  {
+    key: 'tlcVapor',
+    title: `Inhibidor de fase vapor / aislamiento si hay gas libre (Hallazgo II E1-03)`,
+    desc: `Protege el techo del tubo en flujo estratificado; sin él, el sobreespesor de 2,42 mm queda corto arriba.`
+  },
+  {
+    key: 'c4Justified',
+    title: `Justificación formal de categoría atmosférica C4 frente a C3/C5 (E1-04)`,
+    desc: `Valida el sistema de pintura de 260 µm (tramo aéreo) y 500 µm Im1 (quebrada).`
+  },
+  {
+    key: 'a3PvtClosed',
+    title: `Datos pendientes de A3 entregados (PVT, presión de burbuja y presión de diseño)`,
+    desc: `En el informe real está PENDIENTE (vacío de información). Márcalo solo para simular el cierre futuro con A3.`
+  }
+];
+
+const NORMAS_DATA = [
+  { code: `UNE-EN ISO 15156-2:2020`, area: `Servicio amargo (Acero al carbono)`, summary: `Define las Regiones 0, 1, 2 y 3 de riesgo de agrietamiento por H₂S (SSC y HIC), límite de dureza 250 HV10 / 22 HRC y uso de Anexo H.` },
+  { code: `UNE-EN ISO 15156-3:2020`, area: `Aleaciones resistentes (CRA)`, summary: `Califica el acero 12Cr (CA6NM) / 410 a ≤ 22–23 HRC en la bomba 6.1, la Aleación 625 en sondas 7.2 y prohíbe el 316L con 42 000 mg/l de cloruros.` },
+  { code: `EN ISO 21457:2010`, area: `Selección de materiales y corrosión`, summary: `Marco general para evaluar CO₂ (De Waard–Milliams), inhibición filmógena, corrosión en parte superior (TLC) y biocidas sin nitrato (7.3.4).` },
+  { code: `API Spec 5L (46.ª ed.) / ISO 3183:2020`, area: `Tubería de línea (5.3)`, summary: `Especifica el tubo sin costura PSL 2 grado L360NS (X52NS) con Anexo H y ensayo HIC NACE TM0284 para servicio agrio.` },
+  { code: `ISO 12944-2:2017 & 12944-5:2019`, area: `Pintura aérea y cruce de quebrada`, summary: `Define atmósfera C4 (sistema C4.11 de 260 µm) e inmersión en agua dulce Im1 (sistema Zn(R)+epoxi/PUR alifático de 500 µm).` },
+  { code: `ISO 8501-1:2007 / ASTM D4417-21 / ASTM D4285-24`, area: `Preparación de superficie`, summary: `Exige limpieza Sa 2½, medición de perfil de anclaje en campo (ASTM D4417) y aire comprimido sin aceite ni agua mediante prueba blotter (ASTM D4285).` },
+  { code: `ISO 21809-1:2018`, area: `Recubrimiento enterrado`, summary: `Polietileno tricapa (3LPE) aplicado en planta más sobrecapa antiabrasión para cruces enterrados bajo el cauce; compatible con protección catódica.` },
+  { code: `NACE SP0169-2024 / ISO 15589-1:2015`, area: `Protección catódica`, summary: `Fija potencial de −950 mV vs CSE (por T > 60 °C y riesgo BSR) usando ánodos galvánicos de magnesio en suelo de 1 800 Ω·cm.` },
+  { code: `API Std 610 (12.ª ed.) & API Std 682 (5.ª ed.)`, area: `Bomba de transferencia (6.1)`, summary: `Define bomba centrífuga Clase S-6 (carcasa acero al carbono + internos CA6NM) o C-6 (todo CA6NM si hay agua libre) y sello mecánico API 682.` },
+  { code: `ASME B31.4 / B31.3 / BPVC VIII Div. 1`, area: `Integridad mecánica`, summary: `Cálculo de espesores mínimos de pared por presión interna, tolerancia de corrosión, MAWP y esfuerzo longitudinal en vanos aéreos.` },
+  { code: `API 6D / API 594 / API 598 / ISO 23936-2`, area: `Válvulas y elastómeros`, summary: `Válvulas de paso completo para raspadores, pruebas de hermeticidad y elastómeros resistentes a descompresión explosiva por CO₂/H₂S.` },
+  { code: `Guía CitaAPA (APA 7.ª ed.)`, area: `Calidad documental`, summary: `Reglas aplicadas en las referencias del informe: titular «Referencias» (no Bibliografía), omitir ciudad en libros, usar URL completa en DOI y sangría francesa de 1,27 cm.` }
+];
+
+// ==================== 2. ENGINEERING & CORROSION ENGINE ====================
+function getIso15156Region(ph, ph2sKpa) {
+  const region = getISO15156Region(ph2sKpa, ph);
+  return {region, label: 'Región ' + region, status: ['green','yellow','yellow','red'][region]};
+}
+
+function calcDeWaardMilliams(tempC, pCo2Bar) {
+  if (pCo2Bar <= 0.001) return 0;
+  const tempK = tempC + 273.15;
+  const logV = 5.8 - (1710 / tempK) + 0.67 * Math.log10(pCo2Bar);
+  return Math.pow(10, logV);
+}
+
+function computeModel(params, assumptions) {
+  const pCo2_53 = (params.co2 / 100) * (params.p53 + 1.01325);
+  const ph2s_53_bar = (params.h2s / 100) * (params.p53 + 1.01325);
+  const ph2s_53_kpa = ph2s_53_bar * 100;
+
+  const pCo2_61 = (params.co2 / 100) * params.p61;
+  const ph2s_61_bar = (params.h2s / 100) * params.p61;
+  const ph2s_61_kpa = ph2s_61_bar * 100;
+
+  // Uninhibited CO2 corrosion rate (mm/yr)
+  const crUninh53 = calcDeWaardMilliams(params.temp, pCo2_53);
+  const crUninh61 = calcDeWaardMilliams(params.temp, pCo2_61);
+
+  // Water wetting & inhibitor mitigation
+  const waterWet53 = params.bsw >= 30 ? 1.0 : (params.bsw > 0.5 ? 0.65 : (assumptions.dryCrudeA3 ? 0.25 : 0.75));
+  const inhAvail = assumptions.inh90 ? 0.90 : 0.0;
+  const inhEff = 0.985; // 98.5% film-forming imidazoline efficiency
+  // Effective net rate factoring availability and water wetting
+  const mitigationFactor = inhAvail * (1 - inhEff) + (1 - inhAvail) * 0.22;
+  const crNet53 = crUninh53 * waterWet53 * (assumptions.inh90 ? mitigationFactor : 1.0);
+  const ca20_53 = crNet53 * 20;
+  const caDesign = 2.42;
+
+  const iso53 = getIso15156Region(params.ph, ph2s_53_kpa);
+  const iso61 = getIso15156Region(params.ph, ph2s_61_kpa);
+
+  // TLC evaluation (5.3)
+  const hasFreeGas = params.bsw > 5 || !assumptions.dryCrudeA3 || !assumptions.a3PvtClosed;
+  let tlcStatus = 'green';
+  let tlcMsg = `Línea llena de líquido estabilizado (sin gas libre que condense arriba).`;
+  if (params.bsw > 5 || !assumptions.dryCrudeA3) {
+    if (assumptions.tlcVapor) {
+      tlcStatus = 'yellow';
+      tlcMsg = `Flujo multifásico/gas posible: requiere confirmar inhibidor de fase vapor y aislamiento (Hallazgo II E1-03).`;
+    } else {
+      tlcStatus = 'red';
+      tlcMsg = `¡Peligro en el techo del tubo! Sin inhibidor de fase vapor el sobreespesor de 2,42 mm queda corto.`;
+    }
+  } else if (!assumptions.a3PvtClosed) {
+    tlcStatus = 'gray';
+    tlcMsg = `Falta presión de burbuja (PVT de A3) para confirmar que no se libera gas en puntos altos.`;
+  }
+
+  // UDC & Erosion (5.3 & 6.1)
+  const lowVel = params.velocity < 1.5;
+  const highVel = params.velocity > 4.3;
+  let udcStatus = 'green';
+  let udcMsg = `Velocidad adecuada (${params.velocity.toFixed(1)} m/s) y sólidos controlados.`;
+  if (highVel && params.solids > 5) {
+    udcStatus = 'red';
+    udcMsg = `Erosión-corrosión severa: supera ~4,3 m/s con arena (${params.solids} lb/1000 bbl).`;
+  } else if (lowVel || params.solids > 8 || !assumptions.biocidePig) {
+    udcStatus = assumptions.biocidePig ? 'yellow' : 'red';
+    udcMsg = assumptions.biocidePig
+      ? `Agua y arena tienden a posarse en depresiones del cruce; depende de corrida periódica de raspadores.`
+      : `Sin raspadores/biocida, los sedimentos bloquean el inhibidor y perforan el fondo por picadura.`;
+  }
+
+  // MIC evaluation
+  let micStatus = 'green';
+  let micMsg = `Controlado con biocida sin nitrato (ISO 21457 7.3.4) y velocidad suficiente.`;
+  if (!assumptions.biocidePig) {
+    micStatus = 'red';
+    micMsg = `¡Peligro microbiológico! Sin biocida en lotes ni pigging, las bacterias BSR atacan puntos bajos.`;
+  } else if (lowVel || params.bsw >= 20) {
+    micStatus = 'yellow';
+    micMsg = `Riesgo moderado en valles de quebrada y succión; mantener dosis estricta de biocida sin nitrato.`;
+  }
+
+  // Mechanical Integrity (5.3 NPS 6, OD = 168.3 mm, L360NS SMYS = 360 MPa)
+  const od = 168.3;
+  const smys = 360;
+  const smts = 460;
+  let sAllow = 0.72 * smys; // B31.4 default = 259.2 MPa
+  let tp = 0;
+  if (params.designCode === 'B31.4') {
+    sAllow = 0.72 * smys;
+    tp = (params.p53 * 0.1 * od) / (2 * sAllow * 1.0);
+  } else if (params.designCode === 'B31.3') {
+    sAllow = Math.min(smts / 3, (2 / 3) * smys); // 153.33 MPa
+    tp = (params.p53 * 0.1 * od) / (2 * (sAllow * 1.0 + params.p53 * 0.1 * 0.4));
+  } else {
+    sAllow = smts / 3.5; // ASME VIII Div 1 approx 131.4 MPa
+    const r = od / 2;
+    tp = (params.p53 * 0.1 * r) / (sAllow * 1.0 - 0.6 * params.p53 * 0.1);
+  }
+
+  const millTol = params.pipeThickness * 0.125;
+  const tReqDesignCA = tp + caDesign + millTol;
+  const tReqDynamicCA = tp + ca20_53 + millTol;
+  const tCorrAvailable = Math.max(0, params.pipeThickness - millTol - Math.max(caDesign, ca20_53));
+  const mawpBar = (2 * sAllow * tCorrAvailable / od) * 10; // MPa -> bar
+
+  // Aerial span bending stress (simply supported approximation w*L^2/8)
+  const tNom = params.pipeThickness;
+  const id = od - 2 * tNom;
+  const areaSteel = (Math.PI / 4) * (od * od - id * id); // mm2
+  const areaFluid = (Math.PI / 4) * (id * id);
+  const wSteel = areaSteel * 7.85e-6 * 9.81; // N/mm -> kN/m
+  const wFluid = areaFluid * 0.96e-6 * 9.81; // kN/m (crudo+agua)
+  const wTotal = wSteel + wFluid; // kN/m
+  const L = params.spanLength; // m
+  const M_Nmm = (wTotal * 1000 * L * L / 8) * 1000; // N*mm
+  const I_mm4 = (Math.PI / 64) * (Math.pow(od, 4) - Math.pow(id, 4));
+  const sigmaBendMPa = (M_Nmm * (od / 2)) / I_mm4;
+  const sigmaLongTotal = sigmaBendMPa + (params.p53 * 0.1 * id * id) / (od * od - id * id);
+  const spanLimitMPa = 0.75 * smys;
+  const spanOk = sigmaLongTotal <= spanLimitMPa;
+
+  // Pump 6.1 Class Recommendation (S-6 vs C-6)
+  const needsC6 = !assumptions.dryCrudeA3 || params.bsw > 1.0 || crUninh61 > 2.5;
+  const pumpClass = needsC6 ? `Clase C-6 (Carcasa e internos en 12Cr CA6NM)` : `Clase S-6 (Carcasa acero al carbono + internos CA6NM)`;
+
+  // Overall Semáforo 5.3
+  let status53 = 'green';
+  let msg53 = `Protegido (L360NS + Anexo H + recubrimiento adecuado)`;
+  if (ca20_53 > caDesign || !assumptions.inh90 || tReqDynamicCA > params.pipeThickness || !spanOk || tlcStatus === 'red' || micStatus === 'red') {
+    status53 = 'red';
+    msg53 = !assumptions.inh90
+      ? `¡Peligro! Sin inhibidor la corrosión (${crNet53.toFixed(1)} mm/año) perfora el tubo.`
+      : (tReqDynamicCA > params.pipeThickness
+        ? `¡Peligro! El espesor elegido (${params.pipeThickness} mm) no alcanza para 20 años.`
+        : (!spanOk ? `¡Peligro! Vano aéreo demasiado largo (${L} m) sobre esfuerza el tubo.` : `¡Peligro activo en 5.3! Revisa TLC o MIC.`));
+  } else if (!assumptions.a3PvtClosed || !assumptions.c4Justified) {
+    status53 = assumptions.c4Justified ? 'yellow' : 'gray';
+    msg53 = !assumptions.c4Justified
+      ? `Falta justificar categoría atmosférica C4 vs C3/C5 (E1-04).`
+      : `Condicional: falta PVT y presión de diseño de A3 (vacío del informe).`;
+  } else if (iso53.region >= 2 || params.bsw > 1) {
+    status53 = 'yellow';
+    msg53 = `Servicio amargo (${iso53.label}): viable solo con Anexo H y control químico estricto.`;
+  }
+
+  // Overall Semáforo 6.1
+  let status61 = 'green';
+  let msg61 = `${pumpClass} — Operación controlada`;
+  if (!assumptions.inh90 && params.bsw > 1) {
+    status61 = 'red';
+    msg61 = `¡Peligro! Agua libre sin inhibidor corroe la bomba si se usa Clase S-6.`;
+  } else if (iso61.region === 3) {
+    status61 = 'red';
+    msg61 = `¡Atención crítica! A ${params.p61} bar y ${params.h2s}% H₂S entra en Región 3 (exige calificación extrema).`;
+  } else if (!assumptions.a3PvtClosed) {
+    status61 = 'yellow';
+    msg61 = `Falta presión de vapor (PVT) para definir sello API 682 y confirmar ${needsC6 ? 'C-6' : 'S-6'}.`;
+  } else if (needsC6) {
+    status61 = 'yellow';
+    msg61 = `Requiere subir a Clase C-6 (carcasa en 12Cr CA6NM) por riesgo de agua libre.`;
+  }
+
+  // Compliance Matrix (ALWAYS partial and honest!)
+  const complianceItems = buildComplianceMatrix(params, assumptions, {
+    ca20_53, caDesign, tReqDynamicCA, iso53, iso61, ph2s_53_kpa, tlcStatus, tlcMsg, micStatus, micMsg, spanOk, needsC6
+  });
+  const totalComp = complianceItems.length;
+  const okCount = complianceItems.filter(i => i.status === 'green').length;
+  const pctHonest = Math.round((okCount / totalComp) * 100);
+
+  return {
+    pCo2_53, ph2s_53_kpa, pCo2_61, ph2s_61_kpa,
+    crUninh53, crUninh61, crNet53, ca20_53, caDesign,
+    iso53, iso61, tlcStatus, tlcMsg, udcStatus, udcMsg, micStatus, micMsg,
+    tp, millTol, tReqDesignCA, tReqDynamicCA, mawpBar, sAllow,
+    sigmaLongTotal, spanLimitMPa, spanOk,
+    needsC6, pumpClass,
+    status53, msg53, status61, msg61,
+    complianceItems, pctHonest, okCount, totalComp
+  };
+}
+
+function buildComplianceMatrix(params, assumptions, calc) {
+  return [
+    {
+      req: `Tubería 5.3 para servicio amargo (ISO 15156-2 / API 5L L360NS Anexo H)`,
+      equip: `5.3 Quebrada`,
+      status: calc.iso53.region === 3 ? 'red' : 'green',
+      text: calc.iso53.region === 3
+        ? `¡Peligro! En Región 3 (${calc.ph2s_53_kpa.toFixed(1)} kPa) se requiere recalificación adicional de soldaduras y material.`
+        : `Cumple: tubo sin costura L360NS PSL 2 Anexo H con dureza ≤ 250 HV10 y ensayo HIC NACE TM0284.`
+    },
+    {
+      req: `Disponibilidad inhibidor filmógeno ≥ 90% y CA = 2,42 mm (Acta A2↔A3)`,
+      equip: `5.3 / 6.1`,
+      status: (!assumptions.inh90 || calc.ca20_53 > calc.caDesign) ? 'red' : 'green',
+      text: !assumptions.inh90
+        ? `Incumple: sin inhibidor la pérdida de acero en 20 años (${calc.ca20_53.toFixed(1)} mm) excede 2,42 mm.`
+        : (calc.ca20_53 > calc.caDesign
+          ? `Insuficiente: bajo las condiciones actuales el desgaste proyectado es ${calc.ca20_53.toFixed(2)} mm (> 2,42 mm).`
+          : `Cumple: desgaste proyectado ${calc.ca20_53.toFixed(2)} mm dentro del sobreespesor de 2,42 mm.`)
+    },
+    {
+      req: `Presión de diseño línea de transferencia 5.3 y ΔP total de descarga bomba 6.1`,
+      equip: `5.3 y 6.1`,
+      status: assumptions.a3PvtClosed ? 'yellow' : 'gray',
+      text: assumptions.a3PvtClosed
+        ? `Simulado como recibido de hidráulica, pero requiere verificación oficial del cálculo de flujo en 14 km.`
+        : `No evaluable (Vacío de información en informe): falta cálculo hidráulico oficial (Tabla 9 dice 45 bar, Tabla 14 dice 2–4 bar).`
+    },
+    {
+      req: `Análisis PVT y presión de burbuja desde A3 (Sello API 682 y desclasificación)`,
+      equip: `6.1 y 5.3`,
+      status: assumptions.a3PvtClosed ? 'yellow' : 'gray',
+      text: assumptions.a3PvtClosed
+        ? `Supuesto marcado para prueba: confirmar plan de sello API 682 en hoja de datos.`
+        : `Dato faltante de A3: sin PVT no se puede cerrar el plan de sello API 682 ni decidir si la línea de 14 km sale de servicio amargo.`
+    },
+    {
+      req: `Justificación atmosférica C4 vs C3/C5 (Hallazgo I de auditoría E1-04)`,
+      equip: `5.3 Aéreo`,
+      status: assumptions.c4Justified ? 'green' : 'gray',
+      text: assumptions.c4Justified
+        ? `Justificado: permite validar sistema C4.11 (260 µm) y vano aéreo Im1 (500 µm).`
+        : `Dato faltante (Hallazgo E1-04): falta argumentación formal de por qué no aplica C3 o C5.`
+    },
+    {
+      req: `Pintura de cruce aéreo sobre agua (Im1 500 µm, Sa 2½, ASTM D4285 / D4417)`,
+      equip: `5.3 Aéreo`,
+      status: params.crossingType === 'aerial' ? 'green' : 'yellow',
+      text: `Cumple en vano aéreo con Zn(R)+epoxi/PUR alifático 500 µm, prueba blotter de aire (D4285) y perfil de anclaje (D4417).`
+    },
+    {
+      req: `Protección catódica −950 mV CSE con ánodos de Mg (NACE SP0169-2024)`,
+      equip: `5.3 Enterrado`,
+      status: 'yellow',
+      text: `Diseño de Mg listo (−950 mV por T > 60 °C y BSR), pero queda condicional a verificar interferencia de corrientes parásitas en el derecho de vía.`
+    },
+    {
+      req: `Control de bacterias MIC y sedimentos (Biocida sin nitrato + pigging)`,
+      equip: `5.3 y 6.1`,
+      status: calc.micStatus,
+      text: calc.micMsg
+    },
+    {
+      req: `Protección parte superior del tubo TLC (Hallazgo II E1-03)`,
+      equip: `5.3 Quebrada`,
+      status: calc.tlcStatus,
+      text: calc.tlcMsg
+    },
+    {
+      req: `Verificación estructural de vano aéreo y espesor mínimo (${params.pipeThickness} mm)`,
+      equip: `5.3 Quebrada`,
+      status: (calc.spanOk && calc.tReqDynamicCA <= params.pipeThickness) ? 'green' : 'red',
+      text: (calc.spanOk && calc.tReqDynamicCA <= params.pipeThickness)
+        ? `Cumple: espesor requerido ${calc.tReqDynamicCA.toFixed(2)} mm ≤ ${params.pipeThickness} mm y vano de ${params.spanLength} m seguro.`
+        : `No cumple: el espesor o el vano aéreo superan el límite admisible del código.`
+    },
+    {
+      req: `Confirmación química exacta de solvente del inhibidor y pedido Aleación 625 (Mes 1)`,
+      equip: `6.1 / 7.2`,
+      status: 'yellow',
+      text: `Condicional: la sonda 7.2 en Aleación 625 tarda 40 semanas (debe pedirse en Mes 1) y el solvente exacto sigue por definir con A3.`
+    }
+  ];
+}
+
+// ==================== 3. UI HELPERS ====================
+function statusLabel(status) {
+  if (status === 'green') return `Cumple / ¡Todo seguro!`;
+  if (status === 'yellow') return `Advertencia / Atención`;
+  if (status === 'red') return `No cumple / ¡Peligro!`;
+  return `No evaluable / Falta dato`;
+}
+
+function renderSemaforoHtml(status, headline, explain, large = true) {
+  return `
+    <div class="semaforo-box" data-status="${status}">
+      <div class="semaforo-housing ${large ? 'large' : ''}" role="img" aria-label="Semáforo en estado ${statusLabel(status)}">
+        <span class="semaforo-bulb bulb-red ${status === 'red' ? 'active' : ''}"></span>
+        <span class="semaforo-bulb bulb-yellow ${status === 'yellow' ? 'active' : ''}"></span>
+        <span class="semaforo-bulb bulb-green ${status === 'green' ? 'active' : ''}"></span>
+        <span class="semaforo-bulb bulb-gray ${status === 'gray' ? 'active' : ''}"></span>
+      </div>
+      <div class="semaforo-text">
+        <span class="semaforo-headline" data-status="${status}">${headline}</span>
+        <p class="semaforo-explain">${explain}</p>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ==================== 4. RENDER PIPELINE ====================
+function renderAll() {
+  const m = computeModel(appState, appState.assumptions);
+
+  // 1. Live Ribbon
+  const r53 = document.getElementById('ribbon-53');
+  const rd53 = document.getElementById('ribbon-dot-53');
+  const rt53 = document.getElementById('ribbon-text-53');
+  if (r53 && rd53 && rt53) {
+    r53.dataset.status = m.status53;
+    rd53.dataset.status = m.status53;
+    rt53.textContent = `${statusLabel(m.status53)} · CR ${m.crNet53.toFixed(2)} mm/año`;
+  }
+
+  const r61 = document.getElementById('ribbon-61');
+  const rd61 = document.getElementById('ribbon-dot-61');
+  const rt61 = document.getElementById('ribbon-text-61');
+  if (r61 && rd61 && rt61) {
+    r61.dataset.status = m.status61;
+    rd61.dataset.status = m.status61;
+    rt61.textContent = `${m.needsC6 ? 'Clase C-6 (12Cr)' : 'Clase S-6 (Acero C)'} · ${statusLabel(m.status61)}`;
+  }
+
+  const rc = document.getElementById('ribbon-compliance');
+  const rdc = document.getElementById('ribbon-dot-compliance');
+  const rtc = document.getElementById('ribbon-text-compliance');
+  if (rc && rdc && rtc) {
+    const compStatus = m.pctHonest >= 70 ? 'yellow' : 'red';
+    rc.dataset.status = compStatus;
+    rdc.dataset.status = compStatus;
+    rtc.textContent = `${m.pctHonest}% (${m.okCount}/${m.totalComp} puntos · Parcial y honesto)`;
+  }
+
+  // 2. Sync control badges & buttons
+  syncControlDisplays();
+  renderAssumptions();
+  renderHomeSummaries(m);
+  renderSideBySideVariants();
+  renderHotspotDetail(m);
+  renderCorrosionModules(m);
+  renderIso15156Diagram(m);
+  renderMechanicalIntegrity(m);
+  renderMaterialTab(m);
+  renderComplianceTab(m);
+  renderScenarioSelectors();
+  renderScenarioComparison();
+  renderSensitivitySweep();
+  renderReportPreview(m);
+}
+
+function syncControlDisplays() {
+  const map = [
+    ['badge-bsw', `${Number(appState.bsw).toFixed(1)} %`],
+    ['badge-p53', `${Number(appState.p53).toFixed(1)} bar`],
+    ['badge-p61', `${Number(appState.p61).toFixed(1)} bar`],
+    ['badge-temp', `${appState.temp} °C`],
+    ['badge-co2', `${Number(appState.co2).toFixed(2)} %`],
+    ['badge-h2s', `${Number(appState.h2s).toFixed(2)} %`],
+    ['badge-ph', `${Number(appState.ph).toFixed(1)}`],
+    ['badge-solids', `${appState.solids}`],
+    ['badge-vel', `${Number(appState.velocity).toFixed(1)} m/s`],
+    ['badge-span', `${appState.spanLength} m`]
+  ];
+  map.forEach(([id, txt]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  });
+
+  const airBtn = document.getElementById('btn-cross-aerial');
+  const burBtn = document.getElementById('btn-cross-buried');
+  if (airBtn && burBtn) {
+    airBtn.setAttribute('aria-pressed', appState.crossingType === 'aerial' ? 'true' : 'false');
+    burBtn.setAttribute('aria-pressed', appState.crossingType === 'buried' ? 'true' : 'false');
+  }
+
+  const pipeAerial = document.getElementById('svg-pipe-53-aerial');
+  const pipeUnder = document.getElementById('svg-pipe-53-undercreek');
+  if (pipeAerial && pipeUnder) {
+    pipeAerial.setAttribute('opacity', appState.crossingType === 'aerial' ? '1' : '0.35');
+    pipeUnder.setAttribute('opacity', appState.crossingType === 'buried' ? '1' : '0.35');
+    pipeUnder.setAttribute('stroke', appState.crossingType === 'buried' ? 'var(--tertiary)' : 'var(--outline)');
+  }
+}
+
+function renderAssumptions() {
+  const container = document.getElementById('assumptions-list');
+  if (!container) return;
+  container.innerHTML = ASSUMPTIONS_META.map(item => {
+    const checked = !!appState.assumptions[item.key];
+    return `
+      <label class="assumption-item ${checked ? '' : 'unchecked'}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleAssumption('${item.key}', this.checked)">
+        <div>
+          <div style="font-weight:700; color:var(--on-surface);">${item.title}</div>
+          <div style="font-size:0.88rem; color:var(--on-surface-variant); margin-top:2px;">${item.desc}</div>
+        </div>
+      </label>
+    `;
+  }).join('');
+}
+
+function renderHomeSummaries(m) {
+  const el53 = document.getElementById('home-summary-53');
+  const el61 = document.getElementById('home-summary-61');
+  if (el53) {
+    el53.innerHTML = `
+      <span class="chip" data-status="${m.status53}" style="margin-bottom:var(--space-sm);">Ítem 5.3 · Cruce de Quebrada</span>
+      <h3 class="card-title">Tubería 6 pulgadas sobre o bajo el agua</h3>
+      ${renderSemaforoHtml(m.status53, statusLabel(m.status53), m.msg53)}
+      <div class="friendly-note">
+        <strong>Material recomendado:</strong> Acero API 5L PSL 2 L360NS con Anexo H + ${appState.crossingType === 'aerial' ? 'Pintura Im1 de 500 µm para lluvia y río.' : 'Recubrimiento 3LPE antiabrasión + ánodos de magnesio (−950 mV).'}
+      </div>
+    `;
+  }
+  if (el61) {
+    el61.innerHTML = `
+      <span class="chip" data-status="${m.status61}" style="margin-bottom:var(--space-sm);">Ítem 6.1 · Bomba de Transferencia</span>
+      <h3 class="card-title">Bomba centrífuga API 610 hacia refinería</h3>
+      ${renderSemaforoHtml(m.status61, statusLabel(m.status61), m.msg61)}
+      <div class="friendly-note">
+        <strong>Material recomendado:</strong> ${m.pumpClass}. Requiere sello mecánico API 682 (pendiente dato PVT de A3) y sonda de vigilancia en Aleación 625 en la entrada.
+      </div>
+    `;
+  }
+}
+
+function renderSideBySideVariants() {
+  // 5.3 Variants: BSW 78% multiphase vs BSW 0.5% treated
+  const v53Dry = computeModel({ ...appState, bsw: 0.5 }, appState.assumptions);
+  const v53Wet = computeModel({ ...appState, bsw: 78 }, appState.assumptions);
+  const c53 = document.getElementById('compare-53-container');
+  if (c53) {
+    c53.innerHTML = `
+      <div class="status-card" data-status="${v53Dry.status53}">
+        <span class="chip" data-status="${v53Dry.status53}">Variante A · BSW 0,5% (Crudo tratado)</span>
+        <div class="figure-val" style="margin-top:var(--space-sm);">${v53Dry.crNet53.toFixed(2)} mm/año</div>
+        <p class="friendly-note"><strong>¿Qué significa?</strong> Casi todo es petróleo sin gas libre (Corriente 3). El agua es mínima, pero puede juntarse en el fondo de los valles del cruce.</p>
+        <ul style="padding-left:1.2rem; margin:var(--space-sm) 0 0; font-size:0.92rem;">
+          <li>Desgaste en 20 años: <strong>${v53Dry.ca20_53.toFixed(2)} mm</strong> (CA: 2,42 mm)</li>
+          <li>Corrosión techo (TLC): <strong>${statusLabel(v53Dry.tlcStatus)}</strong></li>
+          <li>MIC / Depósitos: <strong>${statusLabel(v53Dry.micStatus)}</strong></li>
+        </ul>
+      </div>
+      <div class="status-card" data-status="${v53Wet.status53}">
+        <span class="chip" data-status="${v53Wet.status53}">Variante B · BSW 78% (Multifásico Tabla 9)</span>
+        <div class="figure-val" style="margin-top:var(--space-sm);">${v53Wet.crNet53.toFixed(2)} mm/año</div>
+        <p class="friendly-note"><strong>¿Qué significa?</strong> El agua salada toca toda la pared del tubo todo el tiempo. Sin químico protector al 90%, se perforaría rápido.</p>
+        <ul style="padding-left:1.2rem; margin:var(--space-sm) 0 0; font-size:0.92rem;">
+          <li>Desgaste en 20 años: <strong>${v53Wet.ca20_53.toFixed(2)} mm</strong> (CA: 2,42 mm)</li>
+          <li>Corrosión techo (TLC): <strong>${statusLabel(v53Wet.tlcStatus)}</strong></li>
+          <li>MIC / Depósitos: <strong>${statusLabel(v53Wet.micStatus)}</strong></li>
+        </ul>
+      </div>
+    `;
+  }
+
+  // 6.1 Variants: Suction 2-4 bar (use 3 bar) vs 45 bar (Tabla 9)
+  const v61Low = computeModel({ ...appState, p61: 3 }, appState.assumptions);
+  const v61High = computeModel({ ...appState, p61: 45 }, appState.assumptions);
+  const c61 = document.getElementById('compare-61-container');
+  if (c61) {
+    c61.innerHTML = `
+      <div class="status-card" data-status="${v61Low.status61}">
+        <span class="chip" data-status="${v61Low.status61}">Variante A · Succión 2–4 bar (Tabla 14)</span>
+        <div class="figure-val" style="margin-top:var(--space-sm);">${v61Low.ph2s_61_kpa.toFixed(2)} kPa H₂S</div>
+        <p class="friendly-note"><strong>¿Qué significa?</strong> Viene de tanques casi sin presión. ${v61Low.iso61.label}. Cerca del límite de exclusión ISO 15156 (4,5 bar).</p>
+        <ul style="padding-left:1.2rem; margin:var(--space-sm) 0 0; font-size:0.92rem;">
+          <li>Bomba sugerida: <strong>${v61Low.needsC6 ? 'Clase C-6' : 'Clase S-6'}</strong></li>
+          <li>Brida succión: Clase 150/300 suficiente en entrada</li>
+          <li>Sello API 682: <strong>Pendiente PVT de A3</strong></li>
+        </ul>
+      </div>
+      <div class="status-card" data-status="${v61High.status61}">
+        <span class="chip" data-status="${v61High.status61}">Variante B · Presión 45 bar (Tabla 9)</span>
+        <div class="figure-val" style="margin-top:var(--space-sm);">${v61High.ph2s_61_kpa.toFixed(2)} kPa H₂S</div>
+        <p class="friendly-note"><strong>¿Qué significa?</strong> Presión muy alta con riesgo amargo confirmado: ${v61High.iso61.label}. Exige bridas Clase 600 y control estricto de dureza.</p>
+        <ul style="padding-left:1.2rem; margin:var(--space-sm) 0 0; font-size:0.92rem;">
+          <li>Bomba sugerida: <strong>${v61High.needsC6 ? 'Clase C-6' : 'Clase S-6'}</strong></li>
+          <li>Brida a 85 °C: <strong>Clase 600</strong> (Clase 300 queda justa)</li>
+          <li>Sello API 682: <strong>Alta presión · Pendiente PVT</strong></li>
+        </ul>
+      </div>
+    `;
+  }
+}
+
+function renderHotspotDetail(m) {
+  const hotspots = [
+    {
+      id: 1,
+      title: `Punto 1 · Tramo enterrado con 3LPE y Ánodos de Magnesio`,
+      status: appState.assumptions.inh90 ? 'yellow' : 'red',
+      plain: `El tubo enterrado a 1,2 m en suelo húmedo (1 800 Ω·cm) lleva triple capa plástica (3LPE) y bloques de magnesio que lo protegen con electricidad suave (−950 mV).`,
+      spec: `Tubo API 5L PSL 2 L360NS Anexo H + 3LPE (ISO 21809-1) + Protección Catódica NACE SP0169-2024.`
+    },
+    {
+      id: 2,
+      title: `Punto 2 · Soportes de tubería con Pad Dieléctrico (5.4)`,
+      status: 'green',
+      plain: `Una lámina aislante de plástico resistente separa el tubo del soporte metálico para que no se acumule humedad ni se robe la corriente de protección catódica.`,
+      spec: `Acero estructural ASTM A36 / A572 Gr 50 galvanizado (ASTM A123) + pintura C4 + Pad dieléctrico PRFV/HDPE.`
+    },
+    {
+      id: 3,
+      title: `Punto 3 · Vano aéreo sobre la quebrada (5.3)`,
+      status: (m.spanOk && appState.assumptions.c4Justified) ? (m.tlcStatus === 'red' ? 'red' : 'green') : 'yellow',
+      plain: `Al cruzar en el aire sobre el agua, recibe lluvia constante y sol tropical. Necesita pintura gruesa de inmersión (500 µm) y soportar su propio peso sin doblarse.`,
+      spec: `Pintura ISO 12944-5 Im1 (Zn rico + epoxi + PUR alifático, 500 µm, limpieza Sa 2½). Vano actual: ${appState.spanLength} m.`
+    },
+    {
+      id: 4,
+      title: `Punto 4 · Cruce bajo el cauce y depresión del valle`,
+      status: m.micStatus,
+      plain: `Si pasa por debajo del río o en un punto bajo, el agua salada y la arena tienden a quedarse quietas en el fondo, alimentando bacterias que pican el acero.`,
+      spec: `3LPE + sobrecapa antiabrasión contra piedras + limpieza con raspadores y biocida sin nitrato.`
+    },
+    {
+      id: 5,
+      title: `Punto 5 · Succión Frontera A2/A3 y Sonda en Aleación 625 (7.2)`,
+      status: appState.assumptions.a3PvtClosed ? 'green' : 'yellow',
+      plain: `Aquí se mide si el equipo A3 entrega el crudo realmente limpio y seco. La sonda es de una superaleación porque el acero inoxidable común (316L) se parte con tanta sal.`,
+      spec: `Sonda retráctil Aleación 625 (UNS N06625) · Plazo de compra: 40 semanas (pedir en Mes 1).`
+    },
+    {
+      id: 6,
+      title: `Punto 6 · Carcasa e Impulsor de la Bomba 6.1 (API 610)`,
+      status: m.status61,
+      plain: `Es el corazón que empuja el crudo 14 km hasta Barrancabermeja. Si llega seco, la carcasa es de acero normal (S-6); si llega agua libre, toda la bomba debe ser de acero 12Cr (C-6).`,
+      spec: m.pumpClass
+    },
+    {
+      id: 7,
+      title: `Punto 7 · Sello Mecánico de la Bomba (API 682)`,
+      status: appState.assumptions.a3PvtClosed ? 'green' : 'gray',
+      plain: `Evita que se escape crudo o gas tóxico por el eje que gira. Todavía no se puede definir su plan definitivo porque falta el dato de presión de vapor (PVT) de A3.`,
+      spec: `API Std 682 (5.ª ed.) · Plan de sello pendiente de análisis PVT en acta A2↔A3.`
+    }
+  ];
+
+  const bar = document.getElementById('hotspot-buttons-bar');
+  if (bar) {
+    bar.innerHTML = hotspots.map(h => `
+      <button type="button" class="btn btn-soft btn-sm" aria-pressed="${appState.selectedHotspot === h.id ? 'true' : 'false'}" onclick="selectHotspot(${h.id})">
+        <span>Punto ${h.id}</span>
+      </button>
+    `).join('');
+  }
+
+  hotspots.forEach(h => {
+    const g = document.getElementById(`hs-btn-${h.id}`);
+    if (g) {
+      if (appState.selectedHotspot === h.id) g.classList.add('selected');
+      else g.classList.remove('selected');
+    }
+  });
+
+  const active = hotspots.find(h => h.id === appState.selectedHotspot) || hotspots[0];
+  const detail = document.getElementById('hotspot-detail-card');
+  if (detail) {
+    detail.innerHTML = `
+      <h3 class="card-title">${active.title}</h3>
+      ${renderSemaforoHtml(active.status, statusLabel(active.status), active.plain)}
+      <div class="friendly-note"><strong>Especificación técnica:</strong> ${active.spec}</div>
+    `;
+  }
+}
+
+function renderCorrosionModules(m) {
+  const grid = document.getElementById('corrosion-modules-grid');
+  if (!grid) return;
+
+  const co2Status = m.ca20_53 > m.caDesign ? 'red' : (appState.assumptions.inh90 ? 'green' : 'red');
+  const co2Plain = !appState.assumptions.inh90
+    ? `¡Sin protector químico, el acero se perforaría en ~${Math.max(1, Math.round((appState.pipeThickness / Math.max(0.1, m.crUninh53)) * 12))} meses!`
+    : `Con el inhibidor al 90%, el desgaste proyectado en 20 años es ${m.ca20_53.toFixed(2)} mm (límite de diseño: 2,42 mm).`;
+
+  const h2sPlain = m.iso53.region === 0
+    ? `Sin riesgo amargo hoy (por debajo del umbral de 0,3 kPa).`
+    : (m.iso53.region === 3
+      ? `¡Zona crítica! Excede el límite de Región 2 (12,6 kPa a pH 4,6). El acero podría agrietarse.`
+      : `Servicio amargo confirmado (${m.ph2s_53_kpa.toFixed(2)} kPa). Se controla comprando tubo con Anexo H y dureza ≤ 250 HV10.`);
+
+  const cards = [
+    {
+      title: `1. Corrosión por CO₂ (De Waard–Milliams)`,
+      status: co2Status,
+      val: `${m.crNet53.toFixed(2)} mm/año`,
+      sub: `Sin inhibir: ${m.crUninh53.toFixed(2)} mm/año · pCO₂ = ${m.pCo2_53.toFixed(2)} bar`,
+      plain: co2Plain
+    },
+    {
+      title: `2. Servicio Amargo H₂S / SSC / HIC (ISO 15156-2)`,
+      status: m.iso53.status,
+      val: `${m.ph2s_53_kpa.toFixed(2)} kPa`,
+      sub: `5.3: ${m.iso53.label} · 6.1: ${m.ph2s_61_kpa.toFixed(2)} kPa (${m.iso61.label})`,
+      plain: h2sPlain
+    },
+    {
+      title: `3. Corrosión en la Parte Superior (TLC)`,
+      status: m.tlcStatus,
+      val: statusLabel(m.tlcStatus),
+      sub: `Ácidos orgánicos 220 mg/L · Hallazgo II E1-03`,
+      plain: m.tlcMsg
+    },
+    {
+      title: `4. Corrosión Bajo Depósito y Erosión por Arena`,
+      status: m.udcStatus,
+      val: `${appState.solids} lb/1000 bbl`,
+      sub: `Velocidad: ${Number(appState.velocity).toFixed(1)} m/s (límite erosión ~4,3 m/s)`,
+      plain: m.udcMsg
+    },
+    {
+      title: `5. Corrosión Microbiológica (MIC / BSR)`,
+      status: m.micStatus,
+      val: appState.assumptions.biocidePig ? `Biocida + Pigging` : `¡Sin control!`,
+      sub: `ISO 21457 Sec. 7.3.4 (biocida sin nitrato)`,
+      plain: m.micMsg
+    }
+  ];
+
+  grid.innerHTML = cards.map(c => `
+    <div class="status-card" data-status="${c.status}">
+      <div class="figure-label">${c.title}</div>
+      <div class="figure-val">${c.val}</div>
+      <p style="font-size:0.88rem; color:var(--on-surface-variant); margin:4px 0 var(--space-sm);">${c.sub}</p>
+      ${renderSemaforoHtml(c.status, statusLabel(c.status), c.plain, false)}
+    </div>
+  `).join('');
+}
+
+function renderIso15156Diagram(m) {
+  const chip = document.getElementById('iso-diagram-chip');
+  if (chip) {
+    chip.textContent = `5.3: ${m.iso53.label} | 6.1: ${m.iso61.label}`;
+    chip.dataset.status = m.iso53.status;
+  }
+
+  const box = document.getElementById('iso15156-svg-container');
+  if (!box) return;
+
+  // Map pH [3.0..7.0] -> x [70..560], log10(pH2S kPa) [-1..2] (0.1..100 kPa) -> y [260..30]
+  function xPh(ph) { return 70 + ((Math.min(7, Math.max(3, ph)) - 3) / 4) * 490; }
+  function yKpa(kpa) {
+    const lk = Math.log10(Math.max(0.1, Math.min(1000, kpa)));
+    return 260 - ((lk + 1) / 4) * 230;
+  }
+
+  const yThresh = yKpa(0.3);
+  const p53x = xPh(appState.ph);
+  const p53y = yKpa(m.ph2s_53_kpa);
+  const p61x = xPh(appState.ph);
+  const p61y = yKpa(m.ph2s_61_kpa);
+  const y10kpa = (0.30 / 100) * (appState.p53 + 1.01325) * 100;
+  const pY10y = yKpa(y10kpa);
+
+  box.innerHTML = `
+    <svg viewBox="0 0 620 300" role="img" aria-label="Diagrama de regiones ISO 15156-2">
+      <!-- Region fills -->
+      <rect x="70" y="${yThresh}" width="490" height="${260 - yThresh}" fill="var(--positive-bg)" opacity="0.8"/>
+
+      <!-- Grid & Axes -->
+      <line x1="70" y1="30" x2="70" y2="260" stroke="var(--on-surface)" stroke-width="1.5"/>
+      <line x1="70" y1="260" x2="560" y2="260" stroke="var(--on-surface)" stroke-width="1.5"/>
+      <line x1="70" y1="${yThresh}" x2="560" y2="${yThresh}" stroke="var(--positive)" stroke-width="2" stroke-dasharray="5 4"/>
+      ${[1,2].map(region => { const x0=region===1?3:3.5; const cap=region===1?6.5:5.5; const points=[x0,cap-.001,cap,7].map(ph => xPh(ph)+","+yKpa(isoPressureLimit(ph,region))).join(" "); return `<polyline points="${points}" fill="none" stroke="var(--error)" stroke-width="2"/>`; }).join("")}
+
+      <!-- Labels -->
+      <text x="550" y="54" text-anchor="end" font-family="Figtree, sans-serif" font-weight="800" font-size="13" fill="var(--error-text)">Región 3 (Crítica SSC)</text>
+      <text x="550" y="${yKpa(8)}" text-anchor="end" font-family="Figtree, sans-serif" font-weight="700" font-size="13" fill="var(--warning-text)">Región 2 / 1 (Amargo)</text>
+      <text x="550" y="250" text-anchor="end" font-family="Figtree, sans-serif" font-weight="700" font-size="13" fill="var(--positive-text)">Región 0 (< 0,3 kPa No amargo)</text>
+
+      <!-- Y ticks -->
+      <text x="62" y="${yKpa(100)+4}" text-anchor="end" font-size="11" fill="var(--on-surface-variant)">100 kPa</text><text x="62" y="34" text-anchor="end" font-size="11">1000 kPa</text>
+      <text x="62" y="${yKpa(10)+4}" text-anchor="end" font-size="11" fill="var(--on-surface-variant)">10 kPa</text>
+      <text x="62" y="${yKpa(1)+4}" text-anchor="end" font-size="11" fill="var(--on-surface-variant)">1 kPa</text>
+      <text x="62" y="${yKpa(0.3)+4}" text-anchor="end" font-size="11" fill="var(--positive-text)">0,3</text>
+
+      <!-- X ticks -->
+      <text x="${xPh(3.5)}" y="280" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">pH 3,5</text>
+      <text x="${xPh(4.6)}" y="280" text-anchor="middle" font-size="11" font-weight="700" fill="var(--on-surface)">pH 4,6</text>
+      <text x="${xPh(5.5)}" y="280" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">pH 5,5</text>
+      <text x="${xPh(6.5)}" y="280" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">pH 6,5</text>
+
+      <!-- Operating Points -->
+      <circle cx="${p53x}" cy="${p53y}" r="8" fill="var(--primary)" stroke="var(--background)" stroke-width="2"/>
+      <text x="${p53x + 12}" y="${p53y + 4}" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--primary)">5.3 (${m.ph2s_53_kpa.toFixed(1)} kPa)</text>
+
+      <circle cx="${p61x}" cy="${p61y}" r="7" fill="var(--data-4)" stroke="var(--background)" stroke-width="2"/>
+      <text x="${p61x - 12}" y="${p61y + 4}" text-anchor="end" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--data-4)">6.1 (${m.ph2s_61_kpa.toFixed(1)} kPa)</text>
+
+      <circle cx="${p53x}" cy="${pY10y}" r="5" fill="var(--warning)" stroke="var(--on-surface)" stroke-width="1.5"/>
+      <text x="${p53x + 12}" y="${pY10y - 4}" font-family="Figtree, sans-serif" font-size="11" fill="var(--warning-text)">Año 10 @ 0,30%</text>
+    </svg>
+  `;
+}
+
+function renderMechanicalIntegrity(m) {
+  const grid = document.getElementById('mechanical-cards-grid');
+  if (!grid) return;
+
+  const thickStatus = m.tReqDynamicCA <= appState.pipeThickness ? 'green' : 'red';
+  const mawpStatus = m.mawpBar >= appState.p53 ? 'green' : 'red';
+  const spanStatus = appState.crossingType === 'buried' ? 'green' : (m.spanOk ? 'green' : 'red');
+  const flangeStatus = appState.p61 > 46 ? 'yellow' : 'green';
+
+  grid.innerHTML = `
+    <div class="status-card" data-status="${thickStatus}">
+      <div class="figure-label">Espesor requerido 5.3 (${appState.designCode})</div>
+      <div class="figure-val">${m.tReqDynamicCA.toFixed(2)} mm</div>
+      <p style="font-size:0.9rem; color:var(--on-surface-variant);">Presión tₚ: ${m.tp.toFixed(2)} mm + CA (${Math.max(m.caDesign, m.ca20_53).toFixed(2)} mm) + tolerancia 12,5% (${m.millTol.toFixed(2)} mm)</p>
+      <p class="friendly-note"><strong>Comparado con tu tubo (${appState.pipeThickness} mm):</strong> ${thickStatus === 'green' ? `¡Sobra acero seguro! (${(appState.pipeThickness - m.tReqDynamicCA).toFixed(2)} mm de margen).` : `¡Falta espesor! Necesitas subir a una cédula más gruesa o mejorar la química.`}</p>
+    </div>
+
+    <div class="status-card" data-status="${mawpStatus}">
+      <div class="figure-label">Presión máxima segura al año 20 (MAWP)</div>
+      <div class="figure-val">${m.mawpBar.toFixed(1)} bar</div>
+      <p style="font-size:0.9rem; color:var(--on-surface-variant);">Esfuerzo admisible S: ${m.sAllow.toFixed(1)} MPa · Presión actual: ${appState.p53} bar</p>
+      <p class="friendly-note"><strong>En palabras simples:</strong> ${mawpStatus === 'green' ? `Incluso tras 20 años de desgaste, el tubo resiste hasta ${m.mawpBar.toFixed(1)} bar.` : `¡Cuidado! Al final de la vida útil la resistencia cae por debajo de la presión de operación.`}</p>
+    </div>
+
+    <div class="status-card" data-status="${spanStatus}">
+      <div class="figure-label">Resistencia del vano aéreo sobre quebrada</div>
+      <div class="figure-val">${m.sigmaLongTotal.toFixed(1)} MPa</div>
+      <p style="font-size:0.9rem; color:var(--on-surface-variant);">Límite admisible longitudinal: ${m.spanLimitMPa.toFixed(0)} MPa · Vano: ${appState.spanLength} m</p>
+      <p class="friendly-note"><strong>¿Aguanta el puente sobre el río?</strong> ${appState.crossingType === 'buried' ? `Cruce configurado bajo tierra (no sufre flexión aérea).` : (m.spanOk ? `Sí, el tubo lleno de fluido soporta bien los ${appState.spanLength} m entre apoyos.` : `No: el vano es muy largo y el tubo se flecta en exceso. Acorta los apoyos o sube el espesor.`)}</p>
+    </div>
+
+    <div class="status-card" data-status="${flangeStatus}">
+      <div class="figure-label">Carcasa y bridas Bomba 6.1 (a ${appState.temp} °C)</div>
+      <div class="figure-val">${appState.p61 > 20 ? 'Clase 600' : 'Clase 300'}</div>
+      <p style="font-size:0.9rem; color:var(--on-surface-variant);">Succión actual: ${appState.p61} bar · Clase 300 @ 85 °C ≈ 46,8 bar; Clase 600 ≈ 93,6 bar</p>
+      <p class="friendly-note"><strong>Recomendación:</strong> ${appState.p61 > 38 ? `Con presión alta de 45 bar (Tabla 9), usar Clase 600 para tener margen de seguridad.` : `Con succión de 2–4 bar desde tanques, la entrada opera holgada; descarga según cálculo hidráulico.`}</p>
+    </div>
+  `;
+}
+
+function renderMaterialTab(m) {
+  const fails = document.getElementById('what-fails-panel');
+  if (fails) {
+    fails.innerHTML = `
+      <span class="chip" data-status="red" style="margin-bottom:var(--space-sm);">Panel crítico · Qué falla o queda abierto</span>
+      <h3 class="card-title">Límites de materiales y temas que NO están cerrados</h3>
+      <ul style="padding-left:1.25rem; margin:var(--space-sm) 0 0; display:flex; flex-direction:column; gap:6px;">
+        <li><strong>Acero inoxidable 316L prohibido en fluido de yacimiento:</strong> Con 42 000 mg/l de cloruros a 68–85 °C sufre agrietamiento por cloruros (SCC). Por eso las sondas 7.2 usan Aleación 625.</li>
+        <li><strong>Pintura C4.11 prohibida bajo tierra:</strong> En tramos enterrados el suelo la desprende y bloquea la protección catódica (apantallamiento).</li>
+        <li><strong>Bomba 6.1 Clase S-6 falla si hay agua libre:</strong> Si A3 se desestabiliza y deja pasar agua salina, la carcasa de acero al carbono se corroe; debe especificarse Clase C-6 (carcasa en CA6NM).</li>
+        <li><strong>Aleación 625 tiene 40 semanas de entrega:</strong> Si no se emite la orden de compra en el Mes 1, no llega a la parada programada del Mes 14.</li>
+        <li><strong>Abierto en el expediente:</strong> Falta análisis PVT (para elegir sello API 682), presión de diseño oficial de 5.3 y descarga de 6.1, y solvente exacto del inhibidor.</li>
+      </ul>
+    `;
+  }
+
+  const matCards = document.getElementById('materials-cards-grid');
+  if (matCards) {
+    const mats = [
+      {
+        tag: `5.3 Tubo Principal`,
+        name: `Acero al carbono sin costura API 5L PSL 2 Grado L360NS (X52NS) con Anexo H`,
+        why: `Calificado para servicio amargo (ISO 15156-2) con dureza ≤ 250 HV10 / 22 HRC y resistencia probada al agrietamiento inducido por hidrógeno (NACE TM0284).`
+      },
+      {
+        tag: `5.3 Protección Aérea (Vano)`,
+        name: `Recubrimiento epóxico rico en zinc + epoxi + poliuretano alifático (ISO 12944-5 Im1, 500 µm NDFT)`,
+        why: `Preparación de superficie Sa 2½ (ISO 8501-1), perfil medido según ASTM D4417 y aire seco verificado con prueba blotter ASTM D4285.`
+      },
+      {
+        tag: `5.3 Protección Enterrada`,
+        name: `Polietileno tricapa 3LPE (ISO 21809-1) con sobrecapa antiabrasión + Ánodos galvánicos de magnesio de alto potencial`,
+        why: `Resiste piedras en el cauce y permite pasar la corriente de protección catódica (−950 mV vs CSE según NACE SP0169-2024).`
+      },
+      {
+        tag: `5.4 Soportes`,
+        name: `Acero estructural ASTM A36 o A572 Grado 50 galvanizado en caliente (ASTM A123) + Pad dieléctrico de PRFV o HDPE`,
+        why: `Evita corrosión por humedad atrapada en la abrazadera y corta la fuga eléctrica de la protección catódica.`
+      },
+      {
+        tag: `6.1 Bomba de Transferencia`,
+        name: m.needsC6
+          ? `Bomba centrífuga API 610 (12.ª ed.) Clase C-6: carcasa e internos en acero inoxidable martensítico 12Cr (ASTM A743 Grado CA6NM ≤ 23 HRC)`
+          : `Bomba centrífuga API 610 (12.ª ed.) Clase S-6: carcasa en acero al carbono e internos en acero inoxidable martensítico 12Cr (ASTM A743 Grado CA6NM ≤ 23 HRC)`,
+        why: `Sello mecánico API 682 (plan pendiente de PVT). La clase C-6 blinda la carcasa cuando A3 no garantiza ausencia de agua libre.`
+      },
+      {
+        tag: `7.2 Sonda de Muestreo en Succión`,
+        name: `Sonda retráctil en Aleación de Níquel-Cromo-Molibdeno 625 (UNS N06625) con doble bloqueo y purga`,
+        why: `Evidencia física en la frontera A2/A3 para comprobar agua, sólidos y H₂S; inmune a 42 000 mg/l de cloruros.`
+      }
+    ];
+    matCards.innerHTML = mats.map(item => `
+      <div class="card">
+        <span class="chip" data-status="info">${item.tag}</span>
+        <h3 class="card-title" style="margin-top:var(--space-sm);">${item.name}</h3>
+        <p class="friendly-note">${item.why}</p>
+      </div>
+    `).join('');
+  }
+
+  const econBody = document.getElementById('economy-table-body');
+  if (econBody) {
+    const rows = [
+      [`5.3 Tubo principal`, `Acero amargo L360NS PSL 2 Anexo H (vs 6,2 Dúplex)`, `1,6`, `16 sem (Mes 4)`, `10 meses`],
+      [`5.3 Pintura aérea`, `Sistema alto desempeño Im1 500 µm / C4.11`, `0,4`, `8 sem (Mes 2)`, `12 meses`],
+      [`5.3 Enterrado`, `3LPE + Ánodos galvánicos de magnesio`, `0,4 + 0,3`, `10 sem (Mes 2–3)`, `11–12 meses`],
+      [`5.4 Soportes`, `ASTM A36/A572 galvanizado + pad dieléctrico`, `1,0`, `6 sem (Mes 2)`, `12 meses`],
+      [`6.1 Bomba`, `Bomba centrífuga API 610 (Clase S-6 o C-6) + API 682`, `Cotización fab.`, `16–20 sem (Mes 4–5)`, `9–10 meses`],
+      [`7.2 Sonda succión`, `Aleación 625 maciza (UNS N06625)`, `14,0`, `40 sem (Mes 10)`, `4 meses · ¡Pedir en Mes 1!`]
+    ];
+    econBody.innerHTML = rows.map(r => `
+      <tr>
+        <td><strong>${r[0]}</strong></td>
+        <td>${r[1]}</td>
+        <td>${r[2]}</td>
+        <td>${r[3]}</td>
+        <td>${r[4]}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function renderComplianceTab(m) {
+  const banner = document.getElementById('compliance-summary-banner');
+  if (banner) {
+    banner.innerHTML = renderSemaforoHtml(
+      m.pctHonest >= 70 ? 'yellow' : 'red',
+      `Cumplimiento global honesto: ${m.pctHonest}% (${m.okCount} de ${m.totalComp} requisitos cerrados)`,
+      `Ningún diseño responsable marca 100% mientras falten el análisis PVT de A3, la presión de diseño de la línea de 14 km y la verificación de corrientes parásitas en campo.`
+    );
+  }
+
+  const filter = appState.complianceFilter;
+  ['all', 'open', 'ok'].forEach(f => {
+    const btn = document.getElementById(`filter-comp-${f}`);
+    if (btn) btn.setAttribute('aria-pressed', filter === f ? 'true' : 'false');
+  });
+
+  const filtered = m.complianceItems.filter(it => {
+    if (filter === 'open') return it.status !== 'green';
+    if (filter === 'ok') return it.status === 'green';
+    return true;
+  });
+
+  const tbody = document.getElementById('compliance-table-body');
+  if (tbody) {
+    tbody.innerHTML = filtered.map(it => `
+      <tr>
+        <td><strong>${it.req}</strong></td>
+        <td>${it.equip}</td>
+        <td><span class="chip" data-status="${it.status}">${statusLabel(it.status)}</span></td>
+        <td>${it.text}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+function renderNormas(query = '') {
+  const grid = document.getElementById('normas-grid');
+  if (!grid) return;
+  const q = query.trim().toLowerCase();
+  const list = NORMAS_DATA.filter(n => !q || n.code.toLowerCase().includes(q) || n.area.toLowerCase().includes(q) || n.summary.toLowerCase().includes(q));
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="card"><p>No hay normas que coincidan con «${escapeHtml(query)}». Borra el filtro para ver todas las referencias.</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(n => `
+    <div class="card">
+      <span class="chip" data-status="info">${n.area}</span>
+      <h3 class="card-title" style="margin-top:var(--space-sm);">${n.code}</h3>
+      <p class="friendly-note">${n.summary}</p>
+    </div>
+  `).join('');
+}
+
+function renderScenarioSelectors() {
+  const selA = document.getElementById('select-scen-a');
+  const selB = document.getElementById('select-scen-b');
+  if (!selA || !selB) return;
+  const prevA = selA.value || appState.savedScenarios[0]?.id;
+  const prevB = selB.value || appState.savedScenarios[1]?.id || appState.savedScenarios[0]?.id;
+
+  const opts = appState.savedScenarios.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  selA.innerHTML = opts;
+  selB.innerHTML = opts;
+  if (appState.savedScenarios.some(s => s.id === prevA)) selA.value = prevA;
+  if (appState.savedScenarios.some(s => s.id === prevB)) selB.value = prevB;
+}
+
+function renderScenarioComparison() {
+  const selA = document.getElementById('select-scen-a');
+  const selB = document.getElementById('select-scen-b');
+  const container = document.getElementById('scenario-compare-table');
+  if (!selA || !selB || !container) return;
+
+  const scA = appState.savedScenarios.find(s => s.id === selA.value) || appState.savedScenarios[0];
+  const scB = appState.savedScenarios.find(s => s.id === selB.value) || appState.savedScenarios[1] || scA;
+  if (!scA || !scB) return;
+
+  const mA = computeModel(scA.params, scA.assumptions);
+  const mB = computeModel(scB.params, scB.assumptions);
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Indicador clave</th>
+          <th>${escapeHtml(scA.name)}</th>
+          <th>${escapeHtml(scB.name)}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Estado 5.3 Quebrada</td><td><span class="chip" data-status="${mA.status53}">${statusLabel(mA.status53)}</span></td><td><span class="chip" data-status="${mB.status53}">${statusLabel(mB.status53)}</span></td></tr>
+        <tr><td>Estado 6.1 Bomba</td><td><span class="chip" data-status="${mA.status61}">${statusLabel(mA.status61)}</span></td><td><span class="chip" data-status="${mB.status61}">${statusLabel(mB.status61)}</span></td></tr>
+        <tr><td>BSW / Presión 5.3 / Succión 6.1</td><td>${scA.params.bsw}% · ${scA.params.p53} bar · ${scA.params.p61} bar</td><td>${scB.params.bsw}% · ${scB.params.p53} bar · ${scB.params.p61} bar</td></tr>
+        <tr><td>Tasa CO₂ neta (5.3)</td><td>${mA.crNet53.toFixed(2)} mm/año (${mA.ca20_53.toFixed(2)} mm en 20 años)</td><td>${mB.crNet53.toFixed(2)} mm/año (${mB.ca20_53.toFixed(2)} mm en 20 años)</td></tr>
+        <tr><td>pH₂S (5.3) y Región ISO 15156-2</td><td>${mA.ph2s_53_kpa.toFixed(2)} kPa (${mA.iso53.label})</td><td>${mB.ph2s_53_kpa.toFixed(2)} kPa (${mB.iso53.label})</td></tr>
+        <tr><td>Clase recomendada Bomba 6.1</td><td>${mA.needsC6 ? 'Clase C-6 (12Cr)' : 'Clase S-6 (Acero C)'}</td><td>${mB.needsC6 ? 'Clase C-6 (12Cr)' : 'Clase S-6 (Acero C)'}</td></tr>
+        <tr><td>MAWP al año 20 (5.3)</td><td>${mA.mawpBar.toFixed(1)} bar</td><td>${mB.mawpBar.toFixed(1)} bar</td></tr>
+        <tr><td>Cumplimiento honesto</td><td>${mA.pctHonest}%</td><td>${mB.pctHonest}%</td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderSensitivitySweep() {
+  const sel = document.getElementById('select-sweep-var');
+  const box = document.getElementById('sensitivity-svg-container');
+  if (!sel || !box) return;
+
+  const mode = sel.value;
+  const pts = [];
+  const steps = 16;
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    const p = { ...appState };
+    let xVal = 0;
+    if (mode === 'h2s') { xVal = 0.02 + frac * (0.50 - 0.02); p.h2s = xVal; }
+    else if (mode === 'pressure') { xVal = 1 + frac * (60 - 1); p.p53 = xVal; }
+    else if (mode === 'temp') { xVal = 35 + frac * (95 - 35); p.temp = xVal; }
+    else { xVal = 0.1 + frac * (85 - 0.1); p.bsw = xVal; }
+
+    const res = computeModel(p, appState.assumptions);
+    pts.push({ xVal, cr: res.crNet53, ph2s: res.ph2s_53_kpa });
+  }
+
+  const maxY = Math.max(15, ...pts.map(pt => Math.max(pt.cr * 3, pt.ph2s)));
+  function px(i) { return 65 + (i / steps) * 490; }
+  function py(val) { return 235 - (Math.min(maxY, val) / maxY) * 195; }
+
+  const crPath = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${px(i).toFixed(1)} ${py(pt.cr * 3).toFixed(1)}`).join(' ');
+  const h2sPath = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${px(i).toFixed(1)} ${py(pt.ph2s).toFixed(1)}`).join(' ');
+  const yR3 = py(12.6);
+
+  box.innerHTML = `
+    <svg viewBox="0 0 620 280" role="img" aria-label="Gráfico de barrido de sensibilidad">
+      <line x1="65" y1="40" x2="65" y2="235" stroke="var(--on-surface)" stroke-width="1.5"/>
+      <line x1="65" y1="235" x2="555" y2="235" stroke="var(--on-surface)" stroke-width="1.5"/>
+      <line x1="65" y1="${yR3}" x2="555" y2="${yR3}" stroke="var(--error)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="550" y="${yR3 - 6}" text-anchor="end" font-size="11" font-weight="700" fill="var(--error-text)">Frontera Región 3 (12,6 kPa @ pH 4,6)</text>
+
+      <path d="${h2sPath}" fill="none" stroke="var(--data-3)" stroke-width="3" stroke-linecap="round"/>
+      <path d="${crPath}" fill="none" stroke="var(--data-1)" stroke-width="3" stroke-linecap="round"/>
+
+      <text x="75" y="24" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--data-1)">● Tasa CO₂ neta (×3 para escala, mm/año)</text>
+      <text x="340" y="24" font-family="Figtree, sans-serif" font-weight="700" font-size="12" fill="var(--data-3)">● Presión parcial pH₂S (kPa)</text>
+
+      <text x="65" y="256" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">${pts[0].xVal.toFixed(1)}</text>
+      <text x="310" y="256" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">${pts[8].xVal.toFixed(1)}</text>
+      <text x="555" y="256" text-anchor="middle" font-size="11" fill="var(--on-surface-variant)">${pts[16].xVal.toFixed(1)}</text>
+    </svg>
+  `;
+}
+
+function renderReportPreview(m) {
+  const el = document.getElementById('report-preview-card');
+  if (!el) return;
+  el.innerHTML = `
+    <span class="chip" data-status="info">Vista previa de informe imprimible</span>
+    <h3 class="card-title" style="margin-top:var(--space-sm);">Reporte de Integridad y Selección de Materiales — Par 6 (Sistema A2)</h3>
+    <p class="section-sub">Equipos: Cruces de Quebrada y Tramos Especiales (5.3) + Bomba de Transferencia de Crudo (6.1)</p>
+    <div class="table-wrap" style="margin-top:var(--space-md);">
+      <table>
+        <tbody>
+          <tr><th>Condición simulada</th><td>BSW ${appState.bsw}% · P(5.3) ${appState.p53} bar · P(6.1) ${appState.p61} bar · T ${appState.temp} °C · CO₂ ${appState.co2}% · H₂S ${appState.h2s}% · pH ${appState.ph}</td></tr>
+          <tr><th>Estado 5.3 Cruces de Quebrada</th><td><strong>${statusLabel(m.status53)}</strong> — ${m.msg53}</td></tr>
+          <tr><th>Estado 6.1 Bomba de Transferencia</th><td><strong>${statusLabel(m.status61)}</strong> — ${m.msg61}</td></tr>
+          <tr><th>Corrosión CO₂ (5.3)</th><td>Sin inhibir: ${m.crUninh53.toFixed(2)} mm/año · Neta inhibida: ${m.crNet53.toFixed(2)} mm/año · Desgaste 20 años: ${m.ca20_53.toFixed(2)} mm (CA diseño: 2,42 mm)</td></tr>
+          <tr><th>Servicio Amargo ISO 15156-2</th><td>5.3: ${m.ph2s_53_kpa.toFixed(2)} kPa (${m.iso53.label}) · 6.1: ${m.ph2s_61_kpa.toFixed(2)} kPa (${m.iso61.label})</td></tr>
+          <tr><th>Integridad Mecánica (${appState.designCode})</th><td>Espesor requerido: ${m.tReqDynamicCA.toFixed(2)} mm (Tubo ${appState.pipeThickness} mm) · MAWP año 20: ${m.mawpBar.toFixed(1)} bar · Vano ${appState.spanLength} m: ${m.sigmaLongTotal.toFixed(1)} MPa</td></tr>
+          <tr><th>Cumplimiento Honesto</th><td><strong>${m.pctHonest}% (${m.okCount}/${m.totalComp} puntos cerrados)</strong> — Parcial por vacíos de información de A1 y A3.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ==================== 5. INTERACTION HANDLERS (HOISTED) ====================
+function switchTab(tabId) {
+  appState.activeTab = tabId;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const target = btn.id.replace('tabbtn-', '');
+    btn.setAttribute('aria-selected', target === tabId ? 'true' : 'false');
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+  });
+  persistState();
+}
+
+function toggleLargeText() {
+  appState.largeText = !appState.largeText;
+  document.body.classList.toggle('large-text', appState.largeText);
+  const btn = document.getElementById('btn-large-text');
+  if (btn) btn.setAttribute('aria-pressed', appState.largeText ? 'true' : 'false');
+  persistState();
+}
+
+function toggleSchematicAnim() {
+  appState.animPaused = !appState.animPaused;
+  const wrap = document.getElementById('schematic-wrap');
+  const btn = document.getElementById('btn-toggle-anim');
+  if (wrap) wrap.classList.toggle('paused-anim', appState.animPaused);
+  if (btn) {
+    btn.setAttribute('aria-pressed', appState.animPaused ? 'true' : 'false');
+    btn.querySelector('span').textContent = appState.animPaused ? `Reanudar animación` : `Pausar animación`;
+  }
+}
+
+function selectHotspot(id) {
+  appState.selectedHotspot = id;
+  renderHotspotDetail(computeModel(appState, appState.assumptions));
+}
+
+function setCrossingType(type) {
+  appState.crossingType = type;
+  renderAll();
+  persistState();
+}
+
+// Dedicated dual-input handlers (prevent snap-back)
+function syncBswFromSlider(v) { const el = document.getElementById('input-bsw'); if (el) el.value = v; appState.bsw = parseFloat(v) || 0.5; renderAll(); persistState(); }
+function syncBswFromNumber(v) { const el = document.getElementById('slider-bsw'); if (el) el.value = v; appState.bsw = parseFloat(v) || 0.5; renderAll(); persistState(); }
+
+function syncP53FromSlider(v) { const el = document.getElementById('input-p53'); if (el) el.value = v; appState.p53 = parseFloat(v) || 1; renderAll(); persistState(); }
+function syncP53FromNumber(v) { const el = document.getElementById('slider-p53'); if (el) el.value = v; appState.p53 = parseFloat(v) || 1; renderAll(); persistState(); }
+
+function syncP61FromSlider(v) { const el = document.getElementById('input-p61'); if (el) el.value = v; appState.p61 = parseFloat(v) || 1; renderAll(); persistState(); }
+function syncP61FromNumber(v) { const el = document.getElementById('slider-p61'); if (el) el.value = v; appState.p61 = parseFloat(v) || 1; renderAll(); persistState(); }
+
+function syncTempFromSlider(v) { const el = document.getElementById('input-temp'); if (el) el.value = v; appState.temp = parseFloat(v) || 35; renderAll(); persistState(); }
+function syncTempFromNumber(v) { const el = document.getElementById('slider-temp'); if (el) el.value = v; appState.temp = parseFloat(v) || 35; renderAll(); persistState(); }
+
+function syncCo2FromSlider(v) { const el = document.getElementById('input-co2'); if (el) el.value = v; appState.co2 = parseFloat(v) || 0.2; renderAll(); persistState(); }
+function syncCo2FromNumber(v) { const el = document.getElementById('slider-co2'); if (el) el.value = v; appState.co2 = parseFloat(v) || 0.2; renderAll(); persistState(); }
+
+function syncH2sFromSlider(v) { const el = document.getElementById('input-h2s'); if (el) el.value = v; appState.h2s = parseFloat(v) || 0.01; renderAll(); persistState(); }
+function syncH2sFromNumber(v) { const el = document.getElementById('slider-h2s'); if (el) el.value = v; appState.h2s = parseFloat(v) || 0.01; renderAll(); persistState(); }
+
+function syncPhFromSlider(v) { const el = document.getElementById('input-ph'); if (el) el.value = v; appState.ph = parseFloat(v) || 3.5; renderAll(); persistState(); }
+function syncPhFromNumber(v) { const el = document.getElementById('slider-ph'); if (el) el.value = v; appState.ph = parseFloat(v) || 3.5; renderAll(); persistState(); }
+
+function syncSolidsFromSlider(v) { const el = document.getElementById('input-solids'); if (el) el.value = v; appState.solids = parseFloat(v) || 0; renderAll(); persistState(); }
+function syncSolidsFromNumber(v) { const el = document.getElementById('slider-solids'); if (el) el.value = v; appState.solids = parseFloat(v) || 0; renderAll(); persistState(); }
+
+function syncVelFromSlider(v) { const el = document.getElementById('input-vel'); if (el) el.value = v; appState.velocity = parseFloat(v) || 0.3; renderAll(); persistState(); }
+function syncVelFromNumber(v) { const el = document.getElementById('slider-vel'); if (el) el.value = v; appState.velocity = parseFloat(v) || 0.3; renderAll(); persistState(); }
+
+function syncSpanFromSlider(v) { const el = document.getElementById('input-span'); if (el) el.value = v; appState.spanLength = parseFloat(v) || 6; renderAll(); persistState(); }
+function syncSpanFromNumber(v) { const el = document.getElementById('slider-span'); if (el) el.value = v; appState.spanLength = parseFloat(v) || 6; renderAll(); persistState(); }
+
+function setDesignCode(code) { appState.designCode = code; renderAll(); persistState(); }
+function setPipeSchedule(val) { appState.pipeThickness = parseFloat(val) || 10.97; renderAll(); persistState(); }
+function setComplianceFilter(f) { appState.complianceFilter = f; renderAll(); persistState(); }
+
+function toggleAssumption(key, checked) {
+  appState.assumptions[key] = checked;
+  renderAll();
+  persistState();
+}
+
+function applyAllInputsToDom() {
+  const pairs = [
+    ['bsw', appState.bsw], ['p53', appState.p53], ['p61', appState.p61],
+    ['temp', appState.temp], ['co2', appState.co2], ['h2s', appState.h2s],
+    ['ph', appState.ph], ['solids', appState.solids], ['vel', appState.velocity],
+    ['span', appState.spanLength]
+  ];
+  pairs.forEach(([k, val]) => {
+    const s = document.getElementById(`slider-${k}`);
+    const i = document.getElementById(`input-${k}`);
+    if (s) s.value = val;
+    if (i) i.value = val;
+  });
+  const dc = document.getElementById('select-design-code');
+  if (dc) dc.value = appState.designCode;
+  const ps = document.getElementById('select-pipe-schedule');
+  if (ps) ps.value = String(appState.pipeThickness);
+}
+
+function applyPreset(name) {
+  if (name === 'normal') {
+    Object.assign(appState, { bsw: 1, p53: 40, p61: 3, temp: 68, h2s: 0.15, solids: 5, velocity: 1.8 });
+    appState.assumptions.inh90 = true;
+    appState.assumptions.dryCrudeA3 = true;
+  } else if (name === 'tabla9') {
+    Object.assign(appState, { bsw: 78, p53: 45, p61: 45, temp: 75, h2s: 0.15, solids: 12, velocity: 1.8 });
+    appState.assumptions.inh90 = true;
+    appState.assumptions.dryCrudeA3 = false;
+  } else if (name === 'year10') {
+    Object.assign(appState, { bsw: 78, p53: 45, p61: 45, temp: 85, h2s: 0.30, solids: 12, velocity: 1.8 });
+    appState.assumptions.inh90 = true;
+    appState.assumptions.dryCrudeA3 = false;
+  } else if (name === 'noinh') {
+    Object.assign(appState, { bsw: 78, p53: 45, p61: 45, temp: 85, h2s: 0.15, solids: 12, velocity: 1.8 });
+    appState.assumptions.inh90 = false;
+    appState.assumptions.dryCrudeA3 = false;
+  }
+  applyAllInputsToDom();
+  renderAll();
+  persistState();
+}
+
+function handleResetDefaults(btn) {
+  if (btn.dataset.armed !== 'true') {
+    btn.dataset.armed = 'true';
+    btn.querySelector('span').textContent = `Pulsa otra vez para confirmar`;
+    return;
+  }
+  btn.dataset.armed = 'false';
+  btn.querySelector('span').textContent = `Restaurar base`;
+  const saved = appState.savedScenarios;
+  appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  appState.savedScenarios = saved;
+  document.body.classList.remove('large-text');
+  applyAllInputsToDom();
+  switchTab('inicio');
+  renderAll();
+  persistState();
+}
+
+function saveCurrentScenario() {
+  const input = document.getElementById('scenario-name-input');
+  const msg = document.getElementById('scenario-save-msg');
+  if (!input || !msg) return;
+  const name = input.value.trim();
+  if (!name) {
+    msg.textContent = `Escribe un nombre corto para guardar este escenario.`;
+    return;
+  }
+  const newScen = {
+    id: `scen-${Date.now()}`,
+    name,
+    params: {
+      crossingType: appState.crossingType, bsw: appState.bsw, p53: appState.p53, p61: appState.p61,
+      temp: appState.temp, co2: appState.co2, h2s: appState.h2s, ph: appState.ph,
+      solids: appState.solids, velocity: appState.velocity, designCode: appState.designCode,
+      pipeThickness: appState.pipeThickness, spanLength: appState.spanLength
+    },
+    assumptions: { ...appState.assumptions }
+  };
+  appState.savedScenarios.push(newScen);
+  input.value = '';
+  msg.textContent = `Escenario «${name}» guardado correctamente.`;
+  renderScenarioSelectors();
+  renderScenarioComparison();
+  persistState();
+}
+
+// ==================== 6. EXPORTS (PDF, EXCEL, CSV, TXT) ====================
+function triggerDownloadHelper(content, contentType, filename) {
+  const fb = document.getElementById('export-feedback');
+  if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === 'function') {
+    window.notebookAppApi.triggerFileDownload({ content, contentType, encoding: 'UTF-8', filename });
+    if (fb) {
+      fb.style.display = 'block';
+      fb.textContent = `Archivo «${filename}» generado para descarga.`;
+    }
+    return;
+  }
+  const blob = new Blob([content], { type: `${contentType};charset=utf-8;` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (fb) {
+    fb.style.display = 'block';
+    fb.textContent = `Descarga local iniciada: ${filename}.`;
+  }
+}
+
+function buildCsvPayload(withExcelBom) {
+  const m = computeModel(appState, appState.assumptions);
+  const rows = [
+    [`Seccion`, `Parametro`, `Valor`, `Estado / Nota`],
+    [`Par 6 - 5.3`, `Cruce de Quebrada`, appState.crossingType === 'aerial' ? `Vano aereo Im1 500 um` : `Enterrado 3LPE + PC`, statusLabel(m.status53)],
+    [`Par 6 - 5.3`, `BSW (%)`, appState.bsw, `Crudo tratado <=0.5% vs Multifasico 78%`],
+    [`Par 6 - 5.3`, `Presion operacion (bar)`, appState.p53, `Diseno oficial pendiente en informe`],
+    [`Par 6 - 5.3`, `Tasa CO2 sin inhibir (mm/ano)`, m.crUninh53.toFixed(2), `De Waard-Milliams`],
+    [`Par 6 - 5.3`, `Tasa CO2 neta (mm/ano)`, m.crNet53.toFixed(2), `CA 20 anos: ${m.ca20_53.toFixed(2)} mm vs 2.42 mm`],
+    [`Par 6 - 5.3`, `pH2S (kPa)`, m.ph2s_53_kpa.toFixed(2), m.iso53.label],
+    [`Par 6 - 5.3`, `Espesor requerido (${appState.designCode})`, `${m.tReqDynamicCA.toFixed(2)} mm`, `Tubo nominal: ${appState.pipeThickness} mm`],
+    [`Par 6 - 5.3`, `MAWP ano 20 (bar)`, m.mawpBar.toFixed(1), `Vano ${appState.spanLength} m: ${m.sigmaLongTotal.toFixed(1)} MPa`],
+    [`Par 6 - 6.1`, `Presion succion (bar)`, appState.p61, `Tabla 14: 2-4 bar vs Tabla 9: 45 bar`],
+    [`Par 6 - 6.1`, `pH2S succion (kPa)`, m.ph2s_61_kpa.toFixed(2), m.iso61.label],
+    [`Par 6 - 6.1`, `Bomba API 610 recomendada`, m.pumpClass, statusLabel(m.status61)],
+    [`Cumplimiento`, `Global honesto`, `${m.pctHonest}%`, `${m.okCount} de ${m.totalComp} cerrados`]
+  ];
+  m.complianceItems.forEach(c => {
+    rows.push([`Matriz`, c.req, statusLabel(c.status), c.text]);
+  });
+  const sep = withExcelBom ? ';' : ',';
+  const body = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(sep)).join('\n');
+  return withExcelBom ? `\uFEFF${body}` : body;
+}
+
+function exportReportPDF() {
+  const fb = document.getElementById('export-feedback');
+  if (fb) {
+    fb.style.display = 'block';
+    fb.textContent = `Abriendo diálogo de impresión: elige «Guardar como PDF» para descargar el informe.`;
+  }
+  window.print();
+}
+
+function exportReportExcel() {
+  triggerDownloadHelper(buildCsvPayload(true), 'text/csv', `par6_sistema_a2_excel.csv`);
+}
+
+function exportReportCSV() {
+  triggerDownloadHelper(buildCsvPayload(false), 'text/csv', `par6_sistema_a2_datos.csv`);
+}
+
+function exportReportTXT() {
+  const m = computeModel(appState, appState.assumptions);
+  const txt = [
+    `SIMULADOR PAR 6 - SISTEMA A2 (CAMPO MAGDALENA MEDIO)`,
+    `Equipos: 5.3 Cruces de Quebrada y 6.1 Bomba de Transferencia`,
+    `========================================================`,
+    `5.3 Estado: ${statusLabel(m.status53)} | ${m.msg53}`,
+    `6.1 Estado: ${statusLabel(m.status61)} | ${m.msg61}`,
+    `CO2 (5.3): ${m.crNet53.toFixed(2)} mm/ano neto (desgaste 20 anos: ${m.ca20_53.toFixed(2)} mm)`,
+    `H2S (5.3): ${m.ph2s_53_kpa.toFixed(2)} kPa -> ${m.iso53.label}`,
+    `H2S (6.1): ${m.ph2s_61_kpa.toFixed(2)} kPa -> ${m.iso61.label}`,
+    `Mecanica (${appState.designCode}): t_req=${m.tReqDynamicCA.toFixed(2)} mm vs ${appState.pipeThickness} mm | MAWP=${m.mawpBar.toFixed(1)} bar`,
+    `Material 6.1: ${m.pumpClass}`,
+    `Cumplimiento honesto: ${m.pctHonest}% (${m.okCount}/${m.totalComp} puntos cerrados)`
+  ].join('\n');
+  triggerDownloadHelper(txt, 'text/plain', `par6_resumen_tecnico.txt`);
+}
+
+// ==================== 7. PERSISTENCE & INIT ====================
+async function persistState() {
+  if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === 'function') {
+    try {
+      await window.notebookAppApi.setAppState(appState);
+    } catch (e) { /* keep running smoothly */ }
+  }
+}
+
+async function initApp() {
+  if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function') {
+    try {
+      const saved = await window.notebookAppApi.getAppState();
+      if (saved && typeof saved === 'object') {
+        appState = {
+          ...DEFAULT_STATE,
+          ...saved,
+          assumptions: { ...DEFAULT_STATE.assumptions, ...(saved.assumptions || {}) },
+          savedScenarios: Array.isArray(saved.savedScenarios) && saved.savedScenarios.length > 0 ? saved.savedScenarios : DEFAULT_STATE.savedScenarios
+        };
+      }
+    } catch (e) { /* fallback to defaults */ }
+  }
+
+  document.body.classList.toggle('large-text', !!appState.largeText);
+  const btnLarge = document.getElementById('btn-large-text');
+  if (btnLarge) btnLarge.setAttribute('aria-pressed', appState.largeText ? 'true' : 'false');
+
+  applyAllInputsToDom();
+  renderNormas('');
+  renderAll();
+  switchTab(appState.activeTab || 'inicio');
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+  if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
+    window.notebookAppApi.notifyAppReady();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
