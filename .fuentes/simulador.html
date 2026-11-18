@@ -1,0 +1,420 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selección de materiales · Proyecto A</title>
+<style>
+@@CSS@@
+:root {
+  --plano:#f5f8fb; --hoja:#fff; --tinta:#17222d; --acero:#4b5866;
+  --trazo:#dde4eb; --trazo-suave:#eaf0f6; --azul:#0b3a63;
+  --alerta:#b83a2a; --supuesto:#a86b12;
+  --cond:'Roboto Slab',Georgia,serif; --cuerpo:Inter,'Segoe UI',Arial,sans-serif;
+}
+#v-envolvente {--ok:#2b7336;--am:#a86b12;--ro:#b83a2a;--nv:#76838f}
+.sim h1,.sim h2,.sim h3,.sim h4 {color:var(--azul)}
+.sim {height:100%; display:grid; grid-template-rows:auto minmax(0,1fr) auto}
+.sim .barra {gap:12px; flex-wrap:wrap}
+.sim .barra p {margin:0; color:var(--acero)}
+html,body {height:100%; overflow:hidden}
+.sim .env {grid-template-columns:minmax(170px,23%) minmax(0,1fr); min-height:0; height:auto; overflow:hidden}
+.sim .env-col {min-width:0; min-height:0; padding:3px 5px 0 3px; overflow:auto; overflow-x:hidden}
+.sim label {display:block; font-weight:600}
+.sim select {display:block; width:100%; min-width:0; background:var(--hoja); border:1px solid var(--trazo); border-radius:6px; padding:5px 8px; margin-bottom:8px}
+.sim .env-sl {grid-template-columns:minmax(0,1fr) auto}
+.sim output,.sim small,.sim footer {color:var(--acero)}
+.sim footer {padding:6px 16px; border-top:1px solid var(--trazo); background:var(--hoja); font-size:12px}
+.chip {border-left:6px solid var(--grupo); padding:3px 8px; display:inline-block; background:var(--plano); border-radius:4px; font-weight:600}
+#chips {display:flex; flex-wrap:wrap; gap:5px}
+#esquema {background-color:var(--plano); background-image:radial-gradient(var(--trazo) 1px,transparent 1px); background-size:13px 13px; border:1px solid var(--trazo); border-radius:8px}
+.process {display:block;width:100%;height:auto;max-height:330px}
+.process .pipe {color:#607d91}
+.process .gas {color:#a05d16}
+.process .agua {color:#087aa8}
+.pipe>path {fill:none;stroke:currentColor;stroke-width:2}
+.gap>path {stroke-dasharray:4 4}
+.particle {fill:currentColor}
+.node {cursor:pointer;outline:none}
+.node .hit {fill:var(--plano);fill-opacity:.93;stroke:transparent}
+.node[aria-pressed=true] .hit,.node:focus-visible .hit {fill:var(--trazo-suave);stroke:var(--azul);stroke-width:2}
+.symbol {fill:none;stroke:currentColor;stroke-width:2}
+.symbol .terrain {stroke:#806a51}
+.symbol .water {stroke:#2198c4}
+.node text {fill:var(--azul);font:700 11px var(--cuerpo)}
+.dot {fill:currentColor}
+.damage {fill:#b92323;stroke:#b92323;pointer-events:none;animation:pulse 1.7s ease-in-out infinite alternate}
+.damage circle:first-child {fill:none;stroke-width:2;stroke-dasharray:4 4}
+@keyframes pulse {from{opacity:.25}to{opacity:.95}}
+.estado0 {color:var(--ok)} .estado1 {color:var(--am)} .estado2 {color:var(--ro)}
+.sim table {width:100%; table-layout:fixed}
+.sim td,.sim th {overflow-wrap:anywhere; vertical-align:top}
+.sim .pill {white-space:normal}
+.sim details {margin-top:8px}
+.sim summary {cursor:pointer; font-weight:600}
+.sim .resumen td,.sim .resumen th {text-align:center}
+.sim .resumen td:first-child,.sim .resumen th:first-child {width:40%; text-align:left}
+.sim .env-g {margin-bottom:8px}
+.sim .env-kpi {padding:6px 8px}
+.sim .env-kpi b {font-size:20px}
+.embedded .barra {display:none}
+.embedded.editor .barra {display:flex}
+.embedded .env {grid-row:2}
+.embedded footer {grid-row:3}
+.embed-only {display:none}
+.embed .embed-only {display:block}
+.embed {grid-template-rows:minmax(0,1fr);font-size:clamp(11px,1.25vw,17px)}
+.embed :is(.barra,footer,.global-card>h3) {display:none}
+.embed .env {grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px;padding:8px}
+.embed .env-col {padding:0;overflow:visible}
+.embed .env-card {margin:0}
+.embed .global-card {display:grid;grid-template-columns:max-content minmax(0,1fr) auto;align-items:center;gap:clamp(6px,1vw,16px);padding:7px 12px}
+.embed .scenario-field label {margin-bottom:2px}
+.embed select {font:inherit;color:var(--tinta)}
+.embed #escenario {width:auto;margin:0}
+.embed #globales {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(5px,1vw,14px)}
+.embed #globales .env-sl {margin:0;gap:2px 4px;grid-template-rows:1fr auto}
+.embed #globales label {font-size:clamp(10px,1.05vw,15px);line-height:1.15}
+.embed button {font:inherit;font-weight:600;white-space:nowrap;cursor:pointer;color:var(--azul);background:var(--plano);border:1px solid var(--trazo);border-radius:6px;padding:6px 9px}
+.embed .results-col {display:grid;grid-template-rows:minmax(0,1fr) minmax(0,clamp(105px,26vh,225px));gap:8px}
+.embed .diagram-card {min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:6px;padding:8px}
+.embed .diagram-head,.embed .pieces-head {display:flex;align-items:center;flex-wrap:wrap;gap:5px 12px}
+.embed .diagram-head {padding-inline:4px}
+.embed :is(.diagram-head,.pieces-head) h3 {margin:0;font-size:clamp(14px,1.45vw,21px)}
+.embed .diagram-head .nota {margin:0;max-width:none;font-size:clamp(10px,1.1vw,15px)}
+.embed #esquema {min-height:0;overflow:hidden}
+.embed .process {height:100%;max-height:none}
+.embed .pieces-card {display:grid;grid-template-rows:auto minmax(0,1fr);gap:5px;padding:6px 12px}
+.embed .pieces-head button {margin-left:auto}
+.embed #piezas {overflow:auto;scrollbar-width:none}
+.embed #piezas:focus-visible {outline:2px solid var(--azul);outline-offset:-2px}
+.embed #piezas th {position:sticky;top:0;background:var(--plano)}
+.embed #piezas .env-tb,.embed #piezas small {font-size:clamp(11px,1.17vw,16px)}
+.embed #piezas :is(th,td) {padding:4px 5px}
+.embed #piezas th:nth-child(-n+3) {width:18%}
+.embed [popover] {box-sizing:border-box;inset:60px 12px auto auto;margin:0;width:min(500px,calc(100% - 24px));max-height:calc(100% - 72px);overflow:auto;border:1px solid var(--trazo);border-radius:8px;background:var(--hoja);color:var(--tinta);box-shadow:0 8px 28px #17222d40;padding:12px}
+.embed #analisis {width:min(900px,calc(100% - 24px))}
+.embed .cerrar-panel {float:right;margin:0 0 6px 8px}
+@media (max-width:630px) {
+  .embed .global-card {grid-template-columns:minmax(0,1fr) auto}
+  .embed #globales {grid-row:2;grid-column:1/-1}
+  .embed #escenario {max-width:100%}
+}
+.sim .sol {overflow-wrap:anywhere}
+.compact {text-decoration:underline dotted; text-underline-offset:3px}
+.state-chip {display:inline-block;border-radius:20px;padding:2px 6px;font-weight:700;background:#edf2f5}
+.state-chip.estado0 {background:#e8f3ea}
+.state-chip.estado1 {background:#fbf1df}
+.state-chip.estado2 {background:#fbeae7}
+.matrix td:first-child,.matrix th:first-child {width:25%}
+.matrix table+table {margin-top:12px}
+#vida svg {width:100%;max-width:470px;display:block}
+@media (prefers-reduced-motion:reduce) {.damage {animation:none}}
+@media (max-width:630px) {
+  .sim .env {grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,34%) minmax(0,1fr)}
+  .sim .barra {padding:6px 10px}
+}
+</style>
+</head>
+<body>
+<div class="sim" id="v-envolvente">
+<header class="barra"><div id="chips"></div><div><h1 id="titulo"></h1><p id="alcance"></p></div></header>
+<main class="env">
+<aside class="env-col" aria-label="Controles de simulación">
+  <section class="env-card global-card">
+    <div class="scenario-field"><label for="escenario">Escenario</label><select id="escenario"></select></div>
+    <h3>Condiciones globales</h3><div id="globales"></div>
+    <button class="embed-only" type="button" popovertarget="config-equipo">Controles por equipo</button>
+  </section>
+  <section class="env-card" id="config-equipo">
+    <button class="embed-only cerrar-panel" type="button" popovertarget="config-equipo" popovertargetaction="hide" aria-label="Cerrar controles">×</button>
+    <h3>Condiciones por equipo</h3>
+    <div id="filtros"></div>
+    <label for="equipo">Equipo</label><select id="equipo"></select>
+    <div id="controles"></div>
+    <div id="totales" class="env-g"></div>
+  </section>
+</aside>
+<div class="env-col results-col" aria-label="Resultados de simulación">
+  <section class="env-card diagram-card"><div class="diagram-head"><h3>Esquema de equipos</h3>
+    <p class="nota">Selecciona un equipo para filtrar las piezas. Cada punto indica su estado. Línea discontinua: tramo fuera del alcance.</p></div>
+    <div id="esquema"></div>
+  </section>
+  <section class="env-card pieces-card"><div class="pieces-head"><h3>Evaluación de piezas</h3>
+    <button class="embed-only" type="button" popovertarget="analisis">Ver análisis</button></div>
+    <div id="piezas"></div>
+  </section>
+  <div id="analisis">
+  <button class="embed-only cerrar-panel" type="button" popovertarget="analisis" popovertargetaction="hide" aria-label="Cerrar análisis">×</button>
+  <div id="resumen"></div>
+  <section class="env-card"><h3>Límites de operación</h3>
+    <label for="pieza">Pieza del equipo seleccionado</label><select id="pieza"></select>
+    <h3>Vida vs. año del yacimiento</h3><div id="vida"></div>
+    <div id="limites"></div>
+  </section>
+  <section class="env-card"><h3>Material resultante</h3><div id="materiales"></div></section>
+  <section class="env-card matrix"><h3>Escenario → material resultante</h3>
+    <p class="nota">Escenarios predefinidos. Las alternativas del motor quedan sujetas a verificación.</p>
+    <div id="matriz"></div>
+  </section>
+  </div>
+</div>
+</main>
+<footer>Datos: Simulador integrado Proyecto A · motor de envolvente (SD-01 a SD-12), tamizaje no certificado</footer>
+</div>
+<script>
+@@MOTOR@@
+const D = @@DATA@@;
+const config = @@CONFIG@@;
+const makeScenarios = @@PRESETS@@;
+const scenario = makeScenarios(D, actualizarControles);
+const M = Motor(D);
+const fmt = Motor.fmt;
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '—').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nombres = ['En envolvente', 'Atención', 'Fuera de envolvente'];
+const pill = s => '<span class="pill p' + s + '">' + nombres[s] + '</span>';
+const option = (value, label) => '<option value="' + esc(value) + '">' + esc(label) + '</option>';
+const params = new URLSearchParams(location.search);
+const editor = params.get('editor') === '1';
+const embed = params.get('embed') === '1';
+if (embed) {
+  $('v-envolvente').classList.add('embed');
+  $('config-equipo').setAttribute('popover', 'auto');
+  $('analisis').setAttribute('popover', 'auto');
+  $('piezas').tabIndex = 0;
+  $('piezas').setAttribute('role', 'region');
+  $('piezas').setAttribute('aria-label', 'Tabla de evaluación de piezas');
+}
+if (params.get('embedded') === '1') {
+  $('v-envolvente').classList.add('embedded');
+  if (editor) $('v-envolvente').classList.add('editor');
+}
+const groupLabel = key => key + (editor && !config.groups[key].confirmada ? ' · reparto provisional' : '');
+const chip = key => '<span class="chip" style="--grupo:' + esc(config.groups[key].color) + '">' + groupLabel(key) + '</span>';
+const table = (headers, rows) => '<table class="env-tb"><thead><tr>' +
+  headers.map(h => '<th scope="col">' + h + '</th>').join('') + '</tr></thead><tbody>' +
+  rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join('') + '</tr>').join('') + '</tbody></table>';
+
+$('titulo').textContent = config.title;
+document.title = config.title + ' · Selección de materiales';
+$('alcance').textContent = config.description;
+$('chips').innerHTML = Object.keys(config.groups).map(chip).join('');
+$('escenario').innerHTML = scenario.PRE.map(([key, label]) => option(key, label)).join('');
+if (config.scope !== 'estudiante') {
+  $('filtros').innerHTML =
+    (config.scope === 'integrado' ? '<label for="grupo">Grupo</label><select id="grupo">' +
+      option('', 'Todos los grupos') + Object.keys(config.groups).map(key => option(key, groupLabel(key))).join('') + '</select>' : '') +
+    '<label for="integrante">Integrante</label><select id="integrante"></select>';
+}
+
+let visibles = D.piezas;
+let equipo, pieza, frame;
+const globales = [
+  ['anio','Año del yacimiento',0,20,1],
+  ['CO2','CO₂ en el gas (% molar)',0,10,.1],
+  ['H2S10','H₂S al año 10 (% molar)',0,1.5,.01],
+  ['pH','pH del agua producida',3.4,6.5,.05]
+];
+const locales = [
+  ['P','Presión (bar)',.01,400,.01], ['T','Temperatura (°C)',0,250,.1],
+  ['A','Disponibilidad de inhibidor (%)',0,99.99,.01,100],
+  ['O2','Oxígeno disuelto (µg/l)',0,1000,1], ['BSW','BS&W (%)',0,100,.1]
+];
+function sliders(target, fields, values, update) {
+  target.replaceChildren();
+  for (const [key, title, low, high, step, scale = 1] of fields) {
+    if (values[key] == null) continue;
+    const id = target.id + '-' + key;
+    const row = document.createElement('div');
+    row.className = 'env-sl';
+    row.innerHTML = '<label for="' + id + '">' + title + '</label><output for="' + id + '"></output>' +
+      '<input type="range" id="' + id + '" min="' + low + '" max="' + high + '" step="' + step + '">';
+    const input = row.querySelector('input');
+    const output = row.querySelector('output');
+    const exact = values[key] * scale;
+    input.value = exact;
+    output.textContent = fmt(exact);
+    input.addEventListener('input', () => {
+      const value = input.valueAsNumber;
+      output.textContent = fmt(value);
+      update(key, value / scale);
+      if (frame === undefined) frame = requestAnimationFrame(mostrar);
+    });
+    target.append(row);
+  }
+}
+function actualizarControles() {
+  const state = scenario.estado;
+  sliders($('globales'), globales, state.G, (key, value) => { state.G[key] = value; });
+  controlesEquipo();
+  mostrar();
+}
+function controlesEquipo() {
+  const state = scenario.estado;
+  sliders($('controles'), locales, equipo ? M.condEq(state, equipo) : {}, (key, value) => {
+    (state.eq[equipo] ??= {})[key] = value;
+  });
+}
+function filtrarIntegrantes() {
+  if (!$('integrante')) return;
+  const grupo = $('grupo')?.value;
+  $('integrante').innerHTML = option('', 'Todos los integrantes') + config.roster
+    .filter(p => !grupo || p.grupo === grupo)
+    .map(p => option(p.key, (config.scope === 'integrado' ? p.grupo + ' · ' : '') + p.nombre)).join('');
+}
+function filtrar() {
+  const grupo = $('grupo')?.value;
+  const person = $('integrante')?.value;
+  const tags = new Set(config.roster.filter(p => (!grupo || p.grupo === grupo) && (!person || p.key === person)).flatMap(p => p.tags));
+  visibles = D.piezas.filter(p => tags.has(p.tag));
+  const equipment = new Set(visibles.map(p => p.eq));
+  $('equipo').innerHTML = D.eq.filter(e => equipment.has(e.tag)).map(e => option(e.tag, e.tag + ' · ' + e.nombre)).join('');
+  elegirEquipo(equipment.has(equipo) ? equipo : $('equipo').value);
+}
+function elegirEquipo(tag) {
+  equipo = tag;
+  $('equipo').value = tag;
+  const pieces = visibles.filter(p => p.eq === tag);
+  $('pieza').innerHTML = pieces.map(p => option(p.tag, p.tag + ' · ' + p.pieza)).join('');
+  if (pieces.some(p => p.tag === pieza)) $('pieza').value = pieza;
+  pieza = $('pieza').value;
+  controlesEquipo();
+  mostrar();
+}
+@@PROCESS@@
+const matrix = @@MATRIX@@;
+const short = (label, full) => '<span class="compact" tabindex="0" title="' + esc(full) + '">' + esc(label) + '</span>';
+const material = p => short(p.mat_corto, p.material);
+function mostrarMatriz(rows) {
+  const tables = [];
+  for (let i = 0; i < rows.length; i += 4) {
+    const tags = rows.slice(i, i + 4).map(r => r.p.tag);
+    tables.push(table(['Escenario', ...tags.map(esc)], scenario.PRE.map(([key, label]) =>
+      [esc(label), ...tags.map(tag => {
+        const r = matrix[key][tag];
+        return '<span class="state-chip estado' + r.s + '" title="' + esc(nombres[r.s]) + '">' +
+          ['✓','!','×'][r.s] + '</span> ' + material(r) +
+          (r.alternativas.length ? '<details><summary>Alternativas</summary>' + r.alternativas.map(esc).join('<br>') + '</details>' : '');
+      })])));
+  }
+  $('matriz').innerHTML = tables.join('');
+}
+function mostrarVida() {
+  const state = scenario.estado;
+  const out = $('vida');
+  const sample = M.evalPieza(state, pieza).c;
+  if (!sample) { out.textContent = 'El motor no calcula vida para esta pieza.'; return; }
+  const years = Math.max(1, state.G.vida);
+  const values = Array.from({length:21}, (_, i) => M.evalPieza(state, pieza, i * years / 20).c);
+  const max = Math.max(1, ...values.flatMap(c => [c.life, c.req]));
+  const y = v => 91 - 67 * v / max;
+  const xy = values.map((c, i) => (50 + i * 16) + ',' + y(c.life)).join(' ');
+  const current = 50 + 320 * Math.min(state.G.anio, years) / years;
+  out.innerHTML = '<small>' + esc(sample.unidad) + ' · vida estimada ' + fmt(sample.life) +
+    ' · requerida ' + fmt(sample.req) + ' · año ' + fmt(state.G.anio) + '</small>' +
+    `<svg viewBox="0 0 396 117" aria-label="Curva de vida estimada por año">
+      <path d="M50 18v73h320" fill="none" stroke="#8aa1b1"/>
+      <path d="M50 ${y(sample.req)}h320" stroke="#a46b16" stroke-dasharray="4 3"/>
+      <path d="M${current} 18v73" stroke="#9aabb8"/>
+      <polyline points="${xy}" fill="none" stroke="#1772a2" stroke-width="2.5"/>
+      <circle cx="${current}" cy="${y(sample.life)}" r="3.5" fill="#1772a2"/>
+      <g fill="#435768" font-size="10"><text x="5" y="26">${fmt(max)}</text><text x="40" y="93">0</text>
+      <text x="48" y="106">0</text><text x="204" y="106">${years / 2}</text><text x="360" y="106">${years}</text></g>
+    </svg>`;
+}
+function conteo(rows) {
+  const counts = [0,0,0];
+  for (const r of rows) counts[r.s]++;
+  return counts;
+}
+function resumen(byTag) {
+  if (config.scope === 'estudiante') return;
+  const summary = roster => conteo(roster.flatMap(p => p.tags.map(tag => byTag.get(tag))));
+  const headers = ['Alcance', ...nombres];
+  const groupRows = Object.keys(config.groups).map(key =>
+    [chip(key), ...summary(config.roster.filter(p => p.grupo === key))]);
+  const personRows = config.roster.map(p => [
+    esc(p.nombre) + ' ' + chip(p.grupo), ...summary([p])]);
+  let panel = $('resumen').querySelector('section');
+  if (!panel) {
+    $('resumen').innerHTML = '<section class="env-card resumen"><h3>Resumen del escenario</h3>' +
+      '<div id="por-grupo"></div><details><summary>Resultados por estudiante</summary><div id="por-persona"></div></details></section>';
+    panel = $('resumen').querySelector('section');
+    panel.querySelector('details').open = config.scope === 'grupo';
+  }
+  if (config.scope === 'integrado') $('por-grupo').innerHTML = table(headers, groupRows);
+  $('por-persona').innerHTML = table(headers, personRows);
+}
+const pieceName = p => '<b>' + esc(p.tag) + '</b><br><small>' + esc(p.pieza) + '</small>';
+function mostrar() {
+  if (frame !== undefined) cancelAnimationFrame(frame);
+  frame = undefined;
+  const state = scenario.estado;
+  const byTag = new Map(D.piezas.map(p => [p.tag, M.evalPieza(state, p.tag)]));
+  const rows = visibles.map(p => byTag.get(p.tag));
+  const selected = rows.filter(r => r.p.eq === equipo);
+  $('totales').innerHTML = conteo(rows).map((n,i) =>
+    '<div class="env-kpi k-' + ['ok','am','ro'][i] + '"><b>' + n + '</b><span>' + nombres[i] + '</span></div>').join('');
+  esquema(rows);
+  resumen(byTag);
+  $('piezas').innerHTML = table(['Pieza','Material seleccionado','Protección','Corrosión (mm/año)','Vida / requerida (años)','Región ISO 15156','Estado'],
+    selected.map(({p,c,reg,s}) => [pieceName(p),material(p),short(p.prot_corta,p.proteccion),fmt(c?.Veff),
+      c ? fmt(c.life) + ' / ' + fmt(c.req) + '<br><small>' + esc(c.unidad) + '</small>' : '—',
+      reg ?? '—',pill(s)]));
+  mostrarLimites();
+  mostrarMatriz(selected);
+  $('materiales').innerHTML = table(['Pieza','Material seleccionado','Resultado y alternativas'],
+    selected.map(({p,s,checks}) => {
+      if (!s) return [pieceName(p),material(p),pill(s)];
+      const options = M.sol(state,p.tag).filter(x => x.t !== 'seguimiento');
+      const reasons = checks.filter(x => x.s > 0).map(x => esc(x.txt)).join('<br>');
+      const advice = options.map(x => '<div class="sol ' + esc(x.t) + '"><b>' + esc(x.tit) + '</b><br>' +
+        esc(x.det) + (x.verif ? '<br><small>' + esc(x.verif) + '</small>' : '') + '</div>').join('');
+      return [pieceName(p),material(p),pill(s) + '<br>' + reasons + advice +
+        (s === 2 && !options.length ? '<p>requiere cambio de material</p>' : '')];
+    }));
+}
+function mostrarLimites() {
+  if (!pieza) { $('limites').replaceChildren(); return; }
+  mostrarVida();
+  const rows = M.limites(scenario.estado,pieza);
+  $('limites').innerHTML = table(['Variable','Actual','Límite','Holgura'],
+    rows.map(r => [esc(r.lab) + (r.nota ? '<br><small>' + esc(r.nota) + '</small>' : ''),
+      fmt(r.act) + ' ' + r.u,
+      r.lim === null ? esc(r.noteMax || 'No cierra') :
+        Number.isFinite(r.lim) ? (r.kind === 'min' ? '≥ ' : '≤ ') + fmt(r.lim) + ' ' + r.u : 'Sin límite en la búsqueda',
+      r.hol === null ? '—' : '<span class="' + (r.ok ? 'estado0' : 'estado2') + '">' + fmt(r.hol) + ' ' + r.u + '</span>']));
+}
+$('escenario').addEventListener('change', e => scenario.aplicarPreset(e.target.value));
+$('grupo')?.addEventListener('change', () => { filtrarIntegrantes(); filtrar(); });
+$('integrante')?.addEventListener('change', filtrar);
+$('equipo').addEventListener('change', e => elegirEquipo(e.target.value));
+$('pieza').addEventListener('change', e => { pieza = e.target.value; mostrarLimites(); });
+function activarEquipo(e) {
+  const button = e.target.closest('[data-equipo]');
+  if (button) {
+    elegirEquipo(button.dataset.equipo);
+    [...$('esquema').querySelectorAll('[data-equipo]')].find(b => b.dataset.equipo === equipo)?.focus();
+  }
+}
+$('esquema').addEventListener('click', activarEquipo);
+$('esquema').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  activarEquipo(e);
+});
+window.addEventListener('keydown', event => {
+  if (window.parent === window || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (!['ArrowLeft','ArrowRight'].includes(event.key) || event.target.closest('input,select,textarea,button,summary')) return;
+  event.preventDefault();
+  window.parent.postMessage({projectAKey:event.key}, '*');
+});
+const initial = new URLSearchParams(location.search).get('escenario');
+$('escenario').value = scenario.PRE.some(([key]) => key === initial) ? initial : 'base';
+filtrarIntegrantes();
+filtrar();
+scenario.aplicarPreset($('escenario').value);
+</script>
+</body>
+</html>

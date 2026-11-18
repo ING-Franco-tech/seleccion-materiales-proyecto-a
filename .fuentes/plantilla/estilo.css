@@ -138,3 +138,20 @@ table.t th,table.t td {vertical-align:top;overflow-wrap:anywhere}
 .bar b {font:700 18px var(--slab);color:var(--navy);text-align:right}
 .track {height:13px;border-radius:3px;background:var(--navy-l);overflow:hidden}
 .track i {display:block;height:100%;background:var(--green)}
+.slide:has(.student-results) .content {top:98px;bottom:75px}
+.student-results {width:100%;height:100%;display:flex;flex-direction:column;min-height:0}
+.student-results .tag {align-self:flex-start;margin-bottom:7px}
+.student-results h2 {margin:0 0 14px}
+.result-table {overflow:auto;min-height:0;border:1px solid var(--line);border-radius:10px}
+.result-table table {table-layout:fixed;font-size:15px}
+.result-table table th {position:sticky;top:0;background:var(--panel);z-index:1}
+.result-table table :is(th,td) {padding:6px;vertical-align:middle}
+.result-table th:is(:nth-child(1),:nth-child(7)) {width:8%}
+.result-table th:nth-child(5) {width:7%}
+.result-table th:nth-child(9) {width:14%}
+.result-table td [title] {cursor:help}
+.student-results .checks {display:grid;grid-template-columns:repeat(8,1fr);gap:2px}
+.student-results .caption {margin:5px 0;font-size:14px}
+.result-reading {margin-top:8px;padding:10px 15px;background:var(--panel);border-left:4px solid var(--accent);border-radius:0 8px 8px 0}
+.result-reading h3 {margin:0 0 4px}
+.result-reading ul {margin:0;padding-left:20px;font-size:16px;line-height:1.38}

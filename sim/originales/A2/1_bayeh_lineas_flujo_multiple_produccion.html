@@ -446,7 +446,7 @@ function sscChart() {
     s += '<path fill="none" stroke="var(--crit)" stroke-width="2" d="' + d + '"/>';
   }
   s += `<text x="${m.l + 4}" y="${m.t + 14}" font-size="11" fill="var(--ok)">Región 0 (&lt; 0,3)</text>`;
-  s += `<text x="${(X(0.3) + X(S.R3)) / 2}" y="${m.t + 14}" text-anchor="middle" font-size="11" fill="var(--ink2)">Fronteras SSC · Figura 1</text>`;
+  s += `<text x="${W - m.r - 8}" y="${m.t + 31}" text-anchor="end" font-size="11">Fronteras SSC · Figura 1</text>`;
   s += `<text x="${X(S.R3) + 6}" y="${m.t + 14}" font-size="11" fill="var(--crit)">R2/R3 al pH actual</text>`;
   const pts = R.sscGrid.map((g, i) => ({ ...g, i: i + 1 }));
   pts.forEach((g, i) => {

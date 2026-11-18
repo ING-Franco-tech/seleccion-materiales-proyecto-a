@@ -8,12 +8,13 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/^\u
 const write = (file, value) => fs.writeFileSync(path.join(root, file), value, 'utf8');
 const json = value => JSON.stringify(value).replace(/</g, '\\u003c');
 const originals = require('./originales.js');
-const D = JSON.parse(originals.correctPipeGrades(read('datos/D.json')));
+const D = JSON.parse(originals.correctPipeGrades(read('../../datos/D.json')));
 const groups = JSON.parse(read('datos/asignaciones.json'));
 originals.buildOriginals({D, read, write, root});
-const original = read('salida/sim/originales/' + originals.plant);
+const original = read('../sim/originales/' + originals.plant);
 const template = read('simulador.html');
 const buildEquipment = require('./equipos.js');
+const studentResults = require('./resultados-estudiante.js');
 function extract(pattern, label) {
   const match = original.match(pattern);
   if (!match) throw Error('No se encontró ' + label);
@@ -27,7 +28,7 @@ const scenarioFactory = '(D, render) => {\n' + presets +
   '\nreturn {PRE, aplicarPreset, get estado(){return st;}};\n}';
 
 const glossary = 'datos/materiales_cortos.json';
-const labels = fs.existsSync(path.join(root, glossary)) ? JSON.parse(originals.correctPipeGrades(read(glossary))) : {};
+const labels = JSON.parse(originals.correctPipeGrades(read('../../datos/materiales_cortos.json')));
 const shorten = value => {
   const text = String(value ?? '—');
   if (text.length <= 28) return text;
@@ -173,21 +174,39 @@ for (const [key] of scenarios.PRE) {
       const {eq, pieza, material, mat_corto, proteccion, prot_corta, familia, ca} = r.p;
       return [tag, {s: r.s, vida: r.c?.life ?? null, 'región': r.reg ?? null,
         eq, pieza, material, mat_corto, proteccion, prot_corta, familia, ca, vidaRequerida:r.c?.req ?? null,
+        mecanismos:r.p.mec, checks:r.checks,
+        medidas: solutions.filter(({apply}) => {
+          if (!apply) return false;
+          const {eq, ...fields} = apply;
+          const changed = {...state, eq:{...state.eq, [eq]:{...state.eq[eq],...fields}}};
+          return m.evalPieza(changed, tag).s === 0;
+        }).map(x => x.tit),
         alternativas: solutions.filter(x => x.t === 'material').map(x => x.tit)}];
     }));
   }
 }
 
-fs.mkdirSync(path.join(root, 'salida/sim'), {recursive: true});
-const equipmentPage = buildEquipment(read('salida/sim/originales/Simulador_integrado-planta.html'));
+for (const person of students) {
+  const student = results.grupos[person.grupo].estudiantes[person.id];
+  student.resultados = studentResults(person, student.escenarios, results.escenarios);
+}
+
+fs.mkdirSync(path.join(root, '../sim'), {recursive: true});
+const presetList = scenarios.PRE.map(([key, name]) => ({key, name, state:scenarioStates[key]}));
+const plantPath = '../sim/originales/' + originals.plant;
+write(plantPath, original.replace(/^const PLANTA_HTML = (.*);$/m, (_, encoded) => {
+  const page = buildEquipment.labelEquipment(buildEquipment.syncPresets(JSON.parse(encoded), presetList));
+  return 'const PLANTA_HTML = ' + JSON.stringify(page).replace(/<\//g, '<\\/') + ';';
+}));
+const equipmentPage = buildEquipment(original);
 function page(file, title, scope, roster, description, focus) {
   const group = roster[0].grupo;
   if (scope !== 'integrado') {
     const data = scopedData(roster);
-    write('salida/sim/' + file + '.html', equipmentPage({
-      title, color: groups[group].color, tags: data.eq.map(e => e.tag),
+    write('../sim/' + file + '.html', equipmentPage({
+      title, color: groups[group].color, data: D, tags: data.eq.map(e => e.tag),
       pieces: data.piezas.map(p => p.tag), showWells: file === 'A2_grupo', focus,
-      presets: scenarios.PRE.map(([key, name]) => ({key, name, state:scenarioStates[key]}))
+      presets: presetList
     }));
     return;
   }
@@ -205,19 +224,18 @@ function page(file, title, scope, roster, description, focus) {
         ...roster.map(p => results.grupos[p.grupo].estudiantes[p.id].escenarios[key]))])
     ))
   };
-  write('salida/sim/' + file + '.html', template.replace(/@@(\w+)@@/g, (_, key) => replacements[key]));
+  write('../sim/' + file + '.html', template.replace(/@@(\w+)@@/g, (_, key) => replacements[key]));
 }
 for (const person of students) {
   if (person.simuladores) {
     for (const sim of person.simuladores) {
       page(sim.file, sim.titulo, 'estudiante', [{...person, tags:sim.tags}], '', sim.enfoque);
     }
-    continue;
   }
   page(person.key, person.nombre, 'estudiante', [person],
     person.descripcion || [...person.equipos, ...person.piezas].join(' · '));
 }
-write('salida/COBERTURA.md', '# Cobertura de la presentación\n\n' +
+write('../COBERTURA.md', '# Cobertura de la presentación\n\n' +
   D.piezas.length + ' piezas asignadas exactamente una vez.\n\n' +
   '| Grupo | Estudiante | Equipos y piezas asociadas | Módulos |\n| --- | --- | --- | --- |\n' +
   students.map(person => {
@@ -235,7 +253,8 @@ for (const group of Object.keys(groups)) {
   page(group + '_grupo', 'Grupo ' + group, 'grupo', students.filter(p => p.grupo === group), 'Selección de materiales del grupo');
 }
 page('integrado', 'Proyecto A', 'integrado', students, 'Selección de materiales de la planta');
-write('salida/resultados.json', JSON.stringify(results, null, 2) + '\n');
+require('./consistencia.js')({D, read, write});
+write('../resultados.json', JSON.stringify(results, null, 2) + '\n');
 if (process.argv.includes('--presentacion')) {
   const buildDeck = require('./presentacion.js');
   const presenter = {

@@ -68,11 +68,11 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
     [key, Object.assign({}, ...roster(key).map(person => blocks(person).base))]));
   const eq = Object.fromEntries(D.eq.map(e => [e.tag, e]));
   const slides = [];
-  function add(content, {group, center = false, section = false, part = 'Proyecto A', speaker = '', source = 'Simulador integrado Proyecto A · D.json'} = {}) {
+  function add(content, {group, center = false, section = false, notes, resultId, part = 'Proyecto A', speaker = '', source = 'Simulador integrado Proyecto A · D.json'} = {}) {
     const accent = group && groups[group].color;
     const style = accent ? ` style="--accent:${esc(accent)}"` : '';
-    const guide = presenter[speaker] ?? presenter[part] ?? presenter.general[slides.length] ?? presenter.general.at(-1);
-    slides.push(`<section class="slide${center ? ' center' : ''}${section ? ' sec' : ''}"${style} data-notes="${esc(JSON.stringify(guide))}" data-part="${esc(part)}" data-speaker="${esc(speaker)}" data-source="${esc(source)}" aria-label="${esc(speaker || part)}"><div class="content">${content}</div></section>`);
+    const guide = notes ?? presenter[speaker] ?? presenter[part] ?? presenter.general[slides.length] ?? presenter.general.at(-1);
+    slides.push(`<section class="slide${center ? ' center' : ''}${section ? ' sec' : ''}"${style} ${resultId ? ' data-result-id="' + esc(resultId) + '"' : ''} data-notes="${esc(JSON.stringify(guide))}" data-part="${esc(part)}" data-speaker="${esc(speaker)}" data-source="${esc(source)}" aria-label="${esc(speaker || part)}"><div class="content">${content}</div></section>`);
   }
   const chip = key => `<span class="chip" style="--accent:${esc(groups[key].color)}">${esc(key)}</span>`;
   const provisional = key => results.grupos[key].confirmada ? '' :
@@ -114,8 +114,9 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
         '<span title="' + esc(results.escenarios[k]) + '"><b>' + esc(codes[k] ?? k) + '</b> ' +
         esc(({base:'Base',y10:'Año 10',adv:'Agrio',inh:'Inhibidor',o2:'Oxígeno',bsw:'Agua en crudo',calor:'Calor',pres:'Presión'})[k] ?? results.escenarios[k]) + '</span>').join('') + '</p>';
       const modules = key === 'A1' ? assignments[person.nombre.split(/\s+/).at(-1)].map(([name, title]) =>
-        ({file:moduleFile(name), title})) : person.simuladores?.map(sim =>
+        ({file:moduleFile(name), title, original:true})) : person.simuladores?.map(sim =>
         ({url:'../sim/' + sim.file + '.html', title:sim.titulo, notes:presenter[sim.file]})) ?? [];
+      if (key === 'A1') modules.unshift({url:'../sim/' + person.key + '.html', title:'Evaluación del acta'});
       if (key === 'A2') {
         const file = a2Files[person.key.slice('A2_'.length)];
         if (!file) throw Error('Falta el simulador original de ' + person.key);
@@ -129,6 +130,26 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
         'Estado en los ocho escenarios', legend + scenarioTables + scenarioKey,
         modules),
         {group:key, part:key + ' · ' + areas[key], speaker:shortName(person.nombre), source:'Motor SD-01 a SD-12 · resultados.json'});
+      const {rows, reading} = results.grupos[person.grupo].estudiantes[person.id].resultados;
+      const dato = value => value == null ? 'sin dato' : number(Number(value.toFixed(1)));
+      const fit = (value, full = value) => compact(value.length > 42 ? value.slice(0, 39) + '…' : value, full);
+      const details = table(['Equipo · pieza', 'Original', 'Acta / motor', '¿Coinciden?', 'ISO 15156-2 · B → 10', 'Mecanismos', 'Vida / req. (a)', 'Norma de producto', 'Escenarios'],
+        rows.map(row => [
+          compact(row.tag, row.equipo + ' · ' + row.pieza),
+          esc(row.original), fit(row.materialCorto, row.material), fit(row.coincidencia + (row.nota ? ' · ' + row.nota : '')),
+          row.regiones.map(dato).join(' → '), fit(row.mecanismos.slice(0, 2).join(' · ') || 'sin dato', row.mecanismos.join(' · ') || 'sin dato'),
+          [row.vida, row.requerida].map(dato).join(' / '), fit(row.norma),
+          '<div class="checks">' + keys.map(k => status(data[k][row.tag], results.escenarios[k])).join('') + '</div>'
+        ]));
+      add(`<article class="student-results">${title(key, 'Resultados · ' + person.nombre)}
+        <div class="result-table" tabindex="0" aria-label="Comparación por pieza">${details}</div>
+        ${legend}${scenarioKey}<section class="result-reading"><h3>Lectura de resultados</h3>
+        <ul>${reading.map(item => '<li>' + esc(item) + '</li>').join('')}</ul></section></article>`,
+        {group:key, part:key + ' · Resultados', speaker:shortName(person.nombre), resultId:person.id,
+          source:'Original del estudiante · D.json · Motor SD-01 a SD-12',
+          notes:['30–45 s. En 10 s, compare el material original y el del acta en una fila.',
+            'En 15 s, recorra región ISO 15156-2 de base a año 10, vida frente al requisito y chips.',
+            'En 15 s, señale el escenario y la medida, y cierre con el alcance del original.', ...reading]});
     }
     const byEquipment = new Map();
     for (const p of Object.values(pieces[key])) {
@@ -149,7 +170,7 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
   const notes = Object.fromEntries(D.piezas.map(p => [p.tag, p]));
   const interfaces = [
     ['A1 → A2', 'XT-101-c / FL-201-a', '625 contra 625. El quill de CI-201-a queda 1 m aguas abajo de la brida.', 'XT-101-c', 'FL-201-a'],
-    ['A3 → A2', 'T-302 / P-301', 'Crudo tratado con BS&W ≤ 1 % (SD-10). P-301 distingue 2–4 bar en succión y 40 bar de operación para C5.', 'T-302-b', 'P-301-a'],
+    ['A3 → A2', 'T-302 / P-301', 'Crudo tratado con BS&W ≤ 1 % (SD-10). P-301 distingue 2–4 bar en succión y 45 bar(g) de descarga para C5.', 'T-302-b', 'P-301-a'],
     ['A3 → A1', 'WH-301 / WI-101-a', 'Agua tratada a 70 / 120 bar(g), 60 / 85 °C y O₂ ≤ 50 µg/l. WI-101 registra contraflujo amargo al cierre (r07).', 'WH-301-a', 'WI-101-a']
   ];
   add(simulator('integrado', 'Simulador integrado',
@@ -182,10 +203,8 @@ module.exports = function buildDeck({D, groups, students, results, presenter, re
     <p>¿Qué condición deja primero a cada material fuera de su envolvente?</p>
     <div class="chips">${Object.keys(groups).map(chip).join('')}</div></div>`, {center:true, part:'Cierre'});
 
-  const folder = 'salida/presentacion';
+  const folder = '../presentacion';
   fs.mkdirSync(path.join(root, folder, 'assets'), {recursive:true});
-  fs.copyFileSync(path.join(root, 'ref/MgO_TiO2/MgO_TiO2/assets/logo_uis_bn.png'),
-    path.join(root, folder, 'assets/logo_uis_bn.png'));
   for (const file of ['estilo.css', 'navegacion.js']) write(folder + '/assets/' + file, read('plantilla/' + file));
   write(folder + '/index.html', `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

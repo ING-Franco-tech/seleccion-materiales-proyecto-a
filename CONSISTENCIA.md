@@ -1,0 +1,61 @@
+# Consistencia de datos
+
+Base común de D.json · CO₂ 3,10 % molar, H₂S hoy 0,15 % y año 10 0,30 %, pH 4,6, ocho pozos productores, ocho líneas y ocho ramales. Corte de agua del campo 78 %. El BS&W de C5 y la disponibilidad de inhibidor se toman por equipo. La vida de diseño es de 20 años. Los intervalos de inspección o reemplazo por pieza se leen de la evaluación cuando el acta los fija.
+
+Cada celda numérica sigue el orden **P/Pdis · T/Tdis · inhibidor % · BS&W % · vida en años**. P y Pdis se presentan en bar(g) en los equipos de transferencia y A1. El cálculo de parciales usa presión absoluta. Se conserva la convención documentada de C1 donde el modelo toma directamente la referencia absoluta y las parciales fijadas por pieza, como C5. La succión de P-301 se indica en bar(a). El BS&W de equipo vacío tiene el significado «sin dato» y es distinto del corte de agua global.
+
+| Equipo | D.json | Uniforme e integrado corregido | Integrado original | Estudiante original | Resolución en la copia |
+| --- | --- | --- | --- | --- | --- |
+| CS-101 | 45/50 · 68/85 · sin dato · sin dato · 20 | 45/50 · 68/85 · sin dato · sin dato · 20 | 45/50 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| CS-102 | 45/50 · 68/85 · sin dato · sin dato · 20 | 45/50 · 68/85 · sin dato · sin dato · 20 | 45/50 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| CS-103 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_casing_api_5ct.html) · P 55, T 72, A 95 %, estallido 55, mojado anular 10 % | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| TB-101 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_Tubing_y_niple.html) · P fondo 112, P cabeza 45, T 68, A 98 %, intervención 6 a | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| VR-101 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_varillas_de_bombeo.html) · P fondo 112, P cabeza 45, T 68, A 98 %, intervención 6 a | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| BP-101 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | sin dato | Coincide el integrado |
+| BS-101 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_Bomba_subsuelo.html) · P fondo 112, descarga para carga de bomba 195, T 68, A 98 %, intervención 6 a | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| PK-101 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | 45/112 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_Packer.html) · P 55, T 72, A 98 %, vida 6 a | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| WH-101 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_cabezal.html) · P de diseño 55, T de diseño 85, A 98 % | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| XT-101 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_Arbol_de_navidad.html) · P 45/55, T de diseño 85, H₂S 0,30 %, A 98 %. Choque y aguja usaban también 55 bar de cierre/máxima | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| SSV-101 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | [módulo](sim/originales/modulo/simulador_parametrico_universal_valvula_de_seguridad.html) · P 45/55, T de diseño 85, H₂S 0,30 %, A 98 % | Campos equivalentes sincronizados desde D. Vida de intervención y cargas específicas según el alcance del módulo |
+| SL-101 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | 45/50 · 68/85 · 90 · sin dato · 20 | sin dato | Coincide el integrado |
+| WI-101 | 70/120 · 60/85 · 90 · sin dato · 20 | 70/120 · 60/85 · 90 · sin dato · 20 | 70/120 · 60/85 · 90 · sin dato · 20 | sin dato | Coincide el integrado |
+| FL-201 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | Bayeh · A 90 %; C1 de referencia | A 95 %, 8 pozos y líneas |
+| MF-201 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | Bayeh · T llegada de trabajo 52, A 90 % | T 68, A 95 %, 8 ramales |
+| MF-202 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | Cano · P 38, T 52, A 90 % | P 45, T 68, A 95 %, 8 ramales |
+| V-201 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | Cano · P 38, T 52, A 90 % en el formulario compartido | P 45, T 68, A 95 % |
+| PL-201 | 45/50 · 68/85 · 90 · 1 · 20 | 45/50 · 68/85 · 90 · 1 · 20 | 40/50 · 68/85 · 90 · 1 · 20 | Duque · P 45/50, T 68/85, BS&W 0,5 % | **Integrado corregido**. BS&W 1 %; 45/50 bar(g) |
+| PL-202 | 45/50 · 68/85 · 90 · 1 · 20 | 45/50 · 68/85 · 90 · 1 · 20 | 40/50 · 68/85 · 90 · 1 · 20 | Duque · P 45/50, T 68/85, BS&W 0,5 % | **Integrado corregido**. BS&W 1 %; 45/50 bar(g) |
+| TL-201 | 45/50 · 68/85 · 90 · 1 · 20 | 45/50 · 68/85 · 90 · 1 · 20 | 40/50 · 68/85 · 90 · 1 · 20 | Cortes / Navarro · Cortes: P 38, T salida 52, BS&W 78 %. Navarro: P 45, T 75, BS&W 0,5 % | **Integrado corregido**. P 45/50 bar(g), T 68/85, BS&W 1 % |
+| XV-201 | 45/50 · 68/85 · 90 · 1 · 20 | 45/50 · 68/85 · 90 · 1 · 20 | 40/50 · 68/85 · 90 · 1 · 20 | Bayeh / Navarro · Trims y clases en fichas; sin formulario independiente | **Integrado corregido**. Ficha común de 45/50 bar(g) y 68/85 °C |
+| SP-201 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | Cortes / Navarro · Geometría y protección de soportes | Sin entradas de fluido propias |
+| CI-201 | 60/100 · 68/85 · 90 · sin dato · 20 | 60/100 · 68/85 · 90 · sin dato · 20 | 60/100 · 68/85 · 90 · sin dato · 20 | Fajardo · Caudal de campo y presión de descarga sin valor acordado | 4 800 bbl/d de campo y descarga operativa de 60 bar(g) |
+| FM-201 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | 45/50 · 68/85 · 95 · sin dato · 20 | Cano · Alcance de la instrumentación de prueba; sin formulario independiente | Ficha común de D |
+| EC-201 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | Bayeh / Cortes / Navarro · Protección exterior | Sin entradas de fluido propias |
+| EC-201-KA | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | Bayeh · Aislamiento eléctrico | Sin entradas de fluido propias |
+| P-301 | 45/50 · 68/85 · 90 · 1 · 20 | 45/50 · 68/85 · 90 · 1 · 20 | 40/50 · 68/85 · 90 · 1 · 20 | Navarro · Succión 3 bar(a), T 75, BS&W 0,5 % | **Integrado corregido**. T 68/85, BS&W 1 %. Descarga 45/50 bar(g). Succión indicada por separado |
+| V-301 | 10/15 · 68/85 · sin dato · sin dato · 20 | 10/15 · 68/85 · sin dato · sin dato · 20 | 10/15 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| H-301 | 10/15 · 68/100 · sin dato · sin dato · 20 | 10/15 · 68/100 · sin dato · sin dato · 20 | 10/15 · 68/100 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| T-301 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| T-302 | 1,013/1,1 · 60/85 · sin dato · 1 · 20 | 1,013/1,1 · 60/85 · sin dato · 1 · 20 | 1,013/1,1 · 60/85 · sin dato · 1 · 20 | sin dato | Coincide el integrado |
+| T-303 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| T-304 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | 1,013/1,1 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| L-302 | 10/15 · 68/85 · 90 · 1 · 20 | 10/15 · 68/85 · 90 · 1 · 20 | 10/15 · 68/85 · 90 · 1 · 20 | sin dato | Coincide el integrado |
+| PC-A3 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| V-302 | 10/15 · 68/85 · sin dato · sin dato · 20 | 10/15 · 68/85 · sin dato · sin dato · 20 | 10/15 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| L-301 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| FL-301 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | 1,5/15 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| FG-301 | 3/15 · 68/85 · sin dato · sin dato · 20 | 3/15 · 68/85 · sin dato · sin dato · 20 | 3/15 · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| L-303 | 10/15 · 68/85 · 90 · sin dato · 20 | 10/15 · 68/85 · 90 · sin dato · 20 | 10/15 · 68/85 · 90 · sin dato · 20 | sin dato | Coincide el integrado |
+| F-301 | 6/15 · 60/85 · sin dato · sin dato · 20 | 6/15 · 60/85 · sin dato · sin dato · 20 | 6/15 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| P-302 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| L-304 | 70/120 · 60/85 · 90 · sin dato · 20 | 70/120 · 60/85 · 90 · sin dato · 20 | 70/120 · 60/85 · 90 · sin dato · 20 | sin dato | Coincide el integrado |
+| WH-301 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| Q-301 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | 70/120 · 60/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| D-301 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+| PC-301 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | 1/sin dato · 68/85 · sin dato · sin dato · 20 | sin dato | Coincide el integrado |
+
+Las selecciones originales corresponden al veredicto, recomendación o clase del archivo entregado por el estudiante. Las copias usan la base de D para los campos equivalentes y conservan sus métodos de cálculo. Una pieza sin vínculo inequívoco con el original se muestra como «sin dato». A3 aparece con «—» en la columna Original.
+
+Los ocho escenarios, los resultados en JSON y la guía N se generan con el motor de la envolvente. El visor de planta usa esos mismos estados y el simulador uniforme permite pasar a un estado editado. Las fichas de clase y los cálculos de las copias originales sirven para la comparación por estudiante.
+
+Véase [Correcciones de los originales](sim/originales/CORRECCIONES.md) para las particularidades de cada módulo.

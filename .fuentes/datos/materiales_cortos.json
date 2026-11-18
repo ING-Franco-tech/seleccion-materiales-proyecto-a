@@ -1,0 +1,582 @@
+{
+  "CS-101": {
+    "mat_corto": "J55",
+    "prot_corta": "Cemento a superficie"
+  },
+  "CS-102": {
+    "mat_corto": "K55",
+    "prot_corta": "Cemento hasta la zapata de…"
+  },
+  "CS-103-a": {
+    "mat_corto": "L80 tipo 1 + CRA 625",
+    "prot_corta": "Barrera: revestimiento…"
+  },
+  "CS-103-b": {
+    "mat_corto": "L80 tipo 1",
+    "prot_corta": "Inhibidor por anular en…"
+  },
+  "CS-103-c": {
+    "mat_corto": "L80 tipo 1",
+    "prot_corta": "Cemento a superficie"
+  },
+  "TB-101": {
+    "mat_corto": "L80 tipo 1",
+    "prot_corta": "Inhibidor por capilar…"
+  },
+  "TB-101-a": {
+    "mat_corto": "Acero 4130",
+    "prot_corta": "Reemplazo junto con el…"
+  },
+  "TB-101-b": {
+    "mat_corto": "Capilar de 1/4 in (6,35…",
+    "prot_corta": "Inhibidor filmógeno, el…"
+  },
+  "VR-101": {
+    "mat_corto": "Grado C (AISI 10XX a…",
+    "prot_corta": "Película de inhibidor T1;…"
+  },
+  "VR-101-b": {
+    "mat_corto": "Acople con metal aspergido…",
+    "prot_corta": "Película de inhibidor; guías"
+  },
+  "BP-101": {
+    "mat_corto": "Acero 10XX <= 22 HRC…",
+    "prot_corta": "Pulido y chequeo del…"
+  },
+  "BP-101-b": {
+    "mat_corto": "Te y cuerpo del prensaestop…",
+    "prot_corta": "Sistema de pintura de alto…"
+  },
+  "BP-101-c": {
+    "mat_corto": "Estructura y contrapesos…",
+    "prot_corta": "Sistema de pintura de alto…"
+  },
+  "BS-101-a": {
+    "mat_corto": "Acero 10XX <= 22 HRC…",
+    "prot_corta": "Inhibidor T1; desmontaje y…"
+  },
+  "BS-101-b": {
+    "mat_corto": "Acero 10XX con núcleo…",
+    "prot_corta": "Inhibidor T1; reemplazo…"
+  },
+  "BS-101-c": {
+    "mat_corto": "Carburo de tungsteno con…",
+    "prot_corta": "Reemplazo con la bomba"
+  },
+  "BS-101-d": {
+    "mat_corto": "Acero 4130",
+    "prot_corta": "Reemplazo con la bomba;…"
+  },
+  "BS-101-e": {
+    "mat_corto": "Copas de poliamida con…",
+    "prot_corta": "Reemplazo en cada reacondic…"
+  },
+  "PK-101": {
+    "mat_corto": "Cuerpo del ancla de acero…",
+    "prot_corta": "Sin elastómeros (ancla…"
+  },
+  "WH-101-a": {
+    "mat_corto": "4130 + 625",
+    "prot_corta": "625 por soldadura en zonas…"
+  },
+  "WH-101-b": {
+    "mat_corto": "Mandriles de baja aleación…",
+    "prot_corta": "625 en sellos; dureza…"
+  },
+  "WH-101-c": {
+    "mat_corto": "Baja aleación <= 22 HRC o…",
+    "prot_corta": "Pintura C4; placa sobre…"
+  },
+  "XT-101-a": {
+    "mat_corto": "4130 + 625",
+    "prot_corta": "625 en superficies mojadas…"
+  },
+  "XT-101-b": {
+    "mat_corto": "Compuertas y asientos en…",
+    "prot_corta": "Trim con resistencia…"
+  },
+  "XT-101-c": {
+    "mat_corto": "4130 + 625",
+    "prot_corta": "625 en todo el diámetro…"
+  },
+  "XT-101-d": {
+    "mat_corto": "NO se instala choke en A1…",
+    "prot_corta": "Definir lado de la brida…"
+  },
+  "XT-101-e": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "Lotes de inhibidor por el…"
+  },
+  "SSV-101-a": {
+    "mat_corto": "Cuerpo de baja aleación…",
+    "prot_corta": "Pintura C4; prueba…"
+  },
+  "SSV-101-b": {
+    "mat_corto": "Tubería de instrumento de…",
+    "prot_corta": "Sin recubrimiento interior;…"
+  },
+  "SSV-101-c": {
+    "mat_corto": "Partes mojadas del…",
+    "prot_corta": "Drenaje y purga periódicos…"
+  },
+  "SL-101-a": {
+    "mat_corto": "Elastómero hidrogenado o…",
+    "prot_corta": "Reemplazo programado; sin…"
+  },
+  "SL-101-b": {
+    "mat_corto": "Anillo de acero bajo…",
+    "prot_corta": "Reemplazo en cada desmontaj…"
+  },
+  "SL-101-c": {
+    "mat_corto": "ASTM A193 B7M con tuercas…",
+    "prot_corta": "Recubrimiento del espárrago…"
+  },
+  "WI-101-a": {
+    "mat_corto": "L80 tipo 1 + CRA tipo 4",
+    "prot_corta": "Packer con fluido de…"
+  },
+  "WI-101-b": {
+    "mat_corto": "L80 tipo 1 + GRE",
+    "prot_corta": "Barrera: liner GRE; el…"
+  },
+  "WI-101-c": {
+    "mat_corto": "4130 + 625",
+    "prot_corta": "Fluido de empaque:…"
+  },
+  "FL-201-a": {
+    "mat_corto": "L360NS PSL2 + CRA 825/625",
+    "prot_corta": "Barrera CRA interna en los…"
+  },
+  "FL-201-b": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Inhibidor continuo…"
+  },
+  "FL-201-t": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Carrete de sacrificio…"
+  },
+  "MF-201-a": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Inhibidor CI-201-a que…"
+  },
+  "MF-201-b": {
+    "mat_corto": "WCB / CA6NM",
+    "prot_corta": "Mismo inhibidor del múltiple"
+  },
+  "MF-202-a": {
+    "mat_corto": "L360NS PSL2 + CRA 825/625",
+    "prot_corta": "Barrera CRA; sin crédito…"
+  },
+  "MF-202-b": {
+    "mat_corto": "WCB / CA6NM",
+    "prot_corta": "Barrera 625; purga de…"
+  },
+  "V-201-a": {
+    "mat_corto": "A516-70 HIC",
+    "prot_corta": "Revestimiento interno…"
+  },
+  "V-201-b": {
+    "mat_corto": "Cuellos de boquilla en…",
+    "prot_corta": "Revestimiento interno…"
+  },
+  "V-201-c": {
+    "mat_corto": "Deflector y rompevórtices…",
+    "prot_corta": "ninguna"
+  },
+  "V-201-d": {
+    "mat_corto": "Partes mojadas de transmiso…",
+    "prot_corta": "Purga periódica de líneas…"
+  },
+  "PL-201-a": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Inhibidor CI-201-b;…"
+  },
+  "PL-202-a": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Revestimiento interno;…"
+  },
+  "PL-201-c / PL-202-c": {
+    "mat_corto": "Conexiones en L360NS sin…",
+    "prot_corta": "Mismo inhibidor"
+  },
+  "TL-201-a": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Inhibidor CI-201-b A 90 %…"
+  },
+  "TL-201-b": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Exterior EC-201-a;…"
+  },
+  "TL-201-c": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Interior como TL-201-a con…"
+  },
+  "TL-201-d": {
+    "mat_corto": "L360NS PSL2",
+    "prot_corta": "Igual a TL-201-a"
+  },
+  "XV-201-a": {
+    "mat_corto": "WCB / CA6NM",
+    "prot_corta": "Inhibidor CI-201-b;…"
+  },
+  "XV-201-b": {
+    "mat_corto": "WCB / CA6NM",
+    "prot_corta": "ninguna"
+  },
+  "XV-201-c": {
+    "mat_corto": "WCB / CA6NM",
+    "prot_corta": "Barrera 625 en la entrada…"
+  },
+  "SP-201-a": {
+    "mat_corto": "Acero estructural ASTM A36…",
+    "prot_corta": "Galvanizado + Zn(R) +…"
+  },
+  "SP-201-b": {
+    "mat_corto": "Estructura en acero…",
+    "prot_corta": "Pintura de alto espesor en…"
+  },
+  "CI-201-a": {
+    "mat_corto": "Quill en 625 recocido…",
+    "prot_corta": "Kit aislante del accesorio…"
+  },
+  "CI-201-b": {
+    "mat_corto": "Quill en 625 macizo…",
+    "prot_corta": "A 90 % (SD-07 T4) en…"
+  },
+  "CI-201-c": {
+    "mat_corto": "GRP viniléster",
+    "prot_corta": "Contención secundaria;…"
+  },
+  "FM-201-a": {
+    "mat_corto": "Ultrasónico no intrusivo…",
+    "prot_corta": "Igual a la línea"
+  },
+  "FM-201-b": {
+    "mat_corto": "Sonda retráctil en 625…",
+    "prot_corta": "Purga antes del muestreo"
+  },
+  "FM-201-c": {
+    "mat_corto": "Accesorios de acceso A105…",
+    "prot_corta": "Registro mensual; es el…"
+  },
+  "EC-201-a": {
+    "mat_corto": "Zn(R) + EP/PUR",
+    "prot_corta": "Sistema de pintura"
+  },
+  "EC-201-b": {
+    "mat_corto": "Epóxico multicapa líquido…",
+    "prot_corta": "Recubrimiento + PC…"
+  },
+  "EC-201-c": {
+    "mat_corto": "Vano aéreo: Zn(R) + EP/PUR…",
+    "prot_corta": "Recubrimiento + PC continua"
+  },
+  "EC-201-e": {
+    "mat_corto": "Ánodos galvánicos",
+    "prot_corta": "PC galvánica"
+  },
+  "EC-201-f": {
+    "mat_corto": "PC corriente impresa",
+    "prot_corta": "PC corriente impresa"
+  },
+  "EC-201-KA": {
+    "mat_corto": "Kit de brida tipo F (cara…",
+    "prot_corta": "Prueba de aislamiento y…"
+  },
+  "P-301-a": {
+    "mat_corto": "Carcasa de acero al…",
+    "prot_corta": "Inhibidor CI-201-b aguas…"
+  },
+  "P-301-b": {
+    "mat_corto": "CA6NM (J91540) <= 23 HRC,…",
+    "prot_corta": "ninguna"
+  },
+  "P-301-c": {
+    "mat_corto": "Eje en S41000 <= 22 HRC…",
+    "prot_corta": "ninguna"
+  },
+  "P-301-d": {
+    "mat_corto": "Sello doble con caras de…",
+    "prot_corta": "Fluido barrera"
+  },
+  "P-301-e": {
+    "mat_corto": "Base en acero estructural…",
+    "prot_corta": "Zn(R) + EP/PUR"
+  },
+  "P-301-f": {
+    "mat_corto": "Carrete L360NS sin costura…",
+    "prot_corta": "Inhibidor CI-201-b (A 90…"
+  },
+  "V-301-a": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi novolaca interno"
+  },
+  "V-301-b": {
+    "mat_corto": "Bridas y cuellos forjados…",
+    "prot_corta": "Boquillas >= 6 in:…"
+  },
+  "V-301-c": {
+    "mat_corto": "Placa de acero al carbono…",
+    "prot_corta": "Ninguna (pieza de sacrifici…"
+  },
+  "V-301-d": {
+    "mat_corto": "Vertedero y rompevórtices:…",
+    "prot_corta": "Vertedero y rompevórtices:…"
+  },
+  "V-301-e": {
+    "mat_corto": "Espárragos ASTM A193 B7M…",
+    "prot_corta": "Recubrimiento externo de…"
+  },
+  "V-301-f": {
+    "mat_corto": "Carrete desde la brida de…",
+    "prot_corta": "Carrete aguas arriba:…"
+  },
+  "V-301-g": {
+    "mat_corto": "GRP viniléster",
+    "prot_corta": "Ninguna (no metálico);…"
+  },
+  "H-301-a": {
+    "mat_corto": "Igual que V-301-a: chapa…",
+    "prot_corta": "Revestimiento orgánico…"
+  },
+  "H-301-b": {
+    "mat_corto": "Tubo de fuego en U…",
+    "prot_corta": "Ninguna orgánica (temperatu…"
+  },
+  "H-301-c": {
+    "mat_corto": "Mismo tubo de acero al…",
+    "prot_corta": "Sin revestimiento;…"
+  },
+  "T-301-a": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-301-b": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-301-c": {
+    "mat_corto": "La misma chapa del fondo",
+    "prot_corta": "PC galvánica"
+  },
+  "T-301-d": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi fenólico"
+  },
+  "T-301-e": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi fenólico"
+  },
+  "T-301-f": {
+    "mat_corto": "Toberas forjadas A105 y…",
+    "prot_corta": "Interior de toberas…"
+  },
+  "T-302-a": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-302-b": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-302-c": {
+    "mat_corto": "La misma chapa del fondo",
+    "prot_corta": "PC galvánica"
+  },
+  "T-302-d": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Sin revestimiento interno…"
+  },
+  "T-302-e": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi fenólico"
+  },
+  "T-302-f": {
+    "mat_corto": "Toberas A105 y cuellos sin…",
+    "prot_corta": "Aislamiento eléctrico…"
+  },
+  "T-303-c": {
+    "mat_corto": "La misma chapa del fondo…",
+    "prot_corta": "PC galvánica"
+  },
+  "T-304-c": {
+    "mat_corto": "La misma chapa del fondo…",
+    "prot_corta": "PC galvánica"
+  },
+  "L-302-a": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "Inhibidor de Q-301 (PI-2,…"
+  },
+  "L-302-b": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "Inhibidor CI-201-b de A2,…"
+  },
+  "L-302-q": {
+    "mat_corto": "Forja ASTM A105 normalizada…",
+    "prot_corta": "625 en lo mojado; quill de…"
+  },
+  "PC-A3": {
+    "mat_corto": "Recubrimiento externo…",
+    "prot_corta": "PC galvánica"
+  },
+  "V-302": {
+    "mat_corto": "Chapa SA-516 Gr 70…",
+    "prot_corta": "Mismo revestimiento…"
+  },
+  "L-301-a": {
+    "mat_corto": "A312 TP316L",
+    "prot_corta": "Ninguna interna; pendiente…"
+  },
+  "L-301-b": {
+    "mat_corto": "X42 / L290 PSL2",
+    "prot_corta": "Pendiente continua hacia…"
+  },
+  "L-301-c": {
+    "mat_corto": "A312 TP316L",
+    "prot_corta": "Arrestallamas en cada…"
+  },
+  "FL-301-a": {
+    "mat_corto": "Chapa SA-516 Gr 70…",
+    "prot_corta": "Sin revestimiento; drenaje…"
+  },
+  "FL-301-b": {
+    "mat_corto": "Sello de velocidad en UNS…",
+    "prot_corta": "Barrido continuo con gas…"
+  },
+  "FL-301-c": {
+    "mat_corto": "Punta y deflectores en UNS…",
+    "prot_corta": "Ninguna; inspección visual…"
+  },
+  "FL-301-d": {
+    "mat_corto": "X42 / L290 PSL2",
+    "prot_corta": "Interior: CA; exterior:…"
+  },
+  "FG-301-a": {
+    "mat_corto": "A312 TP316L",
+    "prot_corta": "Ninguna; drenaje de…"
+  },
+  "FG-301-b": {
+    "mat_corto": "Recipientes SA-516 Gr 70…",
+    "prot_corta": "Revestimiento interno…"
+  },
+  "FG-301-c": {
+    "mat_corto": "NO_APLICA",
+    "prot_corta": "NO_APLICA"
+  },
+  "FG-301-d": {
+    "mat_corto": "A312 TP316L",
+    "prot_corta": "Calentador eléctrico de…"
+  },
+  "FG-301-e": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "Calentador eléctrico…"
+  },
+  "FG-301-f": {
+    "mat_corto": "A312 TP316L",
+    "prot_corta": "Ninguna (material);…"
+  },
+  "L-303": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "Q-301 en PI-1 (salida de…"
+  },
+  "T-303-a": {
+    "mat_corto": "A36 / A516-70",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-303-b": {
+    "mat_corto": "A36 / A516-70",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-303-d": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi fenólico"
+  },
+  "T-304-a": {
+    "mat_corto": "A36 / A516-70",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-304-b": {
+    "mat_corto": "A36 / A516-70",
+    "prot_corta": "Epoxi con escama de vidrio"
+  },
+  "T-304-d": {
+    "mat_corto": "Chapa de acero al carbono",
+    "prot_corta": "Epoxi fenólico"
+  },
+  "F-301-a": {
+    "mat_corto": "Recipiente de acero al…",
+    "prot_corta": "Epoxi novolac resistente a…"
+  },
+  "F-301-b": {
+    "mat_corto": "Dúplex 22Cr (UNS S31803/S32…",
+    "prot_corta": "Soportes de 22Cr pintados…"
+  },
+  "P-302-c": {
+    "mat_corto": "Dúplex 22Cr fundido (ASTM…",
+    "prot_corta": "ninguna (material resistent…"
+  },
+  "P-302-i": {
+    "mat_corto": "Dúplex 22Cr fundido (misma…",
+    "prot_corta": "ninguna"
+  },
+  "P-302-e": {
+    "mat_corto": "Dúplex 22Cr forjado (UNS…",
+    "prot_corta": "ninguna"
+  },
+  "P-302-s": {
+    "mat_corto": "Sello de cartucho doble…",
+    "prot_corta": "fluido barrera a presión…"
+  },
+  "L-304-a": {
+    "mat_corto": "GRE",
+    "prot_corta": "Ninguna química exigida…"
+  },
+  "L-304-a-R": {
+    "mat_corto": "Tubo de acero al carbono…",
+    "prot_corta": "Revestimiento interno…"
+  },
+  "L-304-b": {
+    "mat_corto": "GRE",
+    "prot_corta": "ninguna; cama de arena y…"
+  },
+  "L-304-c": {
+    "mat_corto": "ASTM A106 B",
+    "prot_corta": "inhibidor de PI-4 (succión…"
+  },
+  "WH-301-a": {
+    "mat_corto": "4130 + 625",
+    "prot_corta": "625 + pintura C4"
+  },
+  "WH-301-b": {
+    "mat_corto": "Recubrimiento por soldadura…",
+    "prot_corta": "ninguna adicional"
+  },
+  "WH-301-c": {
+    "mat_corto": "ASTM A193 B7 con tuercas…",
+    "prot_corta": "recubrimiento del espárrago"
+  },
+  "Q-301-a": {
+    "mat_corto": "Tanque y tubería de…",
+    "prot_corta": "ninguna"
+  },
+  "Q-301-b": {
+    "mat_corto": "GRP viniléster",
+    "prot_corta": "ninguna"
+  },
+  "Q-301-c": {
+    "mat_corto": "Tanque GRP o 316L; bomba…",
+    "prot_corta": "ninguna"
+  },
+  "Q-301-d": {
+    "mat_corto": "Tanque y línea 316L; bomba…",
+    "prot_corta": "ninguna"
+  },
+  "D-301": {
+    "mat_corto": "Tubería GRP epóxico;…",
+    "prot_corta": "ninguna"
+  },
+  "PC-301": {
+    "mat_corto": "Geomembrana HDPE doble de…",
+    "prot_corta": "ninguna"
+  }
+}

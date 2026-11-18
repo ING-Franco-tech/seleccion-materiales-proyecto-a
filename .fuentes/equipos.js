@@ -5,6 +5,38 @@ const escapeHTML = value => value.replace(/[&<>"]/g, char =>
 const serialize = value => JSON.stringify(value).replace(/</g, '\\u003c');
 const {wellsDiagram} = require('./originales.js');
 
+function syncPresets(html, presets) {
+  const declaration = `const ESC = ${serialize(presets)}.map(({key, name, state}) => ({
+  k:key, n:name, f:target => Object.assign(target, {G:{...target.G,...state.G}, eq:JSON.parse(JSON.stringify(state.eq)), preset:true, bio:target.G.BIO})
+}));`;
+  return html
+    .replace(/const ESC = \[[\s\S]*?\n\];/, () => declaration)
+    .replaceAll("aplicarEsc('acta')", "aplicarEsc('base')")
+    .replaceAll("this.esc === 'acta'", "this.esc === 'base'")
+    .replace("esc: 'acta', play:", "esc: 'base', play:")
+    .replace("if (!keepEsc) this.esc = '';", "if (!keepEsc) { this.esc = ''; delete ST.preset; }")
+    .replace('const { E, her, S } = efectivo(st);',
+      'const { E, her, S } = st.preset ? {E:st, her:{}, S:M.planta(st)} : efectivo(st);')
+    .replace('let ST = estadoActa();','let ST = estadoActa(); ST.preset = true; ST.bio = ST.G.BIO;');
+}
+
+function labelEquipment(html) {
+  return html
+    .replace("12, H * .3 - 6", "12, H * .29")
+    .replace("ci0 + 4, y0 - 14", "W * .48, H * (o.tag === 'FL-201' ? .72 : .29)")
+    .replace("ci0 - 40, y0 - 46", "12, H * .19")
+    .replace("DIB.etiquetas(c, W, H, asig, EQV.res, EQV.sel)", "[]")
+    .replace(/const hit = EQV\.cajas\.some[^\r\n]+/, `const hit = Object.entries(EQV.zonas).find(([,z]) =>
+      x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h);
+    ev.target.title = hit ? hit[0] + ' · ' + EQV.res[hit[0]].p.pieza : '';`)
+    .replace("c.fillText('pérdida de contención'", "c.fillText('Fuga'")
+    .replace("lab: 'pérdida de contención'", "lab: ''")
+    .replace('lab: ' + '\`vida de diseño \${vida} a\`', "lab: ''")
+    .replace('lab: ' + '\`año \${fmt(E.G.anio, 1)}\`', "lab: ''")
+    .replace('<canvas id="cvVida"', '<p id="vidaLeyenda" style="margin:6px 12px 0;font-size:12px"></p><canvas id="cvVida"')
+    .replace("  let top = 1.25;", "  if ($('#cvVida').clientWidth < 180) return; $('#vidaLeyenda').textContent = 'Rojo · pérdida de contención al 100 %  |  Violeta · vida de diseño ' + vida + ' a  |  Azul · año ' + fmt(E.G.anio, 1);");
+}
+
 // PLANTA_HTML is the complete offline build of the user's “Simulador de planta”.
 // Keep its drawing, physics, corrosion cards and equipment controls together.
 module.exports = function buildEquipment(original) {
@@ -12,7 +44,7 @@ module.exports = function buildEquipment(original) {
   if (!bundle) throw Error('No se encontró el simulador de planta incrustado');
   const source = JSON.parse(bundle[1]);
   const dataLine = source.match(/^const D=(.*);$/m);
-  const data = JSON.parse(dataLine[1]);
+  const embeddedData = JSON.parse(dataLine[1]);
 
   function replace(html, search, replacement) {
     if (typeof search === 'string' ? !html.includes(search) : !search.test(html))
@@ -20,7 +52,7 @@ module.exports = function buildEquipment(original) {
     return html.replace(search, () => replacement);
   }
 
-  return ({title, color, tags, pieces, showWells, focus, presets}) => {
+  return ({title, color, data = embeddedData, tags, pieces, showWells, focus, presets}) => {
     const eq = tags.map(tag => data.eq.find(e => e.tag === tag));
     const byTag = new Map(data.piezas.map(p => [p.tag, p]));
     const scopedPieces = pieces.map(tag => byTag.get(tag));
@@ -67,15 +99,23 @@ module.exports = function buildEquipment(original) {
     rr(c, zone.x - 4, zone.y - 4, zone.w + 8, zone.h + 8, 8); c.stroke();
     return Z;`));
     }
+    html = labelEquipment(html)
+      .replace("aria-label=\"Material de ${p.tag}\"", "title=\"${esc(r.mat?.n ?? p.material)}\" aria-label=\"Material de ${p.tag}\"")
+      .replace("p.material.replace(/\(.*?\)/g, '').slice(0, 60)", "p.mat_corto ?? p.material")
+      .replace("Presión de operación, bar", "Presión de operación, bar(g)");
+    html = html.replace("  $('#eqIzq').innerHTML = s;", `  const gFields = [
+    ['CO2','CO₂ en gas, % mol',0,10,.1], ['H2Shoy','H₂S hoy, % mol',0,1.5,.01],
+    ['H2S10','H₂S año 10, % mol',0,1.5,.01], ['pH','pH del agua',3.4,6.5,.05],
+    ['bsw','Corte de agua del campo, %',5,98,1], ['vida','Vida de diseño, años',5,30,1]
+  ];
+  const globalOpen = $('#condicionesGlobales')?.open;
+  s += '<details class="pnl" id="condicionesGlobales"' + (globalOpen ? ' open' : '') + '><summary>Condiciones globales</summary><div class="cu">' +
+    gFields.map(([key,label,min,max,step]) => sliderH('global-'+key,label,ST.G[key],min,max,step,'',null,false)).join('') +
+    '<p class="nota">La ficha de cada pieza indica su intervalo y si usa una presión parcial de H₂S propia.</p></div></details>';
+  $('#eqIzq').innerHTML = s;
+  gFields.forEach(([key]) => bindSl('global-'+key, value => { ST.G[key] = value; APP.cambio('Condiciones globales'); }));`);
     html = replace(html, 'const M = Motor(D)', 'const M = Motor({...D, eq: procesoEq})');
-    html = replace(html, /const ESC = \[[\s\S]*?\n\];/, `const ESC = ${serialize(presets)}.map(({key, name, state}) => ({
-      k:key, n:name, f:target => Object.assign(target, JSON.parse(JSON.stringify(state)), {preset:true})
-    }));`);
-    html = replace(html, "esc: 'acta', play:", "esc: 'base', play:");
-    html = replace(html, "if (!keepEsc) this.esc = '';",
-      "if (!keepEsc) { this.esc = ''; delete ST.preset; }");
-    html = replace(html, 'const { E, her, S } = efectivo(st);',
-      'const { E, her, S } = st.preset ? {E:st, her:{}, S:M.planta(st)} : efectivo(st);');
+    html = syncPresets(html, presets);
     html = replace(html, /<nav class="nav"[\s\S]*?<\/nav>/,
       '<div class="equipment-picker"><span id="navEq" hidden></span>' +
       '<div id="equipmentTabs" role="group" aria-label="Equipos asignados"></div>' +
@@ -155,6 +195,9 @@ new ResizeObserver(() => {
 #equipmentTabs button, #equipmentScenario { border:1px solid var(--line2); background:#fff; border-radius:6px; padding:4px 7px; font-weight:600; }
 #equipmentTabs button[aria-pressed=true] { background:color-mix(in srgb,var(--grupo),#fff 72%); border-color:var(--grupo); }
 #equipmentScenario { max-width:100%; font-size:12px; }
+.pz select {width:100%;min-width:0;max-width:100%;text-overflow:ellipsis;}
+#condicionesGlobales summary {cursor:pointer;padding:9px 12px;font-weight:650;}
+.escena .hud {pointer-events:none;}
 .wells svg {display:block;max-width:100%;height:auto}
 .wells[open] {flex-basis:100%}
 #v-equipo .equipo { grid-template-columns:minmax(0,22fr) minmax(0,55fr) minmax(0,23fr); height:100%; min-height:0; overflow:hidden; }
@@ -193,3 +236,7 @@ new ResizeObserver(() => {
     </svg><canvas id="cvEq" aria-label="Corte animado del equipo"></canvas>`);
   };
 };
+
+module.exports.syncPresets = syncPresets;
+
+module.exports.labelEquipment = labelEquipment;
