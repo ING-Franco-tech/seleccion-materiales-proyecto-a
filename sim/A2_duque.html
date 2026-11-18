@@ -406,7 +406,7 @@ window.addEventListener('message', event => {
   #v-equipo .equipo { grid-template-columns:minmax(0,1fr); }
   .eq-centro { grid-row:1; }
 }
-</style></head>
+</style><style id="sin-logo">.logo>svg{display:none!important}</style></head>
 <body>
 <script>if (new URLSearchParams(location.search).get('embed') === '1' || window.parent !== window) document.documentElement.classList.add('embebido');</script>
 <div class="app">
