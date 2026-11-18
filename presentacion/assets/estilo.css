@@ -90,8 +90,6 @@ h3 {font:700 23px var(--slab);color:var(--navy);margin:0 0 15px}
 .sim-tabs {display:flex;gap:10px;flex-wrap:wrap}
 .sim-tabs button {flex:1;border:1px solid #bec7c2;border-radius:8px;background:#fff;color:var(--ink);padding:10px 14px;min-height:46px;font:inherit;font-size:18px;font-weight:650;cursor:pointer}
 .sim-tabs [aria-selected="true"] {background:color-mix(in srgb,var(--accent),white 78%);border-color:var(--accent);box-shadow:inset 0 -3px var(--accent)}
-.sim-tabs [data-original] {flex:0 0 auto;background:transparent;font-size:14px;font-weight:550}
-.sim-tabs [data-original][aria-selected="true"] {color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .sim-head {display:flex;align-items:center;gap:12px;min-width:0;min-height:40px}
 .sim-head .chip,.sim-head h2,.sim-head p {margin:0}
 .sim-head .chip {--accent:var(--green)}
