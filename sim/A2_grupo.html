@@ -901,12 +901,84 @@ const MATS = [
     ssc: { tipo: 'NI', T: 200, p: 700 }, tLoc: { aer: 70, deaer: 150 }, aplica: 'Componentes críticos pequeños', ref: 'ISO 15156-3, A.14', conf: 't', costoSup: true },
   { k: 'grp', n: 'GRE / GRP epóxico', uns: 'ISO 14692', cls: 'NOMET', i: 1.8, p: 12, cr: 0, mo: 0, n_: 0, E: null,
     ssc: { tipo: 'NO' }, tLoc: null, tmax: 93, pmax: 100, aplica: 'Líneas de agua y de baja presión; no expuestas a fuego', ref: 'ISO 14692 (T y P según la calificación del fabricante)', conf: 't' },
+  /* ---- Catálogo ampliado para la selección automática. i = costo relativo al acero al carbono; p = plazo en semanas.
+     conf: 'n' límite tomado de la norma citada; 't' tamizaje de práctica de la industria que debe confirmarse. t: tipos de equipo donde aplica. ---- */
+  // Aceros al carbono y de baja aleación
+  { k: 'a106b', n: 'Tubo sin costura ASTM A106 Gr B', uns: 'K03006', cls: 'CS', i: 1.1, p: 6, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['linea', 'multiple', 'sepH', 'vertical', 'tea', 'cabezal', 'tratador'], aplica: 'Tubería de proceso', ref: 'ASTM A106; ISO 15156-2, A.2 (≤ 22 HRC)', conf: 'n' },
+  { k: 'a53b', n: 'Tubo ASTM A53 Gr B (ERW)', uns: 'K03005', cls: 'CS', i: 0.95, p: 4, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['linea', 'tanque', 'fosa', 'skid'], aplica: 'Tubería de servicio general', ref: 'ASTM A53; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'a333', n: 'Tubo ASTM A333 Gr 6 (baja temperatura)', uns: 'K03006', cls: 'CS', i: 1.3, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['linea', 'multiple', 'vertical', 'tea'], aplica: 'Tubería con exigencia de tenacidad', ref: 'ASTM A333; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'l245ns', n: 'Tubo ISO 3183 L245NS PSL 2 (servicio amargo)', uns: 'ISO 3183 anexo H', cls: 'CS', i: 1.05, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['linea', 'multiple', 'tea'], aplica: 'Líneas de flujo y transferencia', ref: 'ISO 3183 anexo H (sufijo S); ISO 15156-2, A.2 y anexo B (HIC)', conf: 'n' },
+  { k: 'l290ns', n: 'Tubo ISO 3183 L290NS PSL 2 (servicio amargo)', uns: 'ISO 3183 anexo H', cls: 'CS', i: 1.1, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['linea', 'multiple', 'tea'], aplica: 'Líneas de flujo y transferencia', ref: 'ISO 3183 anexo H; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'l360ns', n: 'Tubo ISO 3183 L360NS PSL 2 (servicio amargo)', uns: 'ISO 3183 anexo H', cls: 'CS', i: 1.15, p: 10, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['linea', 'multiple', 'tea'], aplica: 'Líneas de flujo y transferencia', ref: 'ISO 3183 anexo H; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'l415ns', n: 'Tubo ISO 3183 L415NS PSL 2 (servicio amargo)', uns: 'ISO 3183 anexo H', cls: 'CS', i: 1.25, p: 12, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['linea', 'multiple'], aplica: 'Líneas de mayor presión', ref: 'ISO 3183 anexo H; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'l450ns', n: 'Tubo ISO 3183 L450QS PSL 2 (servicio amargo)', uns: 'ISO 3183 anexo H', cls: 'CS', i: 1.35, p: 14, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['linea'], aplica: 'Líneas de alta presión', ref: 'ISO 3183 anexo H; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'a516_60', n: 'Chapa SA-516 Gr 60 N con ensayo HIC', uns: 'K02100', cls: 'CS', i: 1.55, p: 16, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'HIC' }, tLoc: null, t: ['sepH', 'tratador', 'vertical', 'tanque', 'tea'], aplica: 'Recipientes a presión', ref: 'ASME SA-516; ISO 15156-2, A.2 y anexo B', conf: 'n' },
+  { k: 'a285c', n: 'Chapa SA-285 Gr C (tanques atmosféricos)', uns: 'K02801', cls: 'CS', i: 0.9, p: 6, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['tanque', 'fosa'], aplica: 'Tanques atmosféricos', ref: 'ASME SA-285; API 650', conf: 'n' },
+  { k: 'a36', n: 'Acero estructural ASTM A36', uns: 'K02600', cls: 'CS', i: 0.85, p: 3, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['tanque', 'fosa', 'skid', 'pc'], aplica: 'Tanques atmosféricos, soportes, estructura', ref: 'ASTM A36', conf: 'n' },
+  { k: 'a105n', n: 'Forja ASTM A105N ≤ 187 HBW', uns: 'K03504', cls: 'CS', i: 1.2, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['cabezal', 'multiple', 'sepH', 'linea', 'bomba', 'vertical', 'tratador'], aplica: 'Bridas, accesorios y cuerpos forjados', ref: 'ASTM A105; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'lf2', n: 'Forja ASTM A350 LF2 cl. 1', uns: 'K03011', cls: 'CS', i: 1.4, p: 10, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['cabezal', 'multiple', 'linea', 'vertical'], aplica: 'Bridas con exigencia de tenacidad', ref: 'ASTM A350; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'wcb', n: 'Fundición ASTM A216 WCB ≤ 22 HRC', uns: 'J03002', cls: 'CS', i: 1.3, p: 12, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['bomba', 'cabezal', 'linea', 'multiple'], aplica: 'Cuerpos de válvula y carcasas de bomba', ref: 'ASTM A216; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'lcc', n: 'Fundición ASTM A352 LCC', uns: 'J02505', cls: 'CS', i: 1.5, p: 14, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['bomba', 'cabezal', 'linea'], aplica: 'Válvulas con exigencia de tenacidad', ref: 'ASTM A352; ISO 15156-2, A.2', conf: 'n' },
+  { k: '4130', n: 'Baja aleación AISI 4130 ≤ 22 HRC', uns: 'G41300', cls: 'CS', i: 1.6, p: 14, cr: 1.0, mo: 0.2, n_: 0, E: -0.68, ssc: { tipo: 'A2' }, tLoc: null, t: ['cabezal', 'pozo'], aplica: 'Cuerpos de cabezal y árbol (API 6A)', ref: 'API 6A; ISO 15156-2, A.2 (≤ 22 HRC)', conf: 'n' },
+  { k: '8630', n: 'Baja aleación AISI 8630M ≤ 22 HRC', uns: 'G86300', cls: 'CS', i: 1.7, p: 16, cr: 0.5, mo: 0.2, n_: 0, E: -0.68, ssc: { tipo: 'A2' }, tLoc: null, t: ['cabezal'], aplica: 'Cuerpos de cabezal y árbol (API 6A)', ref: 'API 6A; ISO 15156-2, A.2', conf: 'n' },
+  { k: 'j55', n: 'API 5CT J55', uns: 'API 5CT', cls: 'CS', i: 1.0, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['pozo'], aplica: 'Revestimientos y tubing', ref: 'API 5CT; ISO 15156-2, Tabla A.3 (todas las temperaturas)', conf: 'n' },
+  { k: 'k55', n: 'API 5CT K55', uns: 'API 5CT', cls: 'CS', i: 1.05, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['pozo'], aplica: 'Revestimientos', ref: 'API 5CT; ISO 15156-2, Tabla A.3', conf: 'n' },
+  { k: 'l80', n: 'API 5CT L80 tipo 1', uns: 'API 5CT', cls: 'CS', i: 1.4, p: 12, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['pozo'], aplica: 'Revestimientos y tubing en servicio amargo', ref: 'API 5CT; ISO 15156-2, Tabla A.3', conf: 'n' },
+  { k: 'c90', n: 'API 5CT C90 tipo 1', uns: 'API 5CT', cls: 'CS', i: 1.8, p: 16, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['pozo'], aplica: 'Tubulares de mayor resistencia, servicio amargo', ref: 'API 5CT; ISO 15156-2, Tabla A.3', conf: 'n' },
+  { k: 't95', n: 'API 5CT T95 tipo 1', uns: 'API 5CT', cls: 'CS', i: 1.9, p: 16, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, t: ['pozo'], aplica: 'Tubulares de mayor resistencia, servicio amargo', ref: 'API 5CT; ISO 15156-2, Tabla A.3', conf: 'n' },
+  // Acero al carbono con recubrimiento o revestimiento
+  { k: 'cs_fbe', n: 'Acero al carbono con epóxico FBE interno', uns: 'FBE, ISO 21809-2', cls: 'CS', i: 1.3, p: 8, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, rec: true, t: ['linea', 'multiple', 'sepH', 'tanque'], aplica: 'Tubería y recipientes', ref: 'ISO 21809-2; ISO 21457, 9', conf: 't' },
+  { k: 'cs_vef', n: 'Acero al carbono con viniléster con escamas de vidrio', uns: 'Glass flake VE', cls: 'CS', i: 1.5, p: 10, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, rec: true, t: ['tanque', 'sepH', 'tratador', 'vertical', 'fosa'], aplica: 'Tanques y recipientes con agua producida', ref: 'ISO 12944-9; NACE SP0178', conf: 't' },
+  { k: 'cs_pe', n: 'Acero al carbono con liner de HDPE', uns: 'Liner PE-100', cls: 'CS', i: 1.6, p: 12, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, rec: true, t: ['linea'], aplica: 'Líneas de agua de inyección', ref: 'API RP 15S; ISO 21457, 9', conf: 't' },
+  { k: 'cs_galv', n: 'Acero galvanizado en caliente', uns: 'ISO 1461', cls: 'CS', i: 1.15, p: 5, cr: 0, mo: 0, n_: 0, E: -0.70, ssc: { tipo: 'A2' }, tLoc: null, rec: true, t: ['skid', 'fosa', 'pc'], aplica: 'Soportes y estructura exterior', ref: 'ISO 1461; ISO 12944-5', conf: 't' },
+  // Martensíticos y endurecidos por precipitación
+  { k: 's13cr', n: 'Súper 13Cr (13Cr-5Ni-2Mo)', uns: 'S41426', cls: 'MART', i: 3.4, p: 24, cr: 12.5, mo: 2.0, n_: 0, E: -0.50, ssc: { tipo: 'LIM', p: 3, pH: 3.5 }, tLoc: { aer: null, deaer: 150, noAgua: true }, t: ['pozo', 'bomba', 'linea'], aplica: 'Tubing y líneas con CO₂', ref: 'ISO 13680; ISO 15156-3, A.6 (límites por confirmar)', conf: 't' },
+  { k: 's410', n: 'Martensítico 410 ≤ 22 HRC', uns: 'S41000', cls: 'MART', i: 2.0, p: 12, cr: 12.0, mo: 0, n_: 0, E: -0.55, ssc: { tipo: 'LIM', p: 10, pH: 3.5 }, tLoc: { aer: null, deaer: 100, noAgua: true }, t: ['bomba', 'cabezal'], aplica: 'Ejes, vástagos y trim', ref: 'ISO 15156-3, A.6', conf: 't' },
+  { k: 'ca6nm', n: 'Fundición CA6NM ≤ 23 HRC', uns: 'J91540', cls: 'MART', i: 2.6, p: 16, cr: 12.5, mo: 0.7, n_: 0, E: -0.52, ssc: { tipo: 'LIM', p: 10, pH: 3.5 }, tLoc: { aer: null, deaer: 100, noAgua: true }, t: ['bomba', 'cabezal'], aplica: 'Impulsores y cuerpos fundidos', ref: 'ASTM A487; ISO 15156-3, A.6', conf: 't' },
+  { k: '174ph', n: 'Endurecido por precipitación 17-4 PH (H1150D)', uns: 'S17400', cls: 'MART', i: 3.0, p: 14, cr: 16.0, mo: 0, n_: 0, E: -0.45, ssc: { tipo: 'LIM', p: 3.4, pH: 4.5 }, tLoc: { aer: null, deaer: 80, noAgua: true }, t: ['bomba', 'cabezal'], aplica: 'Ejes y vástagos', ref: 'ISO 15156-3, A.8 (pH₂S ≤ 3,4 kPa, pH ≥ 4,5)', conf: 't' },
+  // Austeníticos
+  { k: 's304l', n: 'Inoxidable austenítico 304L', uns: 'S30403', cls: 'AUS', i: 2.0, p: 8, cr: 18.0, mo: 0, n_: 0, E: -0.28, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 50, tcl: 40 }, t: ['linea', 'skid', 'tea', 'vertical'], aplica: 'Instrumentación y servicios sin cloruros', ref: 'ISO 15156-3, A.2', conf: 't' },
+  { k: 's317l', n: 'Inoxidable austenítico 317L', uns: 'S31703', cls: 'AUS', i: 2.8, p: 12, cr: 18.0, mo: 3.0, n_: 0, E: -0.24, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 500, tcl: 60 }, t: ['linea', 'skid', 'vertical', 'sepH'], aplica: 'Tubería pequeña e internos', ref: 'ISO 15156-3, A.2', conf: 't' },
+  { k: 's321', n: 'Inoxidable austenítico 321', uns: 'S32100', cls: 'AUS', i: 2.2, p: 10, cr: 17.0, mo: 0, n_: 0, E: -0.28, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 50, tcl: 40 }, t: ['tea', 'tratador', 'linea'], aplica: 'Servicio a temperatura elevada', ref: 'ISO 15156-3, A.2', conf: 't' },
+  { k: 's310', n: 'Inoxidable refractario 310', uns: 'S31000', cls: 'AUS', i: 3.0, p: 12, cr: 25.0, mo: 0, n_: 0, E: -0.26, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 50, tcl: 40 }, t: ['tea', 'tratador'], aplica: 'Punta de tea y zonas calientes', ref: 'ASTM A240; ISO 15156-3, A.2', conf: 't' },
+  { k: 'cf8m', n: 'Fundición CF8M (316 fundido)', uns: 'J92900', cls: 'AUS', i: 2.6, p: 14, cr: 19.0, mo: 2.5, n_: 0, E: -0.25, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 200, tcl: 60 }, t: ['bomba', 'cabezal', 'linea', 'multiple'], aplica: 'Válvulas y bombas', ref: 'ASTM A351; ISO 15156-3, A.2', conf: 't' },
+  { k: 's904l', n: 'Súper austenítico 904L', uns: 'N08904', cls: 'AUS', i: 4.5, p: 20, cr: 20.0, mo: 4.5, n_: 0.05, E: -0.20, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { aer: 25, deaer: 70 }, t: ['linea', 'bomba', 'sepH', 'vertical', 'skid'], aplica: 'Agua con cloruros moderados', ref: 'ISO 15156-3, A.3; ISO 21457, Tabla 9', conf: 't' },
+  { k: 's6mo', n: 'Súper austenítico 6Mo', uns: 'S31254', cls: 'AUS', i: 6.0, p: 24, cr: 20.0, mo: 6.1, n_: 0.2, E: -0.18, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { aer: 40, deaer: 120 }, t: ['linea', 'bomba', 'sepH', 'vertical', 'skid'], aplica: 'Agua de mar y salmuera', ref: 'ISO 15156-3, A.3; ISO 21457, Tabla 9', conf: 't' },
+  // Dúplex
+  { k: 'lean', n: 'Dúplex económico 2304', uns: 'S32304', cls: 'DUP', i: 4.5, p: 24, cr: 23.0, mo: 0.3, n_: 0.1, E: -0.22, ssc: { tipo: 'LIM', p: 2, T: 232 }, tLoc: { aer: 10, deaer: 60 }, t: ['linea', 'tanque', 'vertical', 'sepH'], aplica: 'Tanques y tubería con cloruros bajos', ref: 'ISO 15156-3, Tabla A.24 (PREN < 30: confirmar)', conf: 't' },
+  { k: 'cd3mn', n: 'Dúplex fundido CD3MN (A890 4A)', uns: 'J92205', cls: 'DUP', i: 5.5, p: 28, cr: 22.0, mo: 3.0, n_: 0.15, E: -0.20, ssc: { tipo: 'LIM', p: 10, T: 232 }, tLoc: { aer: 20, deaer: 100 }, t: ['bomba', 'cabezal', 'linea'], aplica: 'Cuerpos de bomba y válvula', ref: 'ASTM A890; ISO 15156-3, Tabla A.24', conf: 't' },
+  { k: 'cd3mwcun', n: 'Súper dúplex fundido CD3MWCuN (A890 6A)', uns: 'J93380', cls: 'DUP', i: 7.5, p: 30, cr: 25.0, mo: 3.5, n_: 0.22, E: -0.18, ssc: { tipo: 'LIM', p: 20, T: 232 }, tLoc: { aer: 40, deaer: 150 }, t: ['bomba', 'cabezal'], aplica: 'Bombas de inyección', ref: 'ASTM A890; ISO 15156-3, Tabla A.24', conf: 't', costoSup: true },
+  // Aleaciones de níquel y revestimientos
+  { k: 'n825', n: 'Aleación 825', uns: 'N08825', cls: 'NI', i: 5.5, p: 26, cr: 21.5, mo: 3.0, n_: 0, E: -0.18, ssc: { tipo: 'NI', T: 232, p: 700 }, tLoc: { aer: 30, deaer: 120 }, t: ['pozo', 'linea', 'cabezal', 'bomba', 'sepH'], aplica: 'Tubulares y tubería en servicio amargo', ref: 'ISO 15156-3, A.4', conf: 't' },
+  { k: 'c276', n: 'Aleación C-276', uns: 'N10276', cls: 'NI', i: 14, p: 32, cr: 16.0, mo: 16.0, n_: 0, E: -0.12, ssc: { tipo: 'NI', T: 232, p: 7000 }, tLoc: { aer: 150, deaer: 200 }, t: ['cabezal', 'bomba', 'linea', 'sepH', 'skid'], aplica: 'Servicio muy agresivo, instrumentación', ref: 'ISO 15156-3, A.14', conf: 't', costoSup: true },
+  { k: 'n718', n: 'Aleación 718 (endurecida, ≤ 40 HRC)', uns: 'N07718', cls: 'NI', i: 12, p: 30, cr: 19.0, mo: 3.0, n_: 0, E: -0.15, ssc: { tipo: 'NI', T: 232, p: 700 }, tLoc: { aer: 30, deaer: 120 }, t: ['cabezal', 'bomba', 'pozo'], aplica: 'Vástagos, colgadores y ejes', ref: 'ISO 15156-3, A.13', conf: 't', costoSup: true },
+  { k: 'n925', n: 'Aleación 925', uns: 'N09925', cls: 'NI', i: 10, p: 30, cr: 21.0, mo: 3.0, n_: 0, E: -0.16, ssc: { tipo: 'NI', T: 232, p: 700 }, tLoc: { aer: 30, deaer: 120 }, t: ['cabezal', 'pozo'], aplica: 'Colgadores y componentes de pozo', ref: 'ISO 15156-3, A.13', conf: 't', costoSup: true },
+  { k: 'm400', n: 'Monel 400', uns: 'N04400', cls: 'NI', i: 8.0, p: 26, cr: 0, mo: 0, n_: 0, E: -0.10, ssc: { tipo: 'NI', T: 230, p: 700 }, tLoc: { aer: 60, deaer: 150 }, t: ['bomba', 'linea', 'skid'], aplica: 'Bombas y tubería de agua salada', ref: 'ASTM B165; ISO 15156-3, A.14', conf: 't', costoSup: true },
+  { k: 'clad825', n: 'Acero con revestimiento interno de 825', uns: 'Clad N08825, 3 mm', cls: 'CRA', i: 3.2, p: 26, cr: 21.5, mo: 3.0, n_: 0, E: -0.18, ssc: { tipo: 'NI', T: 232, p: 700 }, tLoc: { aer: 30, deaer: 120 }, t: ['linea', 'sepH', 'multiple', 'tratador', 'vertical'], aplica: 'Tubería y recipientes', ref: 'API 5LD; ISO 15156-3, A.4', conf: 't' },
+  { k: 'clad316', n: 'Acero con revestimiento interno de 316L', uns: 'Clad S31603, 3 mm', cls: 'CRA', i: 2.4, p: 20, cr: 16.0, mo: 2.0, n_: 0, E: -0.25, ssc: { tipo: 'LIM', p: 100, T: 60 }, tLoc: { cl: 200, tcl: 60 }, t: ['sepH', 'vertical', 'multiple'], aplica: 'Recipientes con poca agua', ref: 'ASME SA-264; ISO 15156-3, A.2', conf: 't' },
+  // Titanio y aleaciones de cobre
+  { k: 'ti2', n: 'Titanio grado 2', uns: 'R50400', cls: 'TI', i: 12, p: 30, cr: 0, mo: 0, n_: 0, E: -0.05, ssc: { tipo: 'NO' }, tLoc: { aer: 150, deaer: 200 }, t: ['linea', 'skid', 'bomba'], aplica: 'Intercambiadores y agua salada', ref: 'ASTM B338; ISO 15156-3, A.16', conf: 't', costoSup: true },
+  { k: 'ti12', n: 'Titanio grado 12', uns: 'R53400', cls: 'TI', i: 13, p: 30, cr: 0, mo: 0.3, n_: 0, E: -0.05, ssc: { tipo: 'NO' }, tLoc: { aer: 200, deaer: 250 }, t: ['linea', 'skid'], aplica: 'Salmuera caliente', ref: 'ASTM B338; ISO 15156-3, A.16', conf: 't', costoSup: true },
+  { k: 'cuni', n: 'Cuproníquel 90/10', uns: 'C70600', cls: 'CU', i: 3.5, p: 20, cr: 0, mo: 0, n_: 0, E: -0.25, ssc: { tipo: 'LIM', p: 0.3 }, tLoc: { aer: 40, deaer: 60 }, t: ['linea', 'skid'], aplica: 'Agua de servicio sin H₂S', ref: 'ASTM B466 (el H₂S lo ataca: no usar en agua producida)', conf: 't' },
+  { k: 'albr', n: 'Bronce al aluminio', uns: 'C95800', cls: 'CU', i: 3.0, p: 16, cr: 0, mo: 0, n_: 0, E: -0.25, ssc: { tipo: 'LIM', p: 0.3 }, tLoc: { aer: 40, deaer: 60 }, t: ['bomba'], aplica: 'Impulsores de agua sin H₂S', ref: 'ASTM B148 (sensible al sulfuro)', conf: 't' },
+  // No metálicos
+  { k: 'gre_hp', n: 'GRE de alta presión (filament wound)', uns: 'ISO 14692', cls: 'NOMET', i: 2.4, p: 14, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 93, pmax: 250, t: ['linea'], aplica: 'Líneas de inyección de agua', ref: 'ISO 14692 (clase según el fabricante)', conf: 't' },
+  { k: 'rtp', n: 'Tubería termoplástica reforzada (RTP)', uns: 'API 15S', cls: 'NOMET', i: 2.0, p: 16, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 65, pmax: 100, t: ['linea'], aplica: 'Líneas de flujo y de agua', ref: 'API RP 15S', conf: 't' },
+  { k: 'hdpe', n: 'Polietileno PE-100', uns: 'ISO 4427', cls: 'NOMET', i: 0.8, p: 6, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 60, pmax: 16, t: ['linea', 'fosa', 'tanque'], aplica: 'Agua a baja presión y drenajes', ref: 'ISO 4427', conf: 't' },
+  { k: 'pp', n: 'Polipropileno PP-R', uns: 'ISO 15874', cls: 'NOMET', i: 0.9, p: 6, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 80, pmax: 10, t: ['linea', 'skid', 'fosa'], aplica: 'Químicos y drenajes a baja presión', ref: 'ISO 15874', conf: 't' },
+  { k: 'pvc', n: 'PVC-U', uns: 'ISO 1452', cls: 'NOMET', i: 0.6, p: 4, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 50, pmax: 10, t: ['fosa', 'skid'], aplica: 'Drenajes y servicios fríos', ref: 'ISO 1452', conf: 't' },
+  { k: 'pvdf', n: 'PVDF', uns: 'ISO 10931', cls: 'NOMET', i: 6.0, p: 16, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 120, pmax: 10, t: ['linea', 'skid'], aplica: 'Dosificación de químicos', ref: 'ISO 10931', conf: 't' },
+  { k: 'frp_t', n: 'Tanque de PRFV viniléster', uns: 'ASTM D3299', cls: 'NOMET', i: 1.6, p: 14, cr: 0, mo: 0, n_: 0, E: null, ssc: { tipo: 'NO' }, tLoc: null, tmax: 95, pmax: 1.5, t: ['tanque', 'fosa', 'skid'], aplica: 'Tanques atmosféricos de agua y químicos', ref: 'ASTM D3299', conf: 't' },
 ];
 const MAT = {}; MATS.forEach(m => { m.pren = m.cr ? m.cr + 3.3 * (m.mo + 0) + 16 * m.n_ : null; MAT[m.k] = m; });
 const PAREDES = { A1: 47.7, A2: 47.7, A3: 47.7 };
 function aplicables(p) {
   const t = TIPO[p.eq], f = FLUIDO[p.eq];
   return MATS.filter(m => {
+    if (m.t && !m.t.includes(t)) return false;
+    const T0 = { '13cr': ['pozo', 'bomba', 'linea', 'cabezal'], '316': ['linea', 'skid', 'sepH', 'vertical', 'cabezal'], n625: ['cabezal', 'bomba', 'linea', 'pozo', 'skid'] };
+    if (T0[m.k] && !T0[m.k].includes(t)) return false;
+    if (m.cls === 'NOMET' && (f === 'gas' || t === 'tea')) return false;
     if (m.k === 'grp') return ['linea', 'tanque', 'fosa'].includes(t) && f !== 'gas';
     if (m.k === 'cs_rec') return ['tanque', 'sepH', 'tratador', 'vertical', 'linea'].includes(t);
     if (m.k === 'cs_hic') return ['sepH', 'tratador', 'vertical', 'tanque', 'linea', 'tea', 'multiple'].includes(t);
@@ -2106,10 +2178,10 @@ function renderEqIzq() {
   s += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" id="c-reset">Condiciones del acta</button><button class="btn sm" id="c-acta">Equipo completo como en el acta</button></div>`;
   if (AFECTA[tag]) s += `<div class="aviso info" style="margin-top:10px">${esc(AFECTA[tag])}</div>`;
   s += `</div></div>`;
-  s += `<div class="pnl"><header><h3>Piezas y material</h3><div class="der"><span class="chip">${M.byEq[tag].length}</span></div></header><div class="cu" style="display:grid;gap:7px">`;
+  s += `<div class="pnl"><header><h3>Piezas y material</h3><div class="der"><button class="btn sm" id="autoMat" title="Elige el material más económico que cumple cuando el del acta se sale de envolvente">${AUTO.on ? 'Automático: sí' : 'Automático: no'}</button><span class="chip">${M.byEq[tag].length}</span></div></header><div class="cu" style="display:grid;gap:7px">${autoResumen(tag)}`;
   M.byEq[tag].forEach(p => {
     const r = R.eqs[tag].piezas.find(x => x.tag === p.tag), mk = ST.mat[p.tag] || 'acta';
-    const ops = [`<option value="acta">Acta: ${esc(p.material.replace(/\(.*?\)/g, '').slice(0, 60))}</option>`].concat(aplicables(p).map(m => `<option value="${m.k}" ${mk === m.k ? 'selected' : ''}>${esc(m.n)}</option>`));
+    const ops = [`<option value="acta">Acta: ${esc(p.material.replace(/\(.*?\)/g, '').slice(0, 60))}</option>`].concat(aplicables(p).map(m => `<option value="${m.k}" ${mk === m.k ? 'selected' : ''}>${esc(m.n)}${AUTO.sel[p.tag] && AUTO.sel[p.tag].k === m.k ? ' · automático' : ''}</option>`));
     const caOn = (mk === 'cs_ca') || (mk === 'acta' && p.m && p.ca && ['inh', 'gasA', 'gasS'].includes(p.m.modo));
     const caV = ST.pz[p.tag] && ST.pz[p.tag].ca !== undefined ? ST.pz[p.tag].ca : (p.ca || 3);
     s += `<div class="pz ${p.tag === EQV.sel ? 'sel' : ''}" data-pz="${p.tag}"><span class="dot d${r.s}"></span><div class="nm"><b>${p.tag}</b> · ${esc(p.pieza)}</div><span class="pill p${r.s}">${['OK', 'Atención', 'Falla'][r.s]}</span>
@@ -2133,7 +2205,7 @@ function renderEqIzq() {
   M.byEq[tag].forEach(p => bindSl(idSeg('ca-' + p.tag), x => { ST.pz[p.tag] = Object.assign(ST.pz[p.tag] || {}, { ca: x }); APP.cambio('Sobreespesor de ' + p.tag); }));
   $('#c-reset').onclick = () => { delete ST.eq[tag]; APP.cambio('Condiciones de ' + tag + ' al acta'); };
   $('#c-acta').onclick = () => { delete ST.eq[tag]; M.byEq[tag].forEach(p => { delete ST.mat[p.tag]; delete ST.pz[p.tag]; }); APP.cambio(tag + ' como en el acta'); };
-  $('#eqIzq').querySelectorAll('select[data-mat]').forEach(sl => sl.addEventListener('change', () => { const t = sl.dataset.mat; if (sl.value === 'acta') delete ST.mat[t]; else ST.mat[t] = sl.value; EQV.sel = t; APP.cambio('Material de ' + t); }));
+  $('#eqIzq').querySelectorAll('select[data-mat]').forEach(sl => sl.addEventListener('change', () => { const t = sl.dataset.mat; AUTO.man[t] = true; delete AUTO.sel[t]; if (sl.value === 'acta') delete ST.mat[t]; else ST.mat[t] = sl.value; EQV.sel = t; APP.cambio('Material de ' + t); }));
   $('#eqIzq').querySelectorAll('.pz').forEach(d => d.addEventListener('click', ev => { if (ev.target.closest('select,input')) return; EQV.sel = d.dataset.pz; renderEqIzq(); renderEqDer(); renderTab(); vidaChart(); lecturas(); }));
 }
 function datosPieza(r) {
@@ -2268,7 +2340,7 @@ function tabMateriales(el, r) {
       <td>${o.k === act ? '<span class="chip">en uso</span>' : `<button class="btn sm" data-usar="${o.k}" data-ca="${o.ca || ''}">Usar</button>`}</td></tr>`).join('')}
     </tbody></table></div></div>
     <p class="nota" style="margin-top:8px">Costo: índice relativo al acero al carbono del anexo del acta (el 25Cr y la aleación 625 maciza son supuestos de este simulador). Holgura frente a la parada de 47,7 semanas. Las filas "tamizaje" usan criterios de práctica de la industria para corrosión localizada que deben confirmarse en la norma antes de decidir.</p>`;
-  el.querySelectorAll('[data-usar]').forEach(b => b.onclick = () => { const k = b.dataset.usar; if (k === 'acta') delete ST.mat[tag]; else ST.mat[tag] = k; if (b.dataset.ca) ST.pz[tag] = Object.assign(ST.pz[tag] || {}, { ca: +b.dataset.ca }); else if (ST.pz[tag] && k !== 'acta') delete ST.pz[tag].ca; APP.cambio('Material de ' + tag); });
+  el.querySelectorAll('[data-usar]').forEach(b => b.onclick = () => { const k = b.dataset.usar; AUTO.man[tag] = true; delete AUTO.sel[tag]; if (k === 'acta') delete ST.mat[tag]; else ST.mat[tag] = k; if (b.dataset.ca) ST.pz[tag] = Object.assign(ST.pz[tag] || {}, { ca: +b.dataset.ca }); else if (ST.pz[tag] && k !== 'acta') delete ST.pz[tag].ca; APP.cambio('Material de ' + tag); });
 }
 function tabLimites(el, r) {
   const tag = r.tag;
@@ -2319,7 +2391,7 @@ function vidaChart() {
 function seccion(t) {
   const r = EQV.res && EQV.res[EQV.sel]; if (!r) return;
   const { c, W, H } = prepCv($('#cvSec')); c.clearRect(0, 0, W, H);
-  const d = r.dano, cra = r.mat && ['CRA', 'AUS', 'DUP', 'NI', 'MART'].includes(r.mat.cls), clad = r.mat && r.mat.k === 'cra625' || r.mat && r.mat.k === 'w625';
+  const d = r.dano, cra = r.mat && ['CRA', 'AUS', 'DUP', 'NI', 'MART', 'TI', 'CU'].includes(r.mat.cls), clad = !!(r.mat && /^(cra625|w625|clad825|clad316)$/.test(r.mat.k));
   const nomet = r.mat && r.mat.cls === 'NOMET';
   const proteccionInterna = !r.mat && /(?:revestimiento|recubrimiento|barrera) (?:orgánico |CRA )?intern[oa]|epoxi fenólico interno/i.test((r.p.proteccion || '') + ' · ' + r.p.material);
   const rec = r.mat?.rec || r.c?.modo === 'rev' || proteccionInterna;
@@ -2356,7 +2428,7 @@ function seccion(t) {
   c.fillStyle = '#e3eaf3'; c.fillRect(0, yE + 4, W, H - yE);
   c.fillStyle = '#586b82'; c.fillText('exterior', 10, H - 6);
   $('#secTit').textContent = `Sección de pared · ${r.tag}`;
-  $('#secChip').textContent = r.mat ? r.mat.n : 'material del acta';
+  $('#secChip').textContent = r.mat ? r.mat.n + (AUTO.sel[r.tag] ? ' (automático)' : '') : 'Acta: ' + String((r.p && r.p.material) || '').replace(/\(.*?\)/g, '').slice(0, 46);
 }
 function lecturas() {
   const r = EQV.res && EQV.res[EQV.sel]; if (!r) return;
@@ -2405,6 +2477,73 @@ const ESC = [{"key":"base","name":"Base de diseño","state":{"G":{"H2Shoy":0.15,
   k:key, n:name, f:target => Object.assign(target, {G:{...target.G,...state.G}, eq:JSON.parse(JSON.stringify(state.eq)), preset:true, bio:target.G.BIO})
 }));
 
+/* ===================== Selección automática del material =====================
+   Cuando el material del acta se sale de envolvente con los parámetros actuales, cada pieza pasa al material
+   más económico del catálogo que cumple (mismo motor y mismas reglas de candidatos()). Si las condiciones
+   vuelven a la envolvente, regresa al material del acta. Lo elegido a mano se respeta. */
+const AUTO = { on: true, sel: {}, man: {}, nada: {}, t: null, busy: false };
+function autoSel() {
+  if (!APP.R) return false;
+  Object.keys(AUTO.sel).forEach(t => { if (ST.mat[t] !== AUTO.sel[t].k) delete AUTO.sel[t]; });
+  Object.keys(AUTO.man).forEach(t => { if (!ST.mat[t]) delete AUTO.man[t]; });
+  AUTO.nada = {};
+  let ch = false;
+  D.piezas.forEach(p => {
+    const q = APP.R.eqs[p.eq]; if (!q) return;
+    const r = q.piezas.find(x => x.tag === p.tag); if (!r) return;
+    const cur = ST.mat[p.tag] || null, auto = !!(AUTO.sel[p.tag] && AUTO.sel[p.tag].k === cur);
+    if (!auto && (cur || AUTO.man[p.tag])) return;      // elegido a mano
+    if (!auto && r.s === 0) return;                       // el material del acta cumple
+    const C = candidatos(p.tag), acta = C.find(o => o.k === 'acta');
+    let pick = null;
+    if (!(acta && acta.s === 0)) {
+      pick = C.find(o => o.mejor) || C.filter(o => o.k !== 'acta').sort((a, b) => a.s - b.s || (a.i ?? 99) - (b.i ?? 99))[0] || null;
+    }
+    if (pick && acta && pick.s >= acta.s) { AUTO.nada[p.tag] = acta.lim || 'condición de diseño'; pick = null; } else delete AUTO.nada[p.tag];
+    const nk = pick ? pick.k : null;
+    if (nk !== cur) {
+      if (nk) {
+        ST.mat[p.tag] = nk;
+        if (pick.ca) ST.pz[p.tag] = Object.assign(ST.pz[p.tag] || {}, { ca: pick.ca }); else if (ST.pz[p.tag]) delete ST.pz[p.tag].ca;
+        AUTO.sel[p.tag] = { k: nk, ok: pick.s === 0, por: acta ? acta.lim : '' };
+      } else {
+        delete ST.mat[p.tag]; if (ST.pz[p.tag]) delete ST.pz[p.tag].ca; delete AUTO.sel[p.tag];
+      }
+      ch = true;
+    } else if (nk && AUTO.sel[p.tag]) AUTO.sel[p.tag].ok = pick.s === 0;
+  });
+  return ch;
+}
+function autoProgramar() {
+  if (!AUTO.on || AUTO.busy) return;
+  clearTimeout(AUTO.t);
+  AUTO.t = setTimeout(() => {
+    AUTO.busy = true;
+    try { if (autoSel()) APP.cambio('Selección automática del material', true); }
+    finally { AUTO.busy = false; }
+  }, 220);
+}
+function autoResumen(tag) {
+  if (!AUTO.on) return `<div class="nota">Selección automática apagada: cada pieza usa el material elegido en la lista.</div>`;
+  const L = (M.byEq[tag] || []).filter(p => AUTO.sel[p.tag]).map(p => {
+    const a = AUTO.sel[p.tag], m = MAT[a.k];
+    return `<li title="${esc(a.por ? 'El del acta falla por: ' + a.por : '')}"><b>${p.tag}</b> → ${esc(m ? m.n : a.k)}${a.ok ? '' : ' <span class="pill p1">mejora parcial</span>'}</li>`;
+  });
+  (M.byEq[tag] || []).filter(p => AUTO.nada[p.tag] && !AUTO.sel[p.tag]).forEach(p => L.push(`<li title="${esc('Límite: ' + AUTO.nada[p.tag])}"><b>${p.tag}</b>: ningún material lo resuelve, sigue el del acta</li>`));
+  return L.length
+    ? `<div class="aviso info" style="margin:0"><b>Material elegido automáticamente.</b> Con estas condiciones el material del acta se sale de la envolvente; se elige el más económico de ${MATS.length} opciones que cumple (pase el cursor para ver por qué):<ul style="margin:4px 0 0 16px;padding:0;max-height:120px;overflow:auto">${L.join('')}</ul></div>`
+    : `<div class="nota">Selección automática activa (${MATS.length} materiales): con estas condiciones el material del acta cumple en todas las piezas.</div>`;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('#autoMat'); if (!b) return;
+  AUTO.on = !AUTO.on; AUTO.man = {};
+  if (!AUTO.on) {
+    Object.keys(AUTO.sel).forEach(t => { if (ST.mat[t] === AUTO.sel[t].k) { delete ST.mat[t]; if (ST.pz[t]) delete ST.pz[t].ca; } });
+    AUTO.sel = {};
+  }
+  APP.cambio(AUTO.on ? 'Selección automática activada' : 'Selección automática apagada', true);
+});
+
 const APP = {
   vista: 'planta', R: null, esc: 'base', play: false, velo: 2, Racta: null,
   ir(v) {
@@ -2417,7 +2556,7 @@ const APP = {
     if (v === 'planta') this.panelesPlanta();
   },
   recalc() {
-    this.R = evalTodo(ST, ST.G.anio);
+    this.R = evalTodo(ST, ST.G.anio); autoProgramar();
     
     const c = this.R.c, s = c[2] ? 2 : (c[1] ? 1 : 0);
     $('#chipEstado').className = 'chip ' + ['ok', 'am', 'ro'][s];
